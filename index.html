@@ -22,19 +22,43 @@
     .game-links {
       margin-top: 40px;
     }
-    a {
+    .game-container {
+      margin: 25px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+    }
+    .play-btn {
       display: inline-block;
-      margin: 15px;
-      padding: 15px 30px;
-      font-size: 18px;
+      margin: 10px;
+      padding: 12px 25px;
+      font-size: 16px;
       color: white;
       background: #0077cc;
       text-decoration: none;
-      border-radius: 10px;
+      border-radius: 8px;
       transition: 0.3s;
     }
-    a:hover {
+    .play-btn:hover {
       background: #005fa3;
+    }
+    .download-btn {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      color: #333;
+      background: #f0f0f0;
+      text-decoration: none;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+    .download-btn:hover {
+      background: #e0e0e0;
     }
   </style>
 </head>
@@ -45,9 +69,55 @@
   </header>
 
   <div class="game-links">
-    <a href="chess.html">♟ Chess</a>
-    <a href="tag.html">🏃 Tag Game</a>
-    <a href="tictactoe.html">❌⭕ Tic Tac Toe</a>
+    
+    <!-- Chess Game -->
+    <div class="game-container">
+      <h2>♟ Chess</h2>
+      <p>Play the classic game of strategy</p>
+      <a href="chess.html" class="play-btn">Play Chess</a>
+      <br>
+      <button class="download-btn" onclick="downloadGame('chess.html', 'Chess Game')">Download Chess Game</button>
+    </div>
+
+    <!-- Tag Game -->
+    <div class="game-container">
+      <h2>🏃 Tag Game</h2>
+      <p>Fun chasing game with friends</p>
+      <a href="tag.html" class="play-btn">Play Tag Game</a>
+      <br>
+      <button class="download-btn" onclick="downloadGame('tag.html', 'Tag Game')">Download Tag Game</button>
+    </div>
+
+    <!-- Tic Tac Toe -->
+    <div class="game-container">
+      <h2>❌⭕ Tic Tac Toe</h2>
+      <p>The classic X and O game</p>
+      <a href="tictactoe.html" class="play-btn">Play Tic Tac Toe</a>
+      <br>
+      <button class="download-btn" onclick="downloadGame('tictactoe.html', 'Tic Tac Toe Game')">Download Tic Tac Toe</button>
+    </div>
+
   </div>
+
+  <script>
+    function downloadGame(filename, gameName) {
+      // Show confirmation message
+      if (confirm(`Are you sure you want to download ${gameName}?\n\nThis will download the HTML file to your computer.`)) {
+        // Create a temporary link to trigger download
+        const link = document.createElement('a');
+        link.href = filename;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message
+        alert(`✅ ${gameName} download started!\n\nCheck your downloads folder for the file.`);
+      } else {
+        // User cancelled the download
+        alert('Download cancelled.');
+      }
+    }
+  </script>
 </body>
 </html>
