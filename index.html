@@ -60,9 +60,52 @@
     .download-btn:hover {
       background: #e0e0e0;
     }
+    /* Patch Notes Styles */
+    .patch-notes {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      max-width: 300px;
+      text-align: left;
+      z-index: 1000;
+    }
+    .patch-notes h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+      border-bottom: 2px solid #0077cc;
+      padding-bottom: 5px;
+    }
+    .patch-notes-content {
+      font-size: 14px;
+      line-height: 1.4;
+      color: #666;
+    }
   </style>
 </head>
 <body>
+  <!-- Patch Notes Section -->
+  <div class="patch-notes">
+    <h3>📝 Patch Notes</h3>
+    <div class="patch-notes-content">
+      <!-- YOU CAN EDIT THE PATCH NOTES BELOW THIS LINE -->
+      <strong>Latest Updates:</strong><br>
+      • Added double jump feature to Tag Game<br>
+      • Improved game controls<br>
+      • Fixed collision detection<br>
+      • Enhanced player movement physics<br>
+      <br>
+      <strong>Coming Soon:</strong><br>
+      • New power-ups<br>
+      • Multiplayer improvements<br>
+      • More game modes
+      <!-- YOU CAN EDIT THE PATCH NOTES ABOVE THIS LINE -->
+    </div>
+  </div>
+
   <header>
     <h1>🎮 Welcome to My Game Hub 🎮</h1>
     <p>Choose a game and start playing!</p>
