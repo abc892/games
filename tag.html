@@ -27,13 +27,30 @@
     #ui {
       position: absolute;
       top: 10px;
-      left: 10px;
+      left: 150px;
       font-size: 18px;
       color: #fff;
       z-index: 10;
       background: rgba(0, 0, 0, 0.5);
       padding: 8px 15px;
       border-radius: 20px;
+    }
+    #home-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #0077cc;
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: 0.3s;
+      z-index: 15;
+      display: block;
+    }
+    #home-btn:hover {
+      background: #005fa3;
     }
     #pause-btn {
       position: absolute;
@@ -50,22 +67,6 @@
     }
     #pause-btn:hover {
       background: rgba(0, 0, 0, 0.7);
-    }
-    #home-btn {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: #0077cc;
-      color: white;
-      text-decoration: none;
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 16px;
-      z-index: 50;
-      transition: background 0.3s;
-    }
-    #home-btn:hover {
-      background: #005fa3;
     }
     #gameOver {
       position: absolute;
@@ -186,11 +187,9 @@
   </style>
 </head>
 <body>
-  <!-- ✅ Home Button -->
-  <a href="index.html" id="home-btn">🏠 Home</a>
-
   <div class="game-container">
-    <div id="ui">Time: 0</div>
+    <a href="index.html" id="home-btn">🏠 Home</a>
+    <div id="ui" style="display: none;">Time: 0</div>
     <button id="pause-btn" style="display: none;">Pause</button>
     <div id="gameOver"></div>
     <div id="countdown"></div>
@@ -209,7 +208,7 @@
       <div class="mode-container">
         <h3>Robot Mode</h3>
         <button id="robot-toggle" class="toggle-btn" onclick="toggleRobotMode()">OFF</button>
-        <p>Adds a bot to the game (always on for 1 Player)</p>
+        <p>Adds a smart circle that seeks or avoids players</p>
       </div>
     </div>
     <div id="time-setup">
@@ -221,9 +220,692 @@
     <canvas id="gameCanvas" width="1200" height="700"></canvas>
   </div>
 
-  <!-- JS stays the same -->
   <script>
-    /* your full JS code here unchanged */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const ui = document.getElementById('ui');
+    const pauseBtn = document.getElementById('pause-btn');
+    const gameOverDisplay = document.getElementById('gameOver');
+    const setupScreen = document.getElementById('setup-screen');
+    const timeSetup = document.getElementById('time-setup');
+    const timeInput = document.getElementById('time-input');
+    const countdownDisplay = document.getElementById('countdown');
+    const pauseMenu = document.getElementById('pause-menu');
+    const robotToggleBtn = document.getElementById('robot-toggle');
+
+    const keys = {};
+    document.addEventListener('keydown', e => keys[e.key] = true);
+    document.addEventListener('keyup', e => keys[e.key] = false);
+
+    let players = [];
+    let smartCircle = null;
+    let numPlayers = 2;
+    let gameStarted = false;
+    let robotMode = false;
+    let gamePaused = false;
+
+    const gravity = 0.5;
+    const platforms = [
+      { x: 100, y: 550, w: 80, h: 15 },
+      { x: 250, y: 500, w: 70, h: 15 },
+      { x: 400, y: 450, w: 80, h: 15 },
+      { x: 550, y: 500, w: 70, h: 15 },
+      { x: 700, y: 550, w: 80, h: 15 },
+      { x: 850, y: 500, w: 70, h: 15 },
+      { x: 1000, y: 450, w: 80, h: 15 },
+      { x: 200, y: 350, w: 70, h: 15 },
+      { x: 400, y: 300, w: 80, h: 15 },
+      { x: 600, y: 350, w: 70, h: 15 },
+      { x: 800, y: 300, w: 80, h: 15 },
+      { x: 1000, y: 350, w: 70, h: 15 },
+      { x: 300, y: 200, w: 80, h: 15 },
+      { x: 500, y: 150, w: 70, h: 15 },
+      { x: 700, y: 200, w: 80, h: 15 },
+      { x: 900, y: 150, w: 70, h: 15 },
+      { x: 200, y: 620, w: 90, h: 15 },
+      { x: 900, y: 620, w: 90, h: 15 }
+    ];
+    
+    const bouncePad = { x: 30, y: 650, w: 50, h: 12 };
+
+    let teleporters = [];
+    let teleportCooldown = 0;
+    let lastTagTime = 0;
+    let timer = 0;
+    let frameCount = 0;
+    let gameOver = false;
+    let animationId = null;
+
+    // Pause functionality
+    pauseBtn.addEventListener('click', togglePause);
+    
+    function togglePause() {
+      if (!gameStarted || gameOver) return;
+      
+      gamePaused = !gamePaused;
+      
+      if (gamePaused) {
+        pauseMenu.style.display = 'block';
+        cancelAnimationFrame(animationId);
+      } else {
+        pauseMenu.style.display = 'none';
+        gameLoop();
+      }
+    }
+    
+    function resumeGame() {
+      gamePaused = false;
+      pauseMenu.style.display = 'none';
+      gameLoop();
+    }
+    
+    function leaveGame() {
+      gamePaused = false;
+      gameStarted = false;
+      gameOver = false;
+      pauseMenu.style.display = 'none';
+      setupScreen.style.display = 'block';
+      pauseBtn.style.display = 'none';
+      ui.style.display = 'none';
+      
+      // Reset robot mode to default state
+      robotMode = false;
+      robotToggleBtn.classList.remove('active');
+      robotToggleBtn.textContent = 'OFF';
+      robotToggleBtn.disabled = false;
+      robotToggleBtn.style.opacity = '1';
+      
+      ui.textContent = 'Time: 0';
+      cancelAnimationFrame(animationId);
+    }
+
+    function toggleRobotMode() {
+      robotMode = !robotMode;
+      robotToggleBtn.classList.toggle('active', robotMode);
+      robotToggleBtn.textContent = robotMode ? 'ON' : 'OFF';
+    }
+
+    function goBack() {
+      timeSetup.style.display = 'none';
+      setupScreen.style.display = 'block';
+      
+      // Reset robot mode to default state when going back
+      robotMode = false;
+      robotToggleBtn.classList.remove('active');
+      robotToggleBtn.textContent = 'OFF';
+      robotToggleBtn.disabled = false;
+      robotToggleBtn.style.opacity = '1';
+    }
+
+    function selectPlayers(number) {
+      numPlayers = number;
+      
+      // Reset robot mode settings for all player counts
+      if (number === 1) {
+        // For single player, robot mode is automatically enabled and locked
+        robotMode = true;
+        robotToggleBtn.classList.add('active');
+        robotToggleBtn.textContent = 'ON';
+        robotToggleBtn.disabled = true;
+        robotToggleBtn.style.opacity = '0.6';
+      } else {
+        // For multiplayer, allow robot mode toggle
+        robotToggleBtn.disabled = false;
+        robotToggleBtn.style.opacity = '1';
+      }
+      
+      setupScreen.style.display = 'none';
+      timeSetup.style.display = 'block';
+    }
+
+    function startGame() {
+      const timeLimit = parseInt(timeInput.value);
+      if (isNaN(timeLimit) || timeLimit < 10) {
+        alert("Please enter a valid time limit (minimum 10 seconds)");
+        return;
+      }
+      
+      timer = timeLimit;
+      timeSetup.style.display = 'none';
+      pauseBtn.style.display = 'block';
+      ui.style.display = 'block';
+      ui.textContent = `Time: ${timer}`;
+      
+      // Reset game state
+      players = [];
+      smartCircle = null;
+      gameStarted = false;
+      gameOver = false;
+      frameCount = 0;
+      lastTagTime = 0;
+      
+      const colors = ['red', 'green', 'blue', 'yellow'];
+      const startPositions = [
+        { x: 100, y: 100 },
+        { x: 1000, y: 100 },
+        { x: 100, y: 500 },
+        { x: 1000, y: 500 }
+      ];
+      
+      const controlSchemes = [
+        { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' },
+        { up: 'w', down: 's', left: 'a', right: 'd' },
+        { up: 't', down: 'g', left: 'f', right: 'h' },
+        { up: 'i', down: 'k', left: 'j', right: 'l' }
+      ];
+      
+      // Create human players
+      for (let i = 0; i < numPlayers; i++) {
+        players.push({ 
+          x: startPositions[i].x, 
+          y: startPositions[i].y, 
+          vx: 0, 
+          vy: 0, 
+          w: 30, 
+          h: 30, 
+          color: colors[i], 
+          isIt: false, 
+          controls: controlSchemes[i]
+        });
+      }
+      
+      // Add smart circle if robot mode is enabled
+      if (robotMode) {
+        smartCircle = {
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: 0,
+          vy: 0,
+          radius: 12,
+          speed: 3,
+          isIt: false,
+          color: 'orange',
+          targetCooldown: 0
+        };
+      }
+      
+      // Randomly assign who is "it"
+      const totalEntities = players.length + (robotMode ? 1 : 0);
+      const randomIndex = Math.floor(Math.random() * totalEntities);
+      
+      if (randomIndex < players.length) {
+        players[randomIndex].isIt = true;
+      } else if (robotMode && smartCircle) {
+        smartCircle.isIt = true;
+      }
+      
+      spawnTeleporters();
+      
+      // Start countdown
+      let countdown = 3;
+      countdownDisplay.style.display = 'block';
+      countdownDisplay.textContent = countdown;
+      
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          countdownDisplay.textContent = countdown;
+        } else {
+          clearInterval(countdownInterval);
+          countdownDisplay.textContent = "GO!";
+          setTimeout(() => {
+            countdownDisplay.style.display = 'none';
+            gameStarted = true;
+            gameLoop();
+          }, 500);
+        }
+      }, 1000);
+    }
+
+    function spawnTeleporters() {
+      const accessiblePositions = [
+        { x: 150, y: 300 },
+        { x: 1050, y: 300 },
+        { x: 600, y: 200 },
+        { x: 600, y: 400 },
+        { x: 350, y: 200 },
+        { x: 850, y: 200 }
+      ];
+      
+      const index1 = Math.floor(Math.random() * accessiblePositions.length);
+      let index2;
+      do {
+        index2 = Math.floor(Math.random() * accessiblePositions.length);
+      } while (index2 === index1);
+      
+      const pos1 = accessiblePositions[index1];
+      const pos2 = accessiblePositions[index2];
+      
+      teleporters = [
+        { x: pos1.x, y: pos1.y, radius: 12, active: true },
+        { x: pos2.x, y: pos2.y, radius: 12, active: true }
+      ];
+    }
+
+    function updateSmartCircle() {
+      if (!smartCircle || !gameStarted || gamePaused) return;
+      
+      if (smartCircle.targetCooldown > 0) smartCircle.targetCooldown--;
+      
+      let target = null;
+      let minDistance = Infinity;
+      
+      if (smartCircle.isIt) {
+        // Smart circle is "it" - chase nearest player
+        for (const player of players) {
+          if (player && typeof player.x !== 'undefined' && typeof player.y !== 'undefined') {
+            const dx = player.x + player.w/2 - smartCircle.x;
+            const dy = player.y + player.h/2 - smartCircle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < minDistance) {
+              minDistance = distance;
+              target = { x: player.x + player.w/2, y: player.y + player.h/2 };
+            }
+          }
+        }
+      } else {
+        // Smart circle is not "it" - avoid the "it" player
+        const itPlayer = players.find(p => p && p.isIt);
+        if (itPlayer && typeof itPlayer.x !== 'undefined' && typeof itPlayer.y !== 'undefined') {
+          const dx = itPlayer.x + itPlayer.w/2 - smartCircle.x;
+          const dy = itPlayer.y + itPlayer.h/2 - smartCircle.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 200) {
+            // Move away from "it" player
+            target = { 
+              x: smartCircle.x - dx, 
+              y: smartCircle.y - dy 
+            };
+          } else {
+            // Move randomly when safe
+            if (smartCircle.targetCooldown <= 0) {
+              target = {
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height
+              };
+              smartCircle.targetCooldown = 120; // Change direction every 2 seconds
+            }
+          }
+        }
+      }
+      
+      if (target) {
+        const dx = target.x - smartCircle.x;
+        const dy = target.y - smartCircle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0) {
+          smartCircle.vx = (dx / distance) * smartCircle.speed;
+          smartCircle.vy = (dy / distance) * smartCircle.speed;
+        }
+      }
+      
+      smartCircle.x += smartCircle.vx;
+      smartCircle.y += smartCircle.vy;
+      
+      // Keep smart circle within bounds
+      smartCircle.x = Math.max(smartCircle.radius, Math.min(canvas.width - smartCircle.radius, smartCircle.x));
+      smartCircle.y = Math.max(smartCircle.radius, Math.min(canvas.height - smartCircle.radius, smartCircle.y));
+      
+      // Handle teleporter collision for smart circle
+      if (teleporters && teleporters.length >= 2 && teleporters[0].active && teleporters[1].active) {
+        for (let i = 0; i < teleporters.length; i++) {
+          const tp = teleporters[i];
+          if (tp && typeof tp.x !== 'undefined' && typeof tp.y !== 'undefined') {
+            const dx = smartCircle.x - tp.x;
+            const dy = smartCircle.y - tp.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < tp.radius + smartCircle.radius) {
+              const targetTp = teleporters[1 - i];
+              if (targetTp && typeof targetTp.x !== 'undefined' && typeof targetTp.y !== 'undefined') {
+                smartCircle.x = targetTp.x;
+                smartCircle.y = targetTp.y;
+                
+                smartCircle.vx = (Math.random() - 0.5) * 4;
+                smartCircle.vy = (Math.random() - 0.5) * 4;
+                
+                teleporters[0].active = false;
+                teleporters[1].active = false;
+                teleportCooldown = frameCount;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function updatePlayer(p) {
+      if (!gameStarted || gamePaused) return;
+      
+      // Handle human player movement
+      if (keys[p.controls.left]) p.vx = -4;
+      else if (keys[p.controls.right]) p.vx = 4;
+      else p.vx = 0;
+
+      if (keys[p.controls.up] && isGrounded(p)) p.vy = -10;
+
+      p.vy += gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+
+      // Ground collision
+      if (p.y + p.h > canvas.height) {
+        p.y = canvas.height - p.h;
+        p.vy = 0;
+      }
+
+      // Platform collision
+      platforms.forEach(pl => {
+        if (p.vy >= 0 && 
+            p.x < pl.x + pl.w &&
+            p.x + p.w > pl.x &&
+            p.y + p.h >= pl.y &&
+            p.y + p.h <= pl.y + pl.h + 5) {
+          p.y = pl.y - p.h;
+          p.vy = 0;
+        }
+        
+        if (p.vy < 0 && 
+            p.x < pl.x + pl.w &&
+            p.x + p.w > pl.x &&
+            p.y <= pl.y + pl.h &&
+            p.y + p.h >= pl.y) {
+          p.y = pl.y + pl.h;
+          p.vy = 0;
+        }
+        
+        if (p.x + p.w > pl.x && p.x < pl.x + pl.w &&
+            p.y + p.h > pl.y && p.y < pl.y + pl.h) {
+          if (p.vx > 0) {
+            p.x = pl.x - p.w;
+          } else if (p.vx < 0) {
+            p.x = pl.x + pl.w;
+          }
+        }
+      });
+
+      // Bounce pad
+      if (p.x < bouncePad.x + bouncePad.w &&
+          p.x + p.w > bouncePad.x &&
+          p.y + p.h >= bouncePad.y &&
+          p.y + p.h <= bouncePad.y + bouncePad.h + 5) {
+        p.vy = -20;
+      }
+
+      // Teleporters
+      if (teleporters[0].active && teleporters[1].active) {
+        for (let i = 0; i < teleporters.length; i++) {
+          const tp = teleporters[i];
+          const dx = (p.x + p.w/2) - tp.x;
+          const dy = (p.y + p.h/2) - tp.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < tp.radius + p.w/2) {
+            const target = teleporters[1 - i];
+            p.x = target.x - p.w/2;
+            p.y = target.y - p.h/2;
+            
+            p.vx = (Math.random() - 0.5) * 4;
+            p.vy = -2;
+            
+            teleporters[0].active = false;
+            teleporters[1].active = false;
+            teleportCooldown = frameCount;
+            break;
+          }
+        }
+      }
+
+      // Keep inside canvas
+      p.x = Math.max(0, Math.min(canvas.width - p.w, p.x));
+      p.y = Math.min(canvas.height - p.h, p.y);
+    }
+
+    function isGrounded(p) {
+      return (
+        p.y + p.h >= canvas.height ||
+        platforms.some(pl =>
+          p.x < pl.x + pl.w &&
+          p.x + p.w > pl.x &&
+          p.y + p.h >= pl.y &&
+          p.y + p.h <= pl.y + pl.h + 5
+        )
+      );
+    }
+
+    function detectPlayerTag(p1, p2) {
+      return (
+        p1.x < p2.x + p2.w &&
+        p1.x + p1.w > p2.x &&
+        p1.y < p2.y + p2.h &&
+        p1.y + p1.h > p2.y
+      );
+    }
+
+    function detectCirclePlayerTag(circle, player) {
+      if (!circle || !player || typeof circle.x === 'undefined' || typeof player.x === 'undefined') {
+        return false;
+      }
+      const dx = (player.x + player.w/2) - circle.x;
+      const dy = (player.y + player.h/2) - circle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < circle.radius + player.w/2;
+    }
+
+    function drawTagIndicator(entity) {
+      let orbX, orbY;
+      if (entity.radius) { // Smart circle
+        orbX = entity.x;
+        orbY = entity.y - 20;
+      } else { // Player
+        orbX = entity.x + entity.w / 2;
+        orbY = entity.y - 12;
+      }
+      
+      ctx.beginPath();
+      ctx.arc(orbX, orbY, 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'gold';
+      ctx.shadowColor = 'gold';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function showGameOver() {
+      let winner = '';
+      const itPlayer = players.find(p => p.isIt);
+      
+      if (itPlayer) {
+        winner = `${itPlayer.color.toUpperCase()} player was IT!`;
+      } else if (smartCircle && smartCircle.isIt) {
+        winner = 'SMART CIRCLE was IT!';
+      }
+      
+      gameOverDisplay.innerHTML = `Game Over!<br><span style="color:gold; font-weight:bold">${winner}</span><br><br>Press F5 to play again`;
+      gameOverDisplay.style.display = 'block';
+    }
+
+    function drawPlatforms() {
+      // Draw platforms
+      platforms.forEach(pl => {
+        ctx.fillStyle = '#8a5c36';
+        ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
+        ctx.fillStyle = '#5d4037';
+        ctx.fillRect(pl.x, pl.y, pl.w, 4);
+      });
+
+      // Draw bounce pad
+      ctx.fillStyle = '#00c853';
+      ctx.fillRect(bouncePad.x, bouncePad.y, bouncePad.w, bouncePad.h);
+      for (let i = 0; i < bouncePad.w; i += 8) {
+        ctx.fillStyle = '#009624';
+        ctx.fillRect(bouncePad.x + i, bouncePad.y, 4, bouncePad.h);
+      }
+    }
+
+    function drawPlayers() {
+      players.forEach(p => {
+        // Draw player shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(p.x + 3, p.y + 3, p.w, p.h);
+        
+        // Draw player
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        
+        // Draw player details
+        ctx.fillStyle = '#000';
+        ctx.fillRect(p.x + 8, p.y + 8, 6, 6);
+        ctx.fillRect(p.x + p.w - 14, p.y + 8, 6, 6);
+        
+        if (p.isIt) drawTagIndicator(p);
+      });
+    }
+
+    function drawSmartCircle() {
+      if (!smartCircle) return;
+      
+      // Draw shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.beginPath();
+      ctx.arc(smartCircle.x + 2, smartCircle.y + 2, smartCircle.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw circle
+      ctx.fillStyle = smartCircle.color;
+      ctx.beginPath();
+      ctx.arc(smartCircle.x, smartCircle.y, smartCircle.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw inner details
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(smartCircle.x - 4, smartCircle.y - 4, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(smartCircle.x + 4, smartCircle.y - 4, 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      if (smartCircle.isIt) drawTagIndicator(smartCircle);
+    }
+
+    function drawTeleporters() {
+      teleporters.forEach(tp => {
+        if (tp.active) {
+          // Draw glow effect
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius + 3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+          ctx.shadowColor = '#ff0';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+          
+          // Draw teleporter
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffeb3b';
+          ctx.fill();
+          
+          // Draw inner circle
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius / 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffc107';
+          ctx.fill();
+          
+          ctx.shadowBlur = 0;
+        }
+      });
+    }
+
+    function gameLoop() {
+      if (gameOver) {
+        showGameOver();
+        return;
+      }
+      
+      if (gamePaused) {
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      frameCount++;
+
+      drawPlatforms();
+
+      // Respawn teleporters
+      if (!teleporters[0].active && frameCount - teleportCooldown > 300) {
+        spawnTeleporters();
+      }
+
+      drawTeleporters();
+
+      // Update and draw players
+      players.forEach(p => {
+        updatePlayer(p);
+      });
+      drawPlayers();
+
+      // Update smart circle
+      updateSmartCircle();
+      drawSmartCircle();
+
+      // Tag logic between players
+      const itPlayer = players.find(p => p.isIt);
+      
+      if (itPlayer) {
+        const otherPlayers = players.filter(p => !p.isIt);
+
+        for (const otherPlayer of otherPlayers) {
+          if (detectPlayerTag(itPlayer, otherPlayer) && Date.now() - lastTagTime > 1000) {
+            itPlayer.isIt = false;
+            otherPlayer.isIt = true;
+            lastTagTime = Date.now();
+            break;
+          }
+        }
+      }
+
+      // Tag logic with smart circle
+      if (smartCircle) {
+        if (smartCircle.isIt) {
+          // Smart circle tags players
+          for (const player of players) {
+            if (player && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
+              smartCircle.isIt = false;
+              player.isIt = true;
+              lastTagTime = Date.now();
+              break;
+            }
+          }
+        } else {
+          // Players tag smart circle
+          for (const player of players) {
+            if (player && player.isIt && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
+              player.isIt = false;
+              smartCircle.isIt = true;
+              lastTagTime = Date.now();
+              break;
+            }
+          }
+        }
+      }
+
+      // Timer
+      if (frameCount % 60 === 0 && timer > 0) {
+        timer--;
+        ui.textContent = `Time: ${timer}`;
+      }
+
+      if (timer === 0 && !gameOver) {
+        gameOver = true;
+      }
+
+      animationId = requestAnimationFrame(gameLoop);
+    }
   </script>
 </body>
 </html>
