@@ -234,8 +234,22 @@
     const robotToggleBtn = document.getElementById('robot-toggle');
 
     const keys = {};
-    document.addEventListener('keydown', e => keys[e.key] = true);
-    document.addEventListener('keyup', e => keys[e.key] = false);
+    const keyState = {}; // Track key state for double jump
+    document.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      // Track key down for double jump
+      if (!keyState[e.key]) {
+        keyState[e.key] = { pressed: true, justPressed: true };
+      } else {
+        keyState[e.key].justPressed = true;
+      }
+    });
+    document.addEventListener('keyup', e => {
+      keys[e.key] = false;
+      if (keyState[e.key]) {
+        keyState[e.key].justPressed = false;
+      }
+    });
 
     let players = [];
     let smartCircle = null;
@@ -405,7 +419,10 @@
           h: 30, 
           color: colors[i], 
           isIt: false, 
-          controls: controlSchemes[i]
+          controls: controlSchemes[i],
+          canDoubleJump: false,
+          jumps: 0,
+          lastJumpTime: 0
         });
       }
       
@@ -586,7 +603,33 @@
       else if (keys[p.controls.right]) p.vx = 4;
       else p.vx = 0;
 
-      if (keys[p.controls.up] && isGrounded(p)) p.vy = -10;
+      // Handle jumping and double jumping
+      const currentTime = Date.now();
+      const jumpKey = p.controls.up;
+      
+      // Reset jumps when grounded
+      if (isGrounded(p)) {
+        p.jumps = 0;
+        p.canDoubleJump = true;
+      }
+      
+      // Check for jump input
+      if (keyState[jumpKey] && keyState[jumpKey].justPressed) {
+        // First jump (on ground)
+        if (p.jumps === 0 && isGrounded(p)) {
+          p.vy = -10;
+          p.jumps = 1;
+          p.lastJumpTime = currentTime;
+          keyState[jumpKey].justPressed = false; // Consume the key press
+        }
+        // Double jump (in air, within 700ms of first jump)
+        else if (p.jumps === 1 && p.canDoubleJump && (currentTime - p.lastJumpTime) <= 700) {
+          p.vy = -10;
+          p.jumps = 2;
+          p.canDoubleJump = false;
+          keyState[jumpKey].justPressed = false; // Consume the key press
+        }
+      }
 
       p.vy += gravity;
       p.x += p.vx;
