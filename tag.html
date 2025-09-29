@@ -290,6 +290,15 @@
     let gameOver = false;
     let animationId = null;
 
+    // Power-up system
+    let powerUps = [];
+    let immunitySpawnTimer = 0;
+    let timeSlowSpawnTimer = 0;
+    let activeEffects = {
+      immunity: [],
+      timeSlow: { active: false, endTime: 0 }
+    };
+
     // Pause functionality
     pauseBtn.addEventListener('click', togglePause);
     
@@ -392,6 +401,13 @@
       gameOver = false;
       frameCount = 0;
       lastTagTime = 0;
+      powerUps = [];
+      immunitySpawnTimer = 0;
+      timeSlowSpawnTimer = 0;
+      activeEffects = {
+        immunity: [],
+        timeSlow: { active: false, endTime: 0 }
+      };
       
       const colors = ['red', 'green', 'blue', 'yellow'];
       const startPositions = [
@@ -499,6 +515,183 @@
       ];
     }
 
+    // Power-up functions
+    function spawnPowerUp(type) {
+      // Find a random platform to spawn the power-up on
+      const platform = platforms[Math.floor(Math.random() * platforms.length)];
+      
+      // Calculate position on the platform
+      const x = platform.x + Math.random() * (platform.w - 20);
+      const y = platform.y - 15; // Above the platform
+      
+      if (type === 'immunity') {
+        powerUps.push({
+          type: 'immunity',
+          x: x,
+          y: y,
+          width: 20,
+          height: 20,
+          color: '#3498db', // Blue
+          spawnTime: frameCount,
+          active: true
+        });
+      } else if (type === 'timeSlow') {
+        powerUps.push({
+          type: 'timeSlow',
+          x: x,
+          y: y,
+          radius: 10,
+          color: '#9b59b6', // Purple
+          spawnTime: frameCount,
+          active: true
+        });
+      }
+    }
+
+    function updatePowerUps() {
+      if (!gameStarted || gamePaused) return;
+      
+      // Update spawn timers
+      immunitySpawnTimer++;
+      timeSlowSpawnTimer++;
+      
+      // Spawn immunity power-up every 15 seconds (900 frames)
+      if (immunitySpawnTimer >= 900) {
+        spawnPowerUp('immunity');
+        immunitySpawnTimer = 0;
+      }
+      
+      // Spawn time slow power-up every 20 seconds (1200 frames)
+      if (timeSlowSpawnTimer >= 1200) {
+        spawnPowerUp('timeSlow');
+        timeSlowSpawnTimer = 0;
+      }
+      
+      // Remove power-ups that have been active for more than 5 seconds (300 frames)
+      powerUps = powerUps.filter(powerUp => {
+        return frameCount - powerUp.spawnTime < 300;
+      });
+      
+      // Check for collisions with players
+      for (let i = 0; i < powerUps.length; i++) {
+        const powerUp = powerUps[i];
+        
+        for (const player of players) {
+          if (detectPowerUpCollision(player, powerUp)) {
+            applyPowerUp(player, powerUp);
+            powerUps.splice(i, 1);
+            i--;
+            break;
+          }
+        }
+      }
+      
+      // Update active effects
+      updateActiveEffects();
+    }
+
+    function detectPowerUpCollision(player, powerUp) {
+      if (powerUp.type === 'immunity') {
+        // Rectangle collision for immunity (shield)
+        return (
+          player.x < powerUp.x + powerUp.width &&
+          player.x + player.w > powerUp.x &&
+          player.y < powerUp.y + powerUp.height &&
+          player.y + player.h > powerUp.y
+        );
+      } else if (powerUp.type === 'timeSlow') {
+        // Circle collision for time slow (clock)
+        const dx = (player.x + player.w/2) - powerUp.x;
+        const dy = (player.y + player.h/2) - powerUp.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < powerUp.radius + player.w/2;
+      }
+      return false;
+    }
+
+    function applyPowerUp(player, powerUp) {
+      if (powerUp.type === 'immunity') {
+        // Grant immunity for 5 seconds (300 frames)
+        activeEffects.immunity.push({
+          player: player,
+          endTime: frameCount + 300
+        });
+      } else if (powerUp.type === 'timeSlow') {
+        // Slow down all other players for 5 seconds (300 frames)
+        activeEffects.timeSlow = {
+          active: true,
+          endTime: frameCount + 300
+        };
+      }
+    }
+
+    function updateActiveEffects() {
+      // Update immunity effects
+      activeEffects.immunity = activeEffects.immunity.filter(effect => {
+        return frameCount < effect.endTime;
+      });
+      
+      // Update time slow effect
+      if (activeEffects.timeSlow.active && frameCount >= activeEffects.timeSlow.endTime) {
+        activeEffects.timeSlow.active = false;
+      }
+    }
+
+    function hasImmunity(player) {
+      return activeEffects.immunity.some(effect => effect.player === player);
+    }
+
+    function isTimeSlowActive() {
+      return activeEffects.timeSlow.active;
+    }
+
+    function drawPowerUps() {
+      powerUps.forEach(powerUp => {
+        if (powerUp.type === 'immunity') {
+          // Draw shield shape (diamond)
+          ctx.fillStyle = powerUp.color;
+          ctx.beginPath();
+          ctx.moveTo(powerUp.x + powerUp.width/2, powerUp.y);
+          ctx.lineTo(powerUp.x + powerUp.width, powerUp.y + powerUp.height/2);
+          ctx.lineTo(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height);
+          ctx.lineTo(powerUp.x, powerUp.y + powerUp.height/2);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Add glow effect
+          ctx.shadowColor = powerUp.color;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else if (powerUp.type === 'timeSlow') {
+          // Draw clock shape
+          ctx.fillStyle = powerUp.color;
+          ctx.beginPath();
+          ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw clock hands
+          ctx.strokeStyle = 'white';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(powerUp.x, powerUp.y);
+          ctx.lineTo(powerUp.x, powerUp.y - powerUp.radius/2);
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.moveTo(powerUp.x, powerUp.y);
+          ctx.lineTo(powerUp.x + powerUp.radius/2, powerUp.y);
+          ctx.stroke();
+          
+          // Add glow effect
+          ctx.shadowColor = powerUp.color;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      });
+    }
+
     function updateSmartCircle() {
       if (!smartCircle || !gameStarted || gamePaused) return;
       
@@ -598,9 +791,12 @@
     function updatePlayer(p) {
       if (!gameStarted || gamePaused) return;
       
+      // Apply time slow effect if active
+      const speedMultiplier = isTimeSlowActive() && !p.isIt ? 0.5 : 1;
+      
       // Handle human player movement
-      if (keys[p.controls.left]) p.vx = -4;
-      else if (keys[p.controls.right]) p.vx = 4;
+      if (keys[p.controls.left]) p.vx = -4 * speedMultiplier;
+      else if (keys[p.controls.right]) p.vx = 4 * speedMultiplier;
       else p.vx = 0;
 
       // Handle jumping and double jumping
@@ -721,6 +917,9 @@
     }
 
     function detectPlayerTag(p1, p2) {
+      // Check if either player has immunity
+      if (hasImmunity(p1) || hasImmunity(p2)) return false;
+      
       return (
         p1.x < p2.x + p2.w &&
         p1.x + p1.w > p2.x &&
@@ -733,6 +932,10 @@
       if (!circle || !player || typeof circle.x === 'undefined' || typeof player.x === 'undefined') {
         return false;
       }
+      
+      // Check if player has immunity
+      if (hasImmunity(player)) return false;
+      
       const dx = (player.x + player.w/2) - circle.x;
       const dy = (player.y + player.h/2) - circle.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -795,6 +998,13 @@
         // Draw player shadow
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(p.x + 3, p.y + 3, p.w, p.h);
+        
+        // Draw immunity effect if active
+        if (hasImmunity(p)) {
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(p.x - 2, p.y - 2, p.w + 4, p.h + 4);
+        }
         
         // Draw player
         ctx.fillStyle = p.color;
@@ -885,6 +1095,10 @@
       }
 
       drawTeleporters();
+
+      // Update and draw power-ups
+      updatePowerUps();
+      drawPowerUps();
 
       // Update and draw players
       players.forEach(p => {
