@@ -19,7 +19,6 @@
     }
     canvas {
       display: block;
-      background: linear-gradient(135deg, #ff6ec4, #7873f5);
       border: 4px solid #fff;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       border-radius: 8px;
@@ -98,7 +97,6 @@
       width: 400px;
     }
     #time-setup {
-      display: none;
       position: absolute;
       top: 50%;
       left: 50%;
@@ -109,7 +107,7 @@
       text-align: center;
       z-index: 30;
       color: white;
-      width: 400px;
+      width: 500px;
     }
     #countdown {
       position: absolute;
@@ -184,6 +182,42 @@
       padding-top: 20px;
       border-top: 1px solid #444;
     }
+    .background-options {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .background-option {
+      width: 120px;
+      height: 80px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .background-option.selected {
+      border-color: #4CAF50;
+      box-shadow: 0 0 10px #4CAF50;
+    }
+    .background-option:hover {
+      transform: scale(1.05);
+    }
+    .bluffs-container {
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+    }
+    .retry-btn {
+      background: #FF9800;
+      font-size: 18px;
+      padding: 12px 25px;
+      margin-top: 15px;
+    }
+    .retry-btn:hover {
+      background: #F57C00;
+    }
   </style>
 </head>
 <body>
@@ -191,7 +225,14 @@
     <a href="index.html" id="home-btn">🏠 Home</a>
     <div id="ui" style="display: none;">Time: 0</div>
     <button id="pause-btn" style="display: none;">Pause</button>
-    <div id="gameOver"></div>
+    <div id="gameOver">
+      <h2>Game Over!</h2>
+      <div id="winner-text" style="color:gold; font-weight:bold; margin: 20px 0; font-size: 24px;"></div>
+      <div style="margin: 20px 0;">
+        <p>Press SPACEBAR or click the button to play again</p>
+        <button class="retry-btn" onclick="resetToSetup()">🔄 Play Again</button>
+      </div>
+    </div>
     <div id="countdown"></div>
     <div id="pause-menu">
       <h2>Game Paused</h2>
@@ -211,10 +252,30 @@
         <p>Adds a smart circle that seeks or avoids players</p>
       </div>
     </div>
-    <div id="time-setup">
+    <div id="time-setup" style="display: none;">
       <button class="back-btn" onclick="goBack()">Back</button>
-      <h2>Set Time Limit (Seconds)</h2>
-      <input type="number" id="time-input" min="10" max="300" value="30">
+      <h2>Game Setup</h2>
+      
+      <div>
+        <h3>Time Limit (Seconds)</h3>
+        <input type="number" id="time-input" min="10" max="300" value="30">
+      </div>
+      
+      <div>
+        <h3>Select Background</h3>
+        <div class="background-options">
+          <div class="background-option selected" style="background: linear-gradient(135deg, #ff6ec4, #7873f5);" onclick="selectBackground(1)"></div>
+          <div class="background-option" style="background: linear-gradient(135deg, #667eea, #764ba2);" onclick="selectBackground(2)"></div>
+          <div class="background-option" style="background: linear-gradient(135deg, #f093fb, #f5576c);" onclick="selectBackground(3)"></div>
+        </div>
+      </div>
+      
+      <div class="bluffs-container">
+        <h3>Power-ups (Bluffs)</h3>
+        <button id="bluffs-toggle" class="toggle-btn" onclick="toggleBluffs()">ON</button>
+        <p>Enable or disable power-ups during gameplay</p>
+      </div>
+      
       <button onclick="startGame()">Start Game</button>
     </div>
     <canvas id="gameCanvas" width="1200" height="700"></canvas>
@@ -226,12 +287,14 @@
     const ui = document.getElementById('ui');
     const pauseBtn = document.getElementById('pause-btn');
     const gameOverDisplay = document.getElementById('gameOver');
+    const winnerText = document.getElementById('winner-text');
     const setupScreen = document.getElementById('setup-screen');
     const timeSetup = document.getElementById('time-setup');
     const timeInput = document.getElementById('time-input');
     const countdownDisplay = document.getElementById('countdown');
     const pauseMenu = document.getElementById('pause-menu');
     const robotToggleBtn = document.getElementById('robot-toggle');
+    const bluffsToggleBtn = document.getElementById('bluffs-toggle');
 
     const keys = {};
     const keyState = {}; // Track key state for double jump
@@ -242,6 +305,11 @@
         keyState[e.key] = { pressed: true, justPressed: true };
       } else {
         keyState[e.key].justPressed = true;
+      }
+      
+      // Check for spacebar to reset game when game over
+      if (e.key === ' ' && gameOver) {
+        resetToSetup();
       }
     });
     document.addEventListener('keyup', e => {
@@ -257,9 +325,13 @@
     let gameStarted = false;
     let robotMode = false;
     let gamePaused = false;
+    let selectedBackground = 1;
+    let bluffsEnabled = true;
+    let currentPlatforms = [];
 
     const gravity = 0.5;
-    const platforms = [
+    // Original platform definitions - these will be used as base for randomization
+    const basePlatforms = [
       { x: 100, y: 550, w: 80, h: 15 },
       { x: 250, y: 500, w: 70, h: 15 },
       { x: 400, y: 450, w: 80, h: 15 },
@@ -294,9 +366,11 @@
     let powerUps = [];
     let immunitySpawnTimer = 0;
     let timeSlowSpawnTimer = 0;
+    let speedBoostSpawnTimer = 0;
     let activeEffects = {
       immunity: [],
-      timeSlow: { active: false, endTime: 0 }
+      timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
+      speedBoost: []
     };
 
     // Pause functionality
@@ -323,9 +397,14 @@
     }
     
     function leaveGame() {
+      resetToSetup();
+    }
+    
+    function resetToSetup() {
       gamePaused = false;
       gameStarted = false;
       gameOver = false;
+      gameOverDisplay.style.display = 'none';
       pauseMenu.style.display = 'none';
       setupScreen.style.display = 'block';
       pauseBtn.style.display = 'none';
@@ -339,13 +418,33 @@
       robotToggleBtn.style.opacity = '1';
       
       ui.textContent = 'Time: 0';
-      cancelAnimationFrame(animationId);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
     }
 
     function toggleRobotMode() {
       robotMode = !robotMode;
       robotToggleBtn.classList.toggle('active', robotMode);
       robotToggleBtn.textContent = robotMode ? 'ON' : 'OFF';
+    }
+
+    function toggleBluffs() {
+      bluffsEnabled = !bluffsEnabled;
+      bluffsToggleBtn.classList.toggle('active', bluffsEnabled);
+      bluffsToggleBtn.textContent = bluffsEnabled ? 'ON' : 'OFF';
+    }
+
+    function selectBackground(bgNum) {
+      selectedBackground = bgNum;
+      // Update UI to show selected background
+      document.querySelectorAll('.background-option').forEach((opt, index) => {
+        if (index + 1 === bgNum) {
+          opt.classList.add('selected');
+        } else {
+          opt.classList.remove('selected');
+        }
+      });
     }
 
     function goBack() {
@@ -381,12 +480,45 @@
       timeSetup.style.display = 'block';
     }
 
+    function randomizePlatforms() {
+      currentPlatforms = basePlatforms.map(platform => {
+        // Random width between current-20 and current+50
+        const minWidth = platform.w - 20;
+        const maxWidth = platform.w + 50;
+        const newWidth = Math.floor(Math.random() * (maxWidth - minWidth + 1)) + minWidth;
+        
+        // Return new platform with same position and height, but randomized width
+        return {
+          x: platform.x,
+          y: platform.y,
+          w: newWidth,
+          h: platform.h
+        };
+      });
+    }
+
     function startGame() {
       const timeLimit = parseInt(timeInput.value);
       if (isNaN(timeLimit) || timeLimit < 10) {
         alert("Please enter a valid time limit (minimum 10 seconds)");
         return;
       }
+      
+      // Set canvas background based on selection
+      switch(selectedBackground) {
+        case 1:
+          canvas.style.background = 'linear-gradient(135deg, #ff6ec4, #7873f5)';
+          break;
+        case 2:
+          canvas.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+          break;
+        case 3:
+          canvas.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
+          break;
+      }
+      
+      // Randomize platforms for this game
+      randomizePlatforms();
       
       timer = timeLimit;
       timeSetup.style.display = 'none';
@@ -404,9 +536,11 @@
       powerUps = [];
       immunitySpawnTimer = 0;
       timeSlowSpawnTimer = 0;
+      speedBoostSpawnTimer = 0;
       activeEffects = {
         immunity: [],
-        timeSlow: { active: false, endTime: 0 }
+        timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
+        speedBoost: []
       };
       
       const colors = ['red', 'green', 'blue', 'yellow'];
@@ -518,7 +652,7 @@
     // Power-up functions
     function spawnPowerUp(type) {
       // Find a random platform to spawn the power-up on
-      const platform = platforms[Math.floor(Math.random() * platforms.length)];
+      const platform = currentPlatforms[Math.floor(Math.random() * currentPlatforms.length)];
       
       // Calculate position on the platform
       const x = platform.x + Math.random() * (platform.w - 20);
@@ -545,15 +679,27 @@
           spawnTime: frameCount,
           active: true
         });
+      } else if (type === 'speedBoost') {
+        powerUps.push({
+          type: 'speedBoost',
+          x: x,
+          y: y,
+          width: 20,
+          height: 20,
+          color: '#2ecc71', // Green
+          spawnTime: frameCount,
+          active: true
+        });
       }
     }
 
     function updatePowerUps() {
-      if (!gameStarted || gamePaused) return;
+      if (!gameStarted || gamePaused || !bluffsEnabled) return;
       
       // Update spawn timers
       immunitySpawnTimer++;
       timeSlowSpawnTimer++;
+      speedBoostSpawnTimer++;
       
       // Spawn immunity power-up every 15 seconds (900 frames)
       if (immunitySpawnTimer >= 900) {
@@ -565,6 +711,12 @@
       if (timeSlowSpawnTimer >= 1200) {
         spawnPowerUp('timeSlow');
         timeSlowSpawnTimer = 0;
+      }
+      
+      // Spawn speed boost power-up every 18 seconds (1080 frames)
+      if (speedBoostSpawnTimer >= 1080) {
+        spawnPowerUp('speedBoost');
+        speedBoostSpawnTimer = 0;
       }
       
       // Remove power-ups that have been active for more than 5 seconds (300 frames)
@@ -584,6 +736,17 @@
             break;
           }
         }
+        
+        // Check for collision with smart circle
+        if (smartCircle && detectSmartCirclePowerUpCollision(smartCircle, powerUp)) {
+          // Smart circle only collects beneficial power-ups
+          if ((powerUp.type === 'speedBoost' || powerUp.type === 'immunity') && 
+              !smartCircle.isIt) {
+            applyPowerUp(smartCircle, powerUp);
+            powerUps.splice(i, 1);
+            i--;
+          }
+        }
       }
       
       // Update active effects
@@ -591,8 +754,8 @@
     }
 
     function detectPowerUpCollision(player, powerUp) {
-      if (powerUp.type === 'immunity') {
-        // Rectangle collision for immunity (shield)
+      if (powerUp.type === 'immunity' || powerUp.type === 'speedBoost') {
+        // Rectangle collision for immunity (shield) and speed boost
         return (
           player.x < powerUp.x + powerUp.width &&
           player.x + player.w > powerUp.x &&
@@ -609,19 +772,52 @@
       return false;
     }
 
-    function applyPowerUp(player, powerUp) {
+    function detectSmartCirclePowerUpCollision(smartCircle, powerUp) {
+      if (powerUp.type === 'immunity' || powerUp.type === 'speedBoost') {
+        // Rectangle-circle collision for immunity and speed boost
+        const dx = smartCircle.x - Math.max(powerUp.x, Math.min(smartCircle.x, powerUp.x + powerUp.width));
+        const dy = smartCircle.y - Math.max(powerUp.y, Math.min(smartCircle.y, powerUp.y + powerUp.height));
+        return (dx * dx + dy * dy) < (smartCircle.radius * smartCircle.radius);
+      } else if (powerUp.type === 'timeSlow') {
+        // Circle-circle collision for time slow
+        const dx = smartCircle.x - powerUp.x;
+        const dy = smartCircle.y - powerUp.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < smartCircle.radius + powerUp.radius;
+      }
+      return false;
+    }
+
+    function applyPowerUp(entity, powerUp) {
       if (powerUp.type === 'immunity') {
         // Grant immunity for 5 seconds (300 frames)
         activeEffects.immunity.push({
-          player: player,
+          entity: entity,
           endTime: frameCount + 300
         });
       } else if (powerUp.type === 'timeSlow') {
-        // Slow down all other players for 5 seconds (300 frames)
+        // Slow down all non-"it" players at the moment of collection for 5 seconds
+        const slowedPlayers = [];
+        for (const player of players) {
+          if (!player.isIt) {
+            slowedPlayers.push(player);
+          }
+        }
+        if (smartCircle && !smartCircle.isIt) {
+          slowedPlayers.push(smartCircle);
+        }
+        
         activeEffects.timeSlow = {
           active: true,
-          endTime: frameCount + 300
+          endTime: frameCount + 300,
+          slowedPlayers: slowedPlayers
         };
+      } else if (powerUp.type === 'speedBoost') {
+        // Grant speed boost for 5 seconds (300 frames)
+        activeEffects.speedBoost.push({
+          entity: entity,
+          endTime: frameCount + 300
+        });
       }
     }
 
@@ -634,18 +830,36 @@
       // Update time slow effect
       if (activeEffects.timeSlow.active && frameCount >= activeEffects.timeSlow.endTime) {
         activeEffects.timeSlow.active = false;
+        activeEffects.timeSlow.slowedPlayers = [];
       }
+      
+      // Update speed boost effects
+      activeEffects.speedBoost = activeEffects.speedBoost.filter(effect => {
+        return frameCount < effect.endTime;
+      });
     }
 
-    function hasImmunity(player) {
-      return activeEffects.immunity.some(effect => effect.player === player);
+    function hasImmunity(entity) {
+      return activeEffects.immunity.some(effect => effect.entity === entity);
     }
 
-    function isTimeSlowActive() {
-      return activeEffects.timeSlow.active;
+    function isPlayerSlowed(player) {
+      if (!activeEffects.timeSlow.active) return false;
+      return activeEffects.timeSlow.slowedPlayers.includes(player);
+    }
+
+    function isSmartCircleSlowed() {
+      if (!activeEffects.timeSlow.active || !smartCircle) return false;
+      return activeEffects.timeSlow.slowedPlayers.includes(smartCircle);
+    }
+
+    function hasSpeedBoost(entity) {
+      return activeEffects.speedBoost.some(effect => effect.entity === entity);
     }
 
     function drawPowerUps() {
+      if (!bluffsEnabled) return;
+      
       powerUps.forEach(powerUp => {
         if (powerUp.type === 'immunity') {
           // Draw shield shape (diamond)
@@ -688,6 +902,24 @@
           ctx.shadowBlur = 10;
           ctx.fill();
           ctx.shadowBlur = 0;
+        } else if (powerUp.type === 'speedBoost') {
+          // Draw lightning bolt shape
+          ctx.fillStyle = powerUp.color;
+          ctx.beginPath();
+          ctx.moveTo(powerUp.x + powerUp.width/2, powerUp.y);
+          ctx.lineTo(powerUp.x + powerUp.width/3, powerUp.y + powerUp.height/2);
+          ctx.lineTo(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2);
+          ctx.lineTo(powerUp.x + powerUp.width/3, powerUp.y + powerUp.height);
+          ctx.lineTo(powerUp.x + powerUp.width*2/3, powerUp.y + powerUp.height/2);
+          ctx.lineTo(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Add glow effect
+          ctx.shadowColor = powerUp.color;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
         }
       });
     }
@@ -700,42 +932,88 @@
       let target = null;
       let minDistance = Infinity;
       
-      if (smartCircle.isIt) {
-        // Smart circle is "it" - chase nearest player
-        for (const player of players) {
-          if (player && typeof player.x !== 'undefined' && typeof player.y !== 'undefined') {
-            const dx = player.x + player.w/2 - smartCircle.x;
-            const dy = player.y + player.h/2 - smartCircle.y;
+      // Apply speed boost to smart circle if active
+      const speedMultiplier = hasSpeedBoost(smartCircle) ? 1.5 : 1;
+      const currentSpeed = smartCircle.speed * speedMultiplier;
+      
+      // Apply time slow effect to smart circle if active
+      const timeSlowMultiplier = isSmartCircleSlowed() ? 0.5 : 1;
+      const finalSpeed = currentSpeed * timeSlowMultiplier;
+      
+      // Check for nearby beneficial power-ups if it's safe and not "it"
+      if (!smartCircle.isIt && powerUps.length > 0 && bluffsEnabled) {
+        const itPlayer = players.find(p => p && p.isIt);
+        let safeToCollect = true;
+        
+        // Check if it's safe to collect power-ups (no "it" player nearby)
+        if (itPlayer) {
+          const dx = itPlayer.x + itPlayer.w/2 - smartCircle.x;
+          const dy = itPlayer.y + itPlayer.h/2 - smartCircle.y;
+          const distanceToIt = Math.sqrt(dx * dx + dy * dy);
+          
+          // If "it" player is too close, don't go for power-ups
+          if (distanceToIt < 200) {
+            safeToCollect = false;
+          }
+        }
+        
+        // If safe, find the closest beneficial power-up (only speed boost and immunity)
+        if (safeToCollect) {
+          for (const powerUp of powerUps) {
+            // Smart circle only collects beneficial power-ups (not time slow)
+            if (powerUp.type === 'timeSlow') continue;
+            
+            const dx = powerUp.x - smartCircle.x;
+            const dy = powerUp.y - smartCircle.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance < minDistance) {
               minDistance = distance;
-              target = { x: player.x + player.w/2, y: player.y + player.h/2 };
+              target = { x: powerUp.x, y: powerUp.y };
             }
           }
         }
-      } else {
-        // Smart circle is not "it" - avoid the "it" player
-        const itPlayer = players.find(p => p && p.isIt);
-        if (itPlayer && typeof itPlayer.x !== 'undefined' && typeof itPlayer.y !== 'undefined') {
-          const dx = itPlayer.x + itPlayer.w/2 - smartCircle.x;
-          const dy = itPlayer.y + itPlayer.h/2 - smartCircle.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < 200) {
-            // Move away from "it" player
-            target = { 
-              x: smartCircle.x - dx, 
-              y: smartCircle.y - dy 
-            };
-          } else {
-            // Move randomly when safe
-            if (smartCircle.targetCooldown <= 0) {
-              target = {
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height
+      }
+      
+      // If no power-up target or not safe, use normal behavior
+      if (!target) {
+        if (smartCircle.isIt) {
+          // Smart circle is "it" - chase nearest player
+          for (const player of players) {
+            if (player && typeof player.x !== 'undefined' && typeof player.y !== 'undefined') {
+              const dx = player.x + player.w/2 - smartCircle.x;
+              const dy = player.y + player.h/2 - smartCircle.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distance < minDistance) {
+                minDistance = distance;
+                target = { x: player.x + player.w/2, y: player.y + player.h/2 };
+              }
+            }
+          }
+        } else {
+          // Smart circle is not "it" - avoid the "it" player
+          const itPlayer = players.find(p => p && p.isIt);
+          if (itPlayer && typeof itPlayer.x !== 'undefined' && typeof itPlayer.y !== 'undefined') {
+            const dx = itPlayer.x + itPlayer.w/2 - smartCircle.x;
+            const dy = itPlayer.y + itPlayer.h/2 - smartCircle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 200) {
+              // Move away from "it" player
+              target = { 
+                x: smartCircle.x - dx, 
+                y: smartCircle.y - dy 
               };
-              smartCircle.targetCooldown = 120; // Change direction every 2 seconds
+            } else {
+              // Move randomly when safe
+              if (smartCircle.targetCooldown <= 0) {
+                target = {
+                  x: Math.random() * canvas.width,
+                  y: Math.random() * canvas.height
+                };
+                smartCircle.targetCooldown = 120; // Change direction every 2 seconds
+              }
             }
           }
         }
@@ -747,8 +1025,8 @@
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 0) {
-          smartCircle.vx = (dx / distance) * smartCircle.speed;
-          smartCircle.vy = (dy / distance) * smartCircle.speed;
+          smartCircle.vx = (dx / distance) * finalSpeed;
+          smartCircle.vy = (dy / distance) * finalSpeed;
         }
       }
       
@@ -792,7 +1070,13 @@
       if (!gameStarted || gamePaused) return;
       
       // Apply time slow effect if active
-      const speedMultiplier = isTimeSlowActive() && !p.isIt ? 0.5 : 1;
+      const timeSlowMultiplier = isPlayerSlowed(p) ? 0.5 : 1;
+      
+      // Apply speed boost effect if active
+      const speedBoostMultiplier = hasSpeedBoost(p) ? 1.5 : 1;
+      
+      // Combined speed multiplier
+      const speedMultiplier = timeSlowMultiplier * speedBoostMultiplier;
       
       // Handle human player movement
       if (keys[p.controls.left]) p.vx = -4 * speedMultiplier;
@@ -838,7 +1122,7 @@
       }
 
       // Platform collision
-      platforms.forEach(pl => {
+      currentPlatforms.forEach(pl => {
         if (p.vy >= 0 && 
             p.x < pl.x + pl.w &&
             p.x + p.w > pl.x &&
@@ -907,7 +1191,7 @@
     function isGrounded(p) {
       return (
         p.y + p.h >= canvas.height ||
-        platforms.some(pl =>
+        currentPlatforms.some(pl =>
           p.x < pl.x + pl.w &&
           p.x + p.w > pl.x &&
           p.y + p.h >= pl.y &&
@@ -917,8 +1201,8 @@
     }
 
     function detectPlayerTag(p1, p2) {
-      // Check if either player has immunity
-      if (hasImmunity(p1) || hasImmunity(p2)) return false;
+      // Only check immunity for the player being tagged (p2), not the one who is "it" (p1)
+      if (hasImmunity(p2)) return false;
       
       return (
         p1.x < p2.x + p2.w &&
@@ -933,7 +1217,7 @@
         return false;
       }
       
-      // Check if player has immunity
+      // Only check immunity for the player being tagged, not the circle that is "it"
       if (hasImmunity(player)) return false;
       
       const dx = (player.x + player.w/2) - circle.x;
@@ -971,13 +1255,13 @@
         winner = 'SMART CIRCLE was IT!';
       }
       
-      gameOverDisplay.innerHTML = `Game Over!<br><span style="color:gold; font-weight:bold">${winner}</span><br><br>Press F5 to play again`;
+      winnerText.textContent = winner;
       gameOverDisplay.style.display = 'block';
     }
 
     function drawPlatforms() {
       // Draw platforms
-      platforms.forEach(pl => {
+      currentPlatforms.forEach(pl => {
         ctx.fillStyle = '#8a5c36';
         ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
         ctx.fillStyle = '#5d4037';
@@ -1006,6 +1290,13 @@
           ctx.strokeRect(p.x - 2, p.y - 2, p.w + 4, p.h + 4);
         }
         
+        // Draw speed boost effect if active
+        if (hasSpeedBoost(p)) {
+          ctx.strokeStyle = '#2ecc71';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(p.x - 2, p.y - 2, p.w + 4, p.h + 4);
+        }
+        
         // Draw player
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x, p.y, p.w, p.h);
@@ -1027,6 +1318,24 @@
       ctx.beginPath();
       ctx.arc(smartCircle.x + 2, smartCircle.y + 2, smartCircle.radius, 0, Math.PI * 2);
       ctx.fill();
+      
+      // Draw immunity effect if active
+      if (hasImmunity(smartCircle)) {
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(smartCircle.x, smartCircle.y, smartCircle.radius + 2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // Draw speed boost effect if active
+      if (hasSpeedBoost(smartCircle)) {
+        ctx.strokeStyle = '#2ecc71';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(smartCircle.x, smartCircle.y, smartCircle.radius + 2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       
       // Draw circle
       ctx.fillStyle = smartCircle.color;
