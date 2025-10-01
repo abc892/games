@@ -84,6 +84,33 @@
       line-height: 1.4;
       color: #666;
     }
+    /* Online Users Counter */
+    .online-users {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #222;
+      color: white;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 12px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+    }
+    .online-indicator {
+      width: 8px;
+      height: 8px;
+      background: #4CAF50;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -97,7 +124,8 @@
       • Added changes to Tag game<br>
       • Added Speed Power-up<br>
       <br>
-      <strong>:</strong><br>
+      <strong>New Feature:</strong><br>
+      • Real-time online user counter
       <!-- YOU CAN EDIT THE PATCH NOTES ABOVE THIS LINE -->
     </div>
   </div>
@@ -147,7 +175,94 @@
 
   </div>
 
+  <!-- Online Users Counter -->
+  <div class="online-users">
+    <div class="online-indicator"></div>
+    Players online: <span id="onlineCount">1</span>
+  </div>
+
   <script>
+    // Real-time online user tracking
+    let onlineUsers = JSON.parse(localStorage.getItem('onlineUsers')) || {};
+    const sessionId = Math.random().toString(36).substr(2, 16);
+    const userKey = 'user_' + sessionId;
+    
+    // Initialize user tracking
+    function initUserTracking() {
+      // Add current user to online list
+      onlineUsers[userKey] = {
+        id: sessionId,
+        lastActive: Date.now(),
+        userAgent: navigator.userAgent,
+        language: navigator.language
+      };
+      
+      // Save to localStorage
+      localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
+      
+      // Update display
+      updateOnlineUsers();
+      
+      // Set up periodic cleanup
+      setInterval(cleanupInactiveUsers, 30000); // Clean every 30 seconds
+      setInterval(updateOnlineUsers, 5000); // Update display every 5 seconds
+      
+      // Update activity on user interaction
+      document.addEventListener('click', updateUserActivity);
+      document.addEventListener('mousemove', updateUserActivity);
+      document.addEventListener('keypress', updateUserActivity);
+      
+      // Remove user when page is closed
+      window.addEventListener('beforeunload', removeUser);
+    }
+    
+    // Update user activity timestamp
+    function updateUserActivity() {
+      if (onlineUsers[userKey]) {
+        onlineUsers[userKey].lastActive = Date.now();
+        localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
+      }
+    }
+    
+    // Remove user from online list
+    function removeUser() {
+      if (onlineUsers[userKey]) {
+        delete onlineUsers[userKey];
+        localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
+      }
+    }
+    
+    // Clean up inactive users (more than 2 minutes since last activity)
+    function cleanupInactiveUsers() {
+      const now = Date.now();
+      const twoMinutesAgo = now - (2 * 60 * 1000);
+      
+      Object.keys(onlineUsers).forEach(key => {
+        if (onlineUsers[key].lastActive < twoMinutesAgo) {
+          delete onlineUsers[key];
+        }
+      });
+      
+      localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
+      updateOnlineUsers();
+    }
+    
+    // Update the online users counter display
+    function updateOnlineUsers() {
+      const userCount = Object.keys(onlineUsers).length;
+      document.getElementById('onlineCount').textContent = userCount;
+      
+      // Visual feedback when count changes
+      const counter = document.getElementById('onlineCount');
+      counter.style.transform = 'scale(1.2)';
+      setTimeout(() => {
+        counter.style.transform = 'scale(1)';
+      }, 300);
+    }
+    
+    // Initialize when page loads
+    window.addEventListener('DOMContentLoaded', initUserTracking);
+    
     function downloadGame(filename, gameName) {
       if (confirm(`Are you sure you want to download ${gameName}?\n\nThis will download the HTML file to your computer.`)) {
         const link = document.createElement('a');
@@ -164,7 +279,3 @@
   </script>
 </body>
 </html>
-
-
-
-
