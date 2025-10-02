@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Game Hub</title>
+  
+  <!-- Import Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -111,6 +117,10 @@
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
+    .loading {
+      color: #666;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -125,7 +135,7 @@
       • Added Speed Power-up<br>
       <br>
       <strong>New Feature:</strong><br>
-      • Real-time online user counter
+      • Real-time online user counter (Cross-device!)
       <!-- YOU CAN EDIT THE PATCH NOTES ABOVE THIS LINE -->
     </div>
   </div>
@@ -178,90 +188,124 @@
   <!-- Online Users Counter -->
   <div class="online-users">
     <div class="online-indicator"></div>
-    Players online: <span id="onlineCount">1</span>
+    Players online: <span id="onlineCount" class="loading">...</span>
   </div>
 
   <script>
-    // Real-time online user tracking
-    let onlineUsers = JSON.parse(localStorage.getItem('onlineUsers')) || {};
-    const sessionId = Math.random().toString(36).substr(2, 16);
-    const userKey = 'user_' + sessionId;
+    // === YOUR EXACT FIREBASE CONFIG FROM THE SCREENSHOT ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwEy-sJx7EG1BA6Vm8fFFMZsjukj88K5g",
+      authDomain: "games-c3e27.firebaseapp.com",
+      databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "games-c3e27",
+      storageBucket: "games-c3e27.firebasestorage.app",
+      messagingSenderId: "193827632869",
+      appId: "1:193827632869:web:b559c3b10811bc6982b9ac"
+    };
     
-    // Initialize user tracking
-    function initUserTracking() {
-      // Add current user to online list
-      onlineUsers[userKey] = {
-        id: sessionId,
-        lastActive: Date.now(),
-        userAgent: navigator.userAgent,
-        language: navigator.language
-      };
-      
-      // Save to localStorage
-      localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
-      
-      // Update display
-      updateOnlineUsers();
-      
-      // Set up periodic cleanup
-      setInterval(cleanupInactiveUsers, 30000); // Clean every 30 seconds
-      setInterval(updateOnlineUsers, 5000); // Update display every 5 seconds
-      
-      // Update activity on user interaction
-      document.addEventListener('click', updateUserActivity);
-      document.addEventListener('mousemove', updateUserActivity);
-      document.addEventListener('keypress', updateUserActivity);
-      
-      // Remove user when page is closed
-      window.addEventListener('beforeunload', removeUser);
-    }
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
     
-    // Update user activity timestamp
-    function updateUserActivity() {
-      if (onlineUsers[userKey]) {
-        onlineUsers[userKey].lastActive = Date.now();
-        localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
+    // Generate a unique ID for this user/session
+    const userId = generateUserId();
+    let isUserOnline = false;
+    
+    function generateUserId() {
+      let userId = localStorage.getItem('gameHubUserId');
+      if (!userId) {
+        userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+        localStorage.setItem('gameHubUserId', userId);
       }
+      return userId;
     }
     
-    // Remove user from online list
-    function removeUser() {
-      if (onlineUsers[userKey]) {
-        delete onlineUsers[userKey];
-        localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
-      }
-    }
-    
-    // Clean up inactive users (more than 2 minutes since last activity)
-    function cleanupInactiveUsers() {
-      const now = Date.now();
-      const twoMinutesAgo = now - (2 * 60 * 1000);
+    function setupUserPresence() {
+      const userRef = database.ref('onlineUsers/' + userId);
       
-      Object.keys(onlineUsers).forEach(key => {
-        if (onlineUsers[key].lastActive < twoMinutesAgo) {
-          delete onlineUsers[key];
-        }
+      // Set user as online
+      userRef.set({
+        id: userId,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        userAgent: navigator.userAgent.substring(0, 100),
+        language: navigator.language,
+        screen: `${screen.width}x${screen.height}`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
       });
       
-      localStorage.setItem('onlineUsers', JSON.stringify(onlineUsers));
-      updateOnlineUsers();
+      isUserOnline = true;
+      
+      // Update lastActive timestamp every 30 seconds
+      const presenceInterval = setInterval(() => {
+        if (isUserOnline) {
+          userRef.update({
+            lastActive: firebase.database.ServerValue.TIMESTAMP
+          });
+        } else {
+          clearInterval(presenceInterval);
+        }
+      }, 30000);
+      
+      // Remove user when they close the page
+      window.addEventListener('beforeunload', () => {
+        userRef.remove();
+        isUserOnline = false;
+      });
+      
+      // Also handle page visibility changes
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          userRef.update({
+            lastActive: firebase.database.ServerValue.TIMESTAMP
+          });
+        }
+      });
     }
     
-    // Update the online users counter display
-    function updateOnlineUsers() {
-      const userCount = Object.keys(onlineUsers).length;
-      document.getElementById('onlineCount').textContent = userCount;
+    function initOnlineTracking() {
+      setupUserPresence();
       
-      // Visual feedback when count changes
-      const counter = document.getElementById('onlineCount');
-      counter.style.transform = 'scale(1.2)';
-      setTimeout(() => {
-        counter.style.transform = 'scale(1)';
-      }, 300);
+      // Listen for online users count changes
+      database.ref('onlineUsers').on('value', (snapshot) => {
+        const onlineUsers = snapshot.val();
+        const userCount = onlineUsers ? Object.keys(onlineUsers).length : 0;
+        
+        document.getElementById('onlineCount').textContent = userCount;
+        document.getElementById('onlineCount').className = '';
+        
+        // Visual feedback
+        const counter = document.getElementById('onlineCount');
+        counter.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+          counter.style.transform = 'scale(1)';
+        }, 300);
+      });
     }
+    
+    // Clean up inactive users (runs on all clients)
+    function cleanupInactiveUsers() {
+      const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+      
+      database.ref('onlineUsers').once('value').then((snapshot) => {
+        const users = snapshot.val();
+        
+        if (users) {
+          Object.keys(users).forEach((key) => {
+            const user = users[key];
+            // Remove users inactive for more than 5 minutes
+            if (user.lastActive < fiveMinutesAgo) {
+              database.ref('onlineUsers/' + key).remove();
+            }
+          });
+        }
+      });
+    }
+    
+    // Run cleanup occasionally (every 2 minutes)
+    setInterval(cleanupInactiveUsers, 120000);
     
     // Initialize when page loads
-    window.addEventListener('DOMContentLoaded', initUserTracking);
+    window.addEventListener('DOMContentLoaded', initOnlineTracking);
     
     function downloadGame(filename, gameName) {
       if (confirm(`Are you sure you want to download ${gameName}?\n\nThis will download the HTML file to your computer.`)) {
