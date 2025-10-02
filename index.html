@@ -135,7 +135,7 @@
       • Added Speed Power-up<br>
       <br>
       <strong>New Feature:</strong><br>
-      • Real-time online user counter (Cross-device!)
+      • Real-time online user counter (Fixed & Instant!)
       <!-- YOU CAN EDIT THE PATCH NOTES ABOVE THIS LINE -->
     </div>
   </div>
@@ -192,15 +192,15 @@
   </div>
 
   <script>
-    // === YOUR EXACT FIREBASE CONFIG FROM THE SCREENSHOT ===
+    // === YOUR EXACT FIREBASE CONFIG ===
     const firebaseConfig = {
-      apiKey: "AIzaSyAwEy-sJx7EG1BA6Vm8fFFMZsjukj88K5g",
+      apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
       authDomain: "games-c3e27.firebaseapp.com",
       databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "games-c3e27",
       storageBucket: "games-c3e27.firebasestorage.app",
-      messagingSenderId: "193827632869",
-      appId: "1:193827632869:web:b559c3b10811bc6982b9ac"
+      messagingSenderId: "193027632069",
+      appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
     };
     
     // Initialize Firebase
@@ -209,7 +209,7 @@
     
     // Generate a unique ID for this user/session
     const userId = generateUserId();
-    let isUserOnline = false;
+    let userRef = null;
     
     function generateUserId() {
       let userId = localStorage.getItem('gameHubUserId');
@@ -221,45 +221,49 @@
     }
     
     function setupUserPresence() {
-      const userRef = database.ref('onlineUsers/' + userId);
+      userRef = database.ref('onlineUsers/' + userId);
       
-      // Set user as online
+      // Set user as online with current timestamp
       userRef.set({
         id: userId,
-        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        lastActive: Date.now(),
         userAgent: navigator.userAgent.substring(0, 100),
         language: navigator.language,
         screen: `${screen.width}x${screen.height}`,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        connected: true
       });
       
-      isUserOnline = true;
-      
-      // Update lastActive timestamp every 30 seconds
+      // Update lastActive timestamp every 15 seconds
       const presenceInterval = setInterval(() => {
-        if (isUserOnline) {
+        if (userRef) {
           userRef.update({
-            lastActive: firebase.database.ServerValue.TIMESTAMP
+            lastActive: Date.now()
           });
-        } else {
-          clearInterval(presenceInterval);
         }
-      }, 30000);
+      }, 15000);
       
-      // Remove user when they close the page
-      window.addEventListener('beforeunload', () => {
-        userRef.remove();
-        isUserOnline = false;
-      });
+      // Set up onDisconnect to remove user when they leave
+      userRef.onDisconnect().remove();
+      
+      // Remove user when they close the page (backup)
+      window.addEventListener('beforeunload', removeUser);
       
       // Also handle page visibility changes
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
+          // Update last active when tab becomes hidden
           userRef.update({
-            lastActive: firebase.database.ServerValue.TIMESTAMP
+            lastActive: Date.now()
           });
         }
       });
+    }
+    
+    function removeUser() {
+      if (userRef) {
+        userRef.remove();
+      }
     }
     
     function initOnlineTracking() {
@@ -268,9 +272,25 @@
       // Listen for online users count changes
       database.ref('onlineUsers').on('value', (snapshot) => {
         const onlineUsers = snapshot.val();
-        const userCount = onlineUsers ? Object.keys(onlineUsers).length : 0;
+        let activeUsers = 0;
         
-        document.getElementById('onlineCount').textContent = userCount;
+        if (onlineUsers) {
+          const now = Date.now();
+          const oneMinuteAgo = now - 60000; // 1 minute threshold
+          
+          // Count only users active in the last minute
+          Object.keys(onlineUsers).forEach((key) => {
+            const user = onlineUsers[key];
+            if (user.lastActive > oneMinuteAgo) {
+              activeUsers++;
+            } else {
+              // Remove inactive users immediately
+              database.ref('onlineUsers/' + key).remove();
+            }
+          });
+        }
+        
+        document.getElementById('onlineCount').textContent = activeUsers;
         document.getElementById('onlineCount').className = '';
         
         // Visual feedback
@@ -280,29 +300,25 @@
           counter.style.transform = 'scale(1)';
         }, 300);
       });
-    }
-    
-    // Clean up inactive users (runs on all clients)
-    function cleanupInactiveUsers() {
-      const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
       
-      database.ref('onlineUsers').once('value').then((snapshot) => {
-        const users = snapshot.val();
-        
-        if (users) {
-          Object.keys(users).forEach((key) => {
-            const user = users[key];
-            // Remove users inactive for more than 5 minutes
-            if (user.lastActive < fiveMinutesAgo) {
-              database.ref('onlineUsers/' + key).remove();
-            }
-          });
-        }
-      });
+      // Additional cleanup every 30 seconds to catch any stragglers
+      setInterval(() => {
+        database.ref('onlineUsers').once('value').then((snapshot) => {
+          const onlineUsers = snapshot.val();
+          if (onlineUsers) {
+            const now = Date.now();
+            const oneMinuteAgo = now - 60000;
+            
+            Object.keys(onlineUsers).forEach((key) => {
+              const user = onlineUsers[key];
+              if (user.lastActive < oneMinuteAgo) {
+                database.ref('onlineUsers/' + key).remove();
+              }
+            });
+          }
+        });
+      }, 30000);
     }
-    
-    // Run cleanup occasionally (every 2 minutes)
-    setInterval(cleanupInactiveUsers, 120000);
     
     // Initialize when page loads
     window.addEventListener('DOMContentLoaded', initOnlineTracking);
