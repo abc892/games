@@ -6,14 +6,13 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-  
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-    
+  
     body {
       font-family: 'Arial', sans-serif;
       background: #1a1a2e;
@@ -24,13 +23,13 @@
       overflow: hidden;
       color: white;
     }
-    
+  
     .game-container {
       position: relative;
       width: 1200px;
       height: 700px;
     }
-    
+  
     canvas {
       display: block;
       border: 4px solid #fff;
@@ -38,7 +37,7 @@
       border-radius: 8px;
       background: linear-gradient(135deg, #ff6ec4, #7873f5);
     }
-    
+  
     /* UI Elements */
     #ui {
       position: absolute;
@@ -51,7 +50,7 @@
       padding: 8px 15px;
       border-radius: 20px;
     }
-    
+  
     #home-btn {
       position: absolute;
       top: 10px;
@@ -66,11 +65,11 @@
       z-index: 15;
       display: block;
     }
-    
+  
     #home-btn:hover {
       background: #005fa3;
     }
-    
+  
     #pause-btn {
       position: absolute;
       top: 10px;
@@ -84,11 +83,11 @@
       z-index: 10;
       font-size: 18px;
     }
-    
+  
     #pause-btn:hover {
       background: rgba(0, 0, 0, 0.7);
     }
-    
+  
     /* Screens */
     .screen {
       position: absolute;
@@ -105,35 +104,35 @@
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
       border: 2px solid #444;
     }
-    
+  
     #setup-screen {
       width: 450px;
     }
-    
+  
     #online-setup {
       display: none;
     }
-    
+  
     #party-id-display {
       display: none;
       width: 550px;
     }
-    
+  
     #join-party {
       display: none;
     }
-    
+  
     #time-setup {
       display: none;
     }
-    
+  
     #gameOver {
       display: none;
       font-size: 36px;
       border: 2px solid gold;
       padding: 40px;
     }
-    
+  
     #countdown {
       position: absolute;
       top: 50%;
@@ -144,13 +143,13 @@
       z-index: 25;
       display: none;
     }
-    
+  
     #pause-menu {
       display: none;
       width: 350px;
       border: 2px solid #4CAF50;
     }
-    
+  
     /* Buttons */
     button {
       background: #4CAF50;
@@ -167,22 +166,22 @@
       transition: all 0.3s;
       font-weight: bold;
     }
-    
+  
     button:hover {
       background: #45a049;
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
-    
+  
     .toggle-btn {
       background: #555;
       padding: 10px 20px;
     }
-    
+  
     .toggle-btn.active {
       background: #4CAF50;
     }
-    
+  
     .back-btn {
       background: #f44336;
       position: absolute;
@@ -191,11 +190,11 @@
       padding: 8px 15px;
       font-size: 14px;
     }
-    
+  
     .back-btn:hover {
       background: #d32f2f;
     }
-    
+  
     .online-option {
       background: #2196F3;
       margin: 15px;
@@ -203,11 +202,11 @@
       font-size: 18px;
       width: 80%;
     }
-    
+  
     .online-option:hover {
       background: #1976D2;
     }
-    
+  
     .local-option {
       background: #4CAF50;
       margin: 8px;
@@ -215,22 +214,22 @@
       font-size: 16px;
       width: 45%;
     }
-    
+  
     .local-option:hover {
       background: #45a049;
     }
-    
+  
     .retry-btn {
       background: #FF9800;
       font-size: 18px;
       padding: 15px 30px;
       margin-top: 20px;
     }
-    
+  
     .retry-btn:hover {
       background: #F57C00;
     }
-    
+  
     /* Inputs */
     input {
       padding: 12px;
@@ -243,26 +242,26 @@
       background: #333;
       color: white;
     }
-    
+  
     input:focus {
       outline: none;
       border-color: #4CAF50;
     }
-    
+  
     /* Sections */
     .mode-container {
       margin-top: 25px;
       padding-top: 20px;
       border-top: 1px solid #444;
     }
-    
+  
     .background-options {
       display: flex;
       justify-content: center;
       gap: 15px;
       margin: 20px 0;
     }
-    
+  
     .background-option {
       width: 120px;
       height: 80px;
@@ -271,23 +270,23 @@
       cursor: pointer;
       transition: all 0.3s;
     }
-    
+  
     .background-option.selected {
       border-color: #4CAF50;
       box-shadow: 0 0 15px #4CAF50;
     }
-    
+  
     .background-option:hover {
       transform: scale(1.05);
     }
-    
+  
     .bluffs-container {
       margin: 20px 0;
       padding: 15px;
       background: rgba(255,255,255,0.1);
       border-radius: 10px;
     }
-    
+  
     /* Party Elements */
     .party-info {
       position: absolute;
@@ -302,7 +301,7 @@
       z-index: 10;
       display: none;
     }
-    
+  
     .player-list {
       position: absolute;
       top: 60px;
@@ -316,12 +315,12 @@
       max-width: 150px;
       display: none;
     }
-    
+  
     .admin-badge {
       color: gold;
       font-weight: bold;
     }
-    
+  
     .error-message {
       color: #ff4444;
       font-size: 14px;
@@ -331,7 +330,7 @@
       padding: 8px;
       border-radius: 5px;
     }
-    
+  
     /* Party ID Display */
     #party-id {
       font-size: 60px;
@@ -344,23 +343,23 @@
       padding: 10px;
       border-radius: 10px;
     }
-    
+  
     h2 {
       margin-bottom: 20px;
       color: #4CAF50;
       font-size: 28px;
     }
-    
+  
     h3 {
       margin: 15px 0;
       color: #ddd;
     }
-    
+  
     p {
       margin: 10px 0;
       line-height: 1.5;
     }
-    
+  
     /* Game Instructions */
     .instructions {
       background: rgba(255,255,255,0.05);
@@ -370,22 +369,10 @@
       font-size: 14px;
       text-align: left;
     }
-    
+  
     .instructions h4 {
       color: #4CAF50;
       margin-bottom: 8px;
-    }
-    
-    .status-message {
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 5px;
-      background: rgba(255,255,255,0.1);
-    }
-    
-    .admin-only {
-      color: #FFD700;
-      font-weight: bold;
     }
   </style>
 </head>
@@ -395,20 +382,20 @@
     <a href="index.html" id="home-btn">🏠 Home</a>
     <div id="ui">Time: 0</div>
     <button id="pause-btn">Pause</button>
-    
+  
     <!-- Party Information -->
     <div id="party-info" class="party-info">
       Party: <span id="current-party-id">----</span> | Players: <span id="player-count">1</span>
     </div>
     <div id="player-list" class="player-list"></div>
-    
+  
     <!-- Game Screens -->
     <div id="setup-screen" class="screen">
       <h2>🏃 Arena Tag Showdown</h2>
       <p>Select your game mode:</p>
-      
+    
       <button class="online-option" onclick="showOnlineSetup()">🌐 Online Multiplayer</button>
-      
+    
       <h3>Local Play</h3>
       <div>
         <button class="local-option" onclick="selectPlayers(1)">1 Player</button>
@@ -416,13 +403,13 @@
         <button class="local-option" onclick="selectPlayers(3)">3 Players</button>
         <button class="local-option" onclick="selectPlayers(4)">4 Players</button>
       </div>
-      
+    
       <div class="mode-container">
         <h3>🤖 Robot Mode</h3>
         <button id="robot-toggle" class="toggle-btn" onclick="toggleRobotMode()">OFF</button>
         <p>Adds a smart circle that seeks or avoids players</p>
       </div>
-      
+    
       <div class="instructions">
         <h4>How to Play:</h4>
         <p>• Avoid being "IT" when time runs out</p>
@@ -431,15 +418,15 @@
         <p>• Collect power-ups for advantages</p>
       </div>
     </div>
-    
+  
     <div id="online-setup" class="screen">
       <button class="back-btn" onclick="goBackToMain()">Back</button>
       <h2>Online Multiplayer</h2>
       <p>Play with friends online!</p>
-      
+    
       <button class="online-option" onclick="createParty()">🎉 Create Party</button>
       <button class="online-option" onclick="showJoinParty()">🔗 Join Party</button>
-      
+    
       <div class="instructions">
         <h4>Online Play:</h4>
         <p>• Create a party and share the 4-digit code</p>
@@ -448,7 +435,7 @@
         <p>• If creator leaves, admin transfers to next player</p>
       </div>
     </div>
-    
+  
     <div id="party-id-display" class="screen">
       <h2>Your Party ID</h2>
       <div id="party-id">----</div>
@@ -456,9 +443,9 @@
       <p>Waiting for players to join...</p>
       <div id="waiting-players" style="margin: 20px 0;"></div>
       <button onclick="cancelPartyCreation()">Cancel Party</button>
-      <button onclick="startGameFromParty()" style="background: #2196F3;">Start Game</button>
+      <button onclick="startGameFromParty()" style="background: #2196F3;">Setup Game</button>
     </div>
-    
+  
     <div id="join-party" class="screen">
       <button class="back-btn" onclick="goBackToOnlineSetup()">Back</button>
       <h2>Join Party</h2>
@@ -467,26 +454,16 @@
       <div id="join-error" class="error-message">Party not found. Please check the ID.</div>
       <button onclick="joinParty()">Join Party</button>
     </div>
-    
+  
     <div id="time-setup" class="screen">
       <button class="back-btn" onclick="goBack()">Back</button>
       <h2>Game Setup</h2>
-      
-      <div id="admin-status" class="status-message" style="display: none;">
-        <span class="admin-only">👑 You are the party admin</span>
-        <p>You control the game settings and start the game</p>
-      </div>
-      
-      <div id="non-admin-status" class="status-message" style="display: none;">
-        <p>Waiting for admin to start the game...</p>
-        <p>Game settings are controlled by the party admin</p>
-      </div>
-      
+    
       <div>
         <h3>⏱️ Time Limit (Seconds)</h3>
         <input type="number" id="time-input" min="10" max="300" value="60">
       </div>
-      
+    
       <div>
         <h3>🎨 Select Background</h3>
         <div class="background-options">
@@ -495,16 +472,20 @@
           <div class="background-option" style="background: linear-gradient(135deg, #f093fb, #f5576c);" onclick="selectBackground(3)"></div>
         </div>
       </div>
-      
+    
       <div class="bluffs-container">
         <h3>⚡ Power-ups (Bluffs)</h3>
         <button id="bluffs-toggle" class="toggle-btn active" onclick="toggleBluffs()">ON</button>
         <p>Enable or disable power-ups during gameplay</p>
       </div>
-      
+    
+      <div style="margin: 20px 0;">
+        <button id="ready-btn" onclick="toggleReady()">Ready</button>
+      </div>
+    
       <button id="start-game-btn" onclick="startGame()" style="padding: 15px 30px; font-size: 18px;">Start Game</button>
     </div>
-    
+  
     <div id="gameOver" class="screen">
       <h2>Game Over!</h2>
       <div id="winner-text" style="color:gold; font-weight:bold; margin: 20px 0; font-size: 24px;"></div>
@@ -513,19 +494,18 @@
         <button class="retry-btn" onclick="resetToSetup()">🔄 Play Again</button>
       </div>
     </div>
-    
+  
     <div id="countdown"></div>
-    
+  
     <div id="pause-menu" class="screen">
       <h2>Game Paused</h2>
       <button onclick="resumeGame()">Resume Game</button>
       <button onclick="leaveParty()">Leave Party</button>
     </div>
-    
+  
     <!-- Game Canvas -->
     <canvas id="gameCanvas" width="1200" height="700"></canvas>
   </div>
-
   <script>
     // Firebase Configuration
     const firebaseConfig = {
@@ -537,11 +517,11 @@
       messagingSenderId: "193027632069",
       appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
     };
-    
+  
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    
+  
     // Game variables
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -567,14 +547,12 @@
     const playerCountElement = document.getElementById('player-count');
     const playerListElement = document.getElementById('player-list');
     const waitingPlayers = document.getElementById('waiting-players');
-    const adminStatus = document.getElementById('admin-status');
-    const nonAdminStatus = document.getElementById('non-admin-status');
+    const readyBtn = document.getElementById('ready-btn');
     const startGameBtn = document.getElementById('start-game-btn');
-
     // Input handling
     const keys = {};
     const keyState = {};
-    
+  
     document.addEventListener('keydown', e => {
       keys[e.key] = true;
       if (!keyState[e.key]) {
@@ -582,20 +560,19 @@
       } else {
         keyState[e.key].justPressed = true;
       }
-      
+    
       // Spacebar to reset game when game over
       if (e.key === ' ' && gameOver) {
         resetToSetup();
       }
     });
-    
+  
     document.addEventListener('keyup', e => {
       keys[e.key] = false;
       if (keyState[e.key]) {
         keyState[e.key].justPressed = false;
       }
     });
-
     // Online multiplayer variables
     let userId = generateUserId();
     let currentPartyId = null;
@@ -603,10 +580,12 @@
     let partyRef = null;
     let playersRef = null;
     let gameSettingsRef = null;
-    let gameStateRef = null;
+    let playerStatesRef = null;
     let onlinePlayers = {};
     let localPlayerId = null;
-
+    let currentAdmin = null;
+    let serverStartTime = 0;
+    let initialTimer = 0;
     // Game state variables
     let players = [];
     let smartCircle = null;
@@ -617,7 +596,6 @@
     let selectedBackground = 1;
     let bluffsEnabled = true;
     let currentPlatforms = [];
-
     const gravity = 0.5;
     const basePlatforms = [
       { x: 100, y: 550, w: 80, h: 15 },
@@ -639,9 +617,8 @@
       { x: 200, y: 620, w: 90, h: 15 },
       { x: 900, y: 620, w: 90, h: 15 }
     ];
-    
+  
     const bouncePad = { x: 30, y: 650, w: 50, h: 12 };
-
     let teleporters = [];
     let teleportCooldown = 0;
     let lastTagTime = 0;
@@ -649,7 +626,6 @@
     let frameCount = 0;
     let gameOver = false;
     let animationId = null;
-
     // Power-up system
     let powerUps = [];
     let immunitySpawnTimer = 0;
@@ -660,7 +636,6 @@
       timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
       speedBoost: []
     };
-
     // Generate unique user ID
     function generateUserId() {
       let id = localStorage.getItem('tagGameUserId');
@@ -670,56 +645,42 @@
       }
       return id;
     }
-
     // Online Multiplayer Functions
     function showOnlineSetup() {
       setupScreen.style.display = 'none';
       onlineSetup.style.display = 'block';
     }
-
     function goBackToMain() {
       onlineSetup.style.display = 'none';
       setupScreen.style.display = 'block';
       joinError.style.display = 'none';
     }
-
     function goBackToOnlineSetup() {
       joinPartyScreen.style.display = 'none';
       onlineSetup.style.display = 'block';
       joinError.style.display = 'none';
       partyIdInput.value = '';
     }
-
     function generatePartyId() {
       return Math.floor(1000 + Math.random() * 9000).toString();
     }
-
     function createParty() {
       currentPartyId = generatePartyId();
       isPartyAdmin = true;
-      
+    
       // Set up Firebase references
       partyRef = database.ref('parties/' + currentPartyId);
       playersRef = database.ref('parties/' + currentPartyId + '/players');
       gameSettingsRef = database.ref('parties/' + currentPartyId + '/settings');
-      gameStateRef = database.ref('parties/' + currentPartyId + '/gameState');
-      
+      playerStatesRef = database.ref('parties/' + currentPartyId + '/playerStates');
+    
       // Initialize party data
       partyRef.set({
         created: Date.now(),
         admin: userId,
-        status: 'waiting',
-        lastActive: Date.now()
+        status: 'waiting'
       });
-      
-      // Initialize game state
-      gameStateRef.set({
-        gameStarted: false,
-        gameRunning: false,
-        timer: 0,
-        winner: null
-      });
-      
+    
       // Add current user as first player
       localPlayerId = userId;
       playersRef.child(userId).set({
@@ -727,10 +688,9 @@
         name: 'Player 1',
         joined: Date.now(),
         isAdmin: true,
-        ready: false,
-        online: true
+        ready: false
       });
-      
+    
       // Initialize game settings
       gameSettingsRef.set({
         timeLimit: 60,
@@ -738,34 +698,25 @@
         bluffsEnabled: true,
         robotMode: false
       });
-      
+    
       // Set up listeners
       setupPartyListeners();
-      
+    
       // Show party ID
       onlineSetup.style.display = 'none';
       partyIdDisplay.style.display = 'block';
       partyIdElement.textContent = currentPartyId;
       currentPartyIdElement.textContent = currentPartyId;
-      
+    
       // Set up disconnect handler
-      const userPlayerRef = playersRef.child(userId);
-      userPlayerRef.onDisconnect().update({
-        online: false,
-        lastSeen: Date.now()
-      });
-      
-      // Set up party cleanup after 1 hour of inactivity
-      partyRef.onDisconnect().remove();
+      playersRef.child(userId).onDisconnect().remove();
     }
-
     function showJoinParty() {
       onlineSetup.style.display = 'none';
       joinPartyScreen.style.display = 'block';
       partyIdInput.focus();
       joinError.style.display = 'none';
     }
-
     function joinParty() {
       const partyId = partyIdInput.value.trim();
       if (partyId.length !== 4 || !/^\d+$/.test(partyId)) {
@@ -773,104 +724,94 @@
         joinError.style.display = 'block';
         return;
       }
-      
+    
       currentPartyId = partyId;
       isPartyAdmin = false;
-      
+    
       // Set up Firebase references
       partyRef = database.ref('parties/' + currentPartyId);
       playersRef = database.ref('parties/' + currentPartyId + '/players');
       gameSettingsRef = database.ref('parties/' + currentPartyId + '/settings');
-      gameStateRef = database.ref('parties/' + currentPartyId + '/gameState');
-      
+      playerStatesRef = database.ref('parties/' + currentPartyId + '/playerStates');
+    
       // Check if party exists
       partyRef.once('value').then(snapshot => {
         if (!snapshot.exists()) {
           joinError.textContent = 'Party not found. Please check the party ID.';
           joinError.style.display = 'block';
-          currentPartyId = null;
           return;
         }
-        
+      
         const partyData = snapshot.val();
         if (partyData.status === 'playing') {
           joinError.textContent = 'Game is already in progress. Please try another party.';
           joinError.style.display = 'block';
-          currentPartyId = null;
           return;
         }
+      
+        // Fetch current players to determine player number
+        playersRef.once('value').then(playersSnap => {
+          const currPlayers = playersSnap.val() || {};
+          const playerNumber = Object.keys(currPlayers).length + 1;
         
-        // Get current players count for naming
-        return playersRef.once('value');
-      }).then(playersSnapshot => {
-        if (!playersSnapshot) return; // Exit if previous check failed
-        
-        const playersData = playersSnapshot.val() || {};
-        const playerCount = Object.keys(playersData).length;
-        
-        // Add player to party
-        localPlayerId = userId;
-        playersRef.child(userId).set({
-          id: userId,
-          name: 'Player ' + (playerCount + 1),
-          joined: Date.now(),
-          isAdmin: false,
-          ready: false,
-          online: true
+          // Add player to party
+          localPlayerId = userId;
+          playersRef.child(userId).set({
+            id: userId,
+            name: 'Player ' + playerNumber,
+            joined: Date.now(),
+            isAdmin: false,
+            ready: false
+          }).then(() => {
+            // Set up listeners
+            setupPartyListeners();
+          
+            // Show time setup (read-only for non-admin)
+            joinPartyScreen.style.display = 'none';
+            timeSetup.style.display = 'block';
+            currentPartyIdElement.textContent = currentPartyId;
+          
+            // Set up disconnect handler
+            playersRef.child(userId).onDisconnect().remove();
+          });
         });
-        
-        // Update party last active
-        partyRef.update({
-          lastActive: Date.now()
-        });
-        
-        // Set up listeners
-        setupPartyListeners();
-        
-        // Show time setup (read-only for non-admin)
-        joinPartyScreen.style.display = 'none';
-        timeSetup.style.display = 'block';
-        currentPartyIdElement.textContent = currentPartyId;
-        
-        // Set up disconnect handler
-        const userPlayerRef = playersRef.child(userId);
-        userPlayerRef.onDisconnect().update({
-          online: false,
-          lastSeen: Date.now()
-        });
-        
       }).catch(error => {
         joinError.textContent = 'Error joining party: ' + error.message;
         joinError.style.display = 'block';
-        currentPartyId = null;
       });
     }
-
     function setupPartyListeners() {
       // Listen for player changes
       playersRef.on('value', snapshot => {
         onlinePlayers = snapshot.val() || {};
         updatePlayerList();
         updateWaitingPlayers();
-        
+      
         // Update player count
-        const onlineCount = Object.keys(onlinePlayers).length;
-        playerCountElement.textContent = onlineCount;
-        
-        // Show/hide UI elements based on player count
-        if (onlineCount > 0) {
+        playerCountElement.textContent = Object.keys(onlinePlayers).length;
+      
+        // Show UI elements
+        if (Object.keys(onlinePlayers).length > 0) {
           partyInfo.style.display = 'block';
           playerListElement.style.display = 'block';
         }
-        
-        // Update party last active
-        if (partyRef) {
-          partyRef.update({
-            lastActive: Date.now()
-          });
-        }
-      });
       
+        checkAdminPresence();
+        updateSettingsUI();
+      });
+    
+      // Listen for admin changes
+      partyRef.child('admin').on('value', snapshot => {
+        currentAdmin = snapshot.val();
+        if (currentAdmin === userId) {
+          isPartyAdmin = true;
+        } else {
+          isPartyAdmin = false;
+        }
+        updateSettingsUI();
+        checkAdminPresence();
+      });
+    
       // Listen for game settings changes
       gameSettingsRef.on('value', snapshot => {
         const settings = snapshot.val();
@@ -880,41 +821,79 @@
           selectedBackground = settings.background;
           bluffsEnabled = settings.bluffsEnabled;
           robotMode = settings.robotMode;
-          
+        
           // Update UI to reflect settings
           updateSettingsUI();
         }
       });
-      
-      // Listen for game state changes
-      gameStateRef.on('value', snapshot => {
-        const gameState = snapshot.val();
-        if (gameState) {
-          // Update game state
-          if (gameState.gameStarted && !gameStarted) {
-            // Game is starting
-            startOnlineGame();
-          }
-          
-          if (gameState.gameRunning && gameStarted) {
-            // Game is running, update timer
-            timer = gameState.timer;
-            ui.textContent = `Time: ${timer}`;
-            
-            // Check for game over
-            if (gameState.winner && !gameOver) {
-              gameOver = true;
-              winnerText.textContent = gameState.winner;
-              gameOverDisplay.style.display = 'block';
+    
+      // Listen for party changes
+      partyRef.on('value', snapshot => {
+        const data = snapshot.val();
+        if (data && data.gameStarted && !gameStarted) {
+          serverStartTime = data.startTime;
+          initialTimer = data.timeLimit;
+          timer = initialTimer;
+          startOnlineGame();
+        }
+      });
+    
+      // Listen for player states
+      playerStatesRef.on('value', snapshot => {
+        const states = snapshot.val() || {};
+        players.forEach(p => {
+          if (p.id !== userId) {
+            const state = states[p.id];
+            if (state) {
+              p.x = state.x;
+              p.y = state.y;
+              p.vx = state.vx;
+              p.vy = state.vy;
+              p.isIt = state.isIt;
             }
+          }
+        });
+        if (smartCircle) {
+          const state = states['robot'];
+          if (state) {
+            smartCircle.x = state.x;
+            smartCircle.y = state.y;
+            smartCircle.vx = state.vx;
+            smartCircle.vy = state.vy;
+            smartCircle.isIt = state.isIt;
           }
         }
       });
+    
+      // Listen for tag events
+      partyRef.child('tagEvent').on('value', snapshot => {
+        const event = snapshot.val();
+        if (event && event.time > lastTagTime) {
+          lastTagTime = event.time;
+          players.forEach(p => p.isIt = false);
+          if (smartCircle) smartCircle.isIt = false;
+          if (event.tagged === 'robot' && smartCircle) {
+            smartCircle.isIt = true;
+          } else {
+            const taggedPlayer = players.find(p => p.id === event.tagged);
+            if (taggedPlayer) taggedPlayer.isIt = true;
+          }
+        }
+      });
+    
+      // Listen for platforms
+      partyRef.child('platforms').on('value', snapshot => {
+        currentPlatforms = snapshot.val() || basePlatforms;
+      });
+    
+      // Listen for teleporters
+      partyRef.child('teleporters').on('value', snapshot => {
+        teleporters = snapshot.val() || [];
+      });
     }
-
     function updateWaitingPlayers() {
       if (!isPartyAdmin) return;
-      
+    
       let html = '<strong>Players in party:</strong><br>';
       Object.values(onlinePlayers).forEach(player => {
         html += `• ${player.name}`;
@@ -923,7 +902,6 @@
       });
       waitingPlayers.innerHTML = html;
     }
-
     function updateSettingsUI() {
       // Update background selection
       document.querySelectorAll('.background-option').forEach((opt, index) => {
@@ -933,27 +911,14 @@
           opt.classList.remove('selected');
         }
       });
-      
+    
       // Update toggles
       bluffsToggleBtn.classList.toggle('active', bluffsEnabled);
       bluffsToggleBtn.textContent = bluffsEnabled ? 'ON' : 'OFF';
-      
+    
       robotToggleBtn.classList.toggle('active', robotMode);
       robotToggleBtn.textContent = robotMode ? 'ON' : 'OFF';
-      
-      // Update admin status
-      if (isPartyAdmin) {
-        adminStatus.style.display = 'block';
-        nonAdminStatus.style.display = 'none';
-        startGameBtn.textContent = 'Start Game';
-        startGameBtn.disabled = false;
-      } else {
-        adminStatus.style.display = 'none';
-        nonAdminStatus.style.display = 'block';
-        startGameBtn.textContent = 'Waiting for Admin...';
-        startGameBtn.disabled = true;
-      }
-      
+    
       // Disable controls for non-admin players
       if (currentPartyId && !isPartyAdmin) {
         timeInput.disabled = true;
@@ -965,6 +930,8 @@
           btn.disabled = true;
           btn.style.opacity = '0.6';
         });
+        startGameBtn.disabled = true;
+        startGameBtn.style.opacity = '0.6';
       } else {
         timeInput.disabled = false;
         document.querySelectorAll('.background-option').forEach(opt => {
@@ -975,78 +942,102 @@
           btn.disabled = false;
           btn.style.opacity = '1';
         });
+        startGameBtn.disabled = false;
+        startGameBtn.style.opacity = '1';
+      }
+    
+      if (currentPartyId) {
+        const allReady = Object.values(onlinePlayers).every(p => p.ready);
+        if (isPartyAdmin) {
+          startGameBtn.disabled = !allReady || Object.keys(onlinePlayers).length < 2; // at least 2 players
+          startGameBtn.style.opacity = (allReady && Object.keys(onlinePlayers).length >= 2) ? '1' : '0.6';
+        }
+        const myReady = onlinePlayers[userId]?.ready || false;
+        readyBtn.textContent = myReady ? 'Unready' : 'Ready';
+        readyBtn.classList.toggle('active', myReady);
+        readyBtn.style.display = 'block';
+      } else {
+        readyBtn.style.display = 'none';
+        startGameBtn.disabled = false;
+        startGameBtn.style.opacity = '1';
       }
     }
-
     function updatePlayerList() {
       let html = '<strong>Players:</strong><br>';
       Object.values(onlinePlayers).forEach(player => {
         html += `<span ${player.isAdmin ? 'class="admin-badge"' : ''}>`;
         html += player.name;
         if (player.isAdmin) html += ' 👑';
+        if (player.ready) html += ' ✅';
         if (player.id === userId) html += ' (You)';
         html += '</span><br>';
       });
       playerListElement.innerHTML = html;
     }
-
+    function toggleReady() {
+      const myPlayer = onlinePlayers[userId];
+      if (myPlayer) {
+        const newReady = !myPlayer.ready;
+        playersRef.child(userId).update({ready: newReady});
+      }
+    }
+    function checkAdminPresence() {
+      if (currentAdmin && !onlinePlayers[currentAdmin]) {
+        const remainingPlayers = Object.values(onlinePlayers).sort((a, b) => a.joined - b.joined);
+        if (remainingPlayers.length > 0) {
+          const newAdmin = remainingPlayers[0];
+          if (newAdmin.id === userId) {
+            playersRef.child(newAdmin.id).update({ isAdmin: true });
+            partyRef.update({ admin: newAdmin.id });
+          }
+        } else {
+          partyRef.remove();
+        }
+      }
+    }
     function transferAdmin() {
       if (!isPartyAdmin) return;
-      
+    
       const players = Object.values(onlinePlayers).filter(p => p.id !== userId);
       if (players.length > 0) {
         // Find the player who joined first
         const newAdmin = players.reduce((oldest, current) => {
           return current.joined < oldest.joined ? current : oldest;
         });
-        
+      
         // Update admin in Firebase
         playersRef.child(newAdmin.id).update({ isAdmin: true });
         partyRef.update({ admin: newAdmin.id });
       } else {
-        // No players left, delete party after delay
-        setTimeout(() => {
-          if (Object.keys(onlinePlayers).length === 0) {
-            partyRef.remove();
-          }
-        }, 5000);
+        // No players left, delete party
+        partyRef.remove();
       }
     }
-
     function leaveParty() {
       if (currentPartyId) {
-        // Remove player from party
         if (playersRef) {
           playersRef.child(userId).remove();
         }
-        
-        // If admin and leaving, transfer admin
-        if (isPartyAdmin) {
-          transferAdmin();
-        }
       }
-      
+    
       resetToSetup();
     }
-
     function cancelPartyCreation() {
       if (currentPartyId && isPartyAdmin) {
         partyRef.remove();
       }
       resetToSetup();
     }
-
     function startGameFromParty() {
       if (currentPartyId && isPartyAdmin) {
         partyIdDisplay.style.display = 'none';
         timeSetup.style.display = 'block';
       }
     }
-
     // Local Game Functions
     function selectPlayers(number) {
       numPlayers = number;
-      
+    
       if (number === 1) {
         robotMode = true;
         robotToggleBtn.classList.add('active');
@@ -1057,38 +1048,36 @@
         robotToggleBtn.disabled = false;
         robotToggleBtn.style.opacity = '1';
       }
-      
+    
       setupScreen.style.display = 'none';
       timeSetup.style.display = 'block';
+      updateSettingsUI();
     }
-
     function toggleRobotMode() {
       if (currentPartyId && !isPartyAdmin) return;
-      
+    
       robotMode = !robotMode;
       robotToggleBtn.classList.toggle('active', robotMode);
       robotToggleBtn.textContent = robotMode ? 'ON' : 'OFF';
-      
+    
       if (currentPartyId && isPartyAdmin) {
         gameSettingsRef.update({ robotMode: robotMode });
       }
     }
-
     function toggleBluffs() {
       if (currentPartyId && !isPartyAdmin) return;
-      
+    
       bluffsEnabled = !bluffsEnabled;
       bluffsToggleBtn.classList.toggle('active', bluffsEnabled);
       bluffsToggleBtn.textContent = bluffsEnabled ? 'ON' : 'OFF';
-      
+    
       if (currentPartyId && isPartyAdmin) {
         gameSettingsRef.update({ bluffsEnabled: bluffsEnabled });
       }
     }
-
     function selectBackground(bgNum) {
       if (currentPartyId && !isPartyAdmin) return;
-      
+    
       selectedBackground = bgNum;
       document.querySelectorAll('.background-option').forEach((opt, index) => {
         if (index + 1 === bgNum) {
@@ -1097,12 +1086,11 @@
           opt.classList.remove('selected');
         }
       });
-      
+    
       if (currentPartyId && isPartyAdmin) {
         gameSettingsRef.update({ background: bgNum });
       }
     }
-
     function goBack() {
       if (currentPartyId) {
         if (isPartyAdmin) {
@@ -1115,7 +1103,7 @@
       } else {
         timeSetup.style.display = 'none';
         setupScreen.style.display = 'block';
-        
+      
         robotMode = false;
         robotToggleBtn.classList.remove('active');
         robotToggleBtn.textContent = 'OFF';
@@ -1123,42 +1111,33 @@
         robotToggleBtn.style.opacity = '1';
       }
     }
-
     function startGame() {
       if (currentPartyId && isPartyAdmin) {
-        // For online games, update settings and signal start
         const settings = {
           timeLimit: parseInt(timeInput.value),
           background: selectedBackground,
           bluffsEnabled: bluffsEnabled,
           robotMode: robotMode
         };
-        
+      
         gameSettingsRef.update(settings);
-        gameStateRef.update({ 
+        partyRef.update({
           gameStarted: true,
-          gameRunning: false,
-          timer: settings.timeLimit,
-          winner: null
-        });
-        
-        // Update party status
-        partyRef.update({ 
-          status: 'playing'
+          status: 'playing',
+          startTime: firebase.database.ServerValue.TIMESTAMP,
+          timeLimit: settings.timeLimit
         });
       } else {
-        // For local games, start directly
         startLocalGame();
       }
     }
-
     function startLocalGame() {
       const timeLimit = parseInt(timeInput.value);
       if (isNaN(timeLimit) || timeLimit < 10) {
         alert("Please enter a valid time limit (minimum 10 seconds)");
         return;
       }
-      
+    
       // Set canvas background
       switch(selectedBackground) {
         case 1:
@@ -1171,7 +1150,7 @@
           canvas.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
           break;
       }
-      
+    
       // Initialize game state
       randomizePlatforms();
       timer = timeLimit;
@@ -1179,10 +1158,10 @@
       pauseBtn.style.display = 'block';
       ui.style.display = 'block';
       ui.textContent = `Time: ${timer}`;
-      
+    
       // Reset game state
       resetGameState();
-      
+    
       const colors = ['red', 'green', 'blue', 'yellow'];
       const startPositions = [
         { x: 100, y: 100 },
@@ -1190,32 +1169,32 @@
         { x: 100, y: 500 },
         { x: 1000, y: 500 }
       ];
-      
+    
       const controlSchemes = [
         { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' },
         { up: 'w', down: 's', left: 'a', right: 'd' },
         { up: 't', down: 'g', left: 'f', right: 'h' },
         { up: 'i', down: 'k', left: 'j', right: 'l' }
       ];
-      
+    
       // Create human players
       for (let i = 0; i < numPlayers; i++) {
-        players.push({ 
-          x: startPositions[i].x, 
-          y: startPositions[i].y, 
-          vx: 0, 
-          vy: 0, 
-          w: 30, 
-          h: 30, 
-          color: colors[i], 
-          isIt: false, 
+        players.push({
+          x: startPositions[i].x,
+          y: startPositions[i].y,
+          vx: 0,
+          vy: 0,
+          w: 30,
+          h: 30,
+          color: colors[i],
+          isIt: false,
           controls: controlSchemes[i],
           canDoubleJump: false,
           jumps: 0,
           lastJumpTime: 0
         });
       }
-      
+    
       // Add smart circle if robot mode is enabled
       if (robotMode) {
         smartCircle = {
@@ -1230,88 +1209,77 @@
           targetCooldown: 0
         };
       }
-      
+    
       // Randomly assign who is "it"
       assignRandomIt();
-      
+    
       spawnTeleporters();
-      
+    
       // Start countdown
       startCountdown();
     }
-
     function startOnlineGame() {
-      // Only the admin should run the actual game logic
-      // Other players just watch and control their own character
-      if (!isPartyAdmin) {
-        // Non-admin players just set up their local player and wait for game state updates
-        setupOnlineGameForNonAdmin();
-        return;
-      }
-      
-      const timeLimit = parseInt(timeInput.value);
-      if (isNaN(timeLimit) || timeLimit < 10) {
-        alert("Please enter a valid time limit (minimum 10 seconds)");
-        return;
-      }
-      
       // Set canvas background
       switch(selectedBackground) {
         case 1: canvas.style.background = 'linear-gradient(135deg, #ff6ec4, #7873f5)'; break;
         case 2: canvas.style.background = 'linear-gradient(135deg, #667eea, #764ba2)'; break;
         case 3: canvas.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)'; break;
       }
-      
+    
+      // Disable power-ups for online mode to avoid sync issues
+      bluffsEnabled = false;
+    
       // Initialize game state
-      randomizePlatforms();
-      timer = timeLimit;
       timeSetup.style.display = 'none';
       partyIdDisplay.style.display = 'none';
       pauseBtn.style.display = 'block';
       ui.style.display = 'block';
       ui.textContent = `Time: ${timer}`;
-      
+    
       // Reset game state
       resetGameState();
-      
-      // Create players based on online players count
+    
+      // Create players based on online players count, sorted by join time
+      const sortedPlayersInfo = Object.values(onlinePlayers).sort((a, b) => a.joined - b.joined);
       const colors = ['red', 'green', 'blue', 'yellow', 'purple', 'orange'];
       const startPositions = [
         { x: 100, y: 100 }, { x: 1000, y: 100 },
         { x: 100, y: 500 }, { x: 1000, y: 500 },
         { x: 300, y: 300 }, { x: 800, y: 300 }
       ];
-      
+    
       const controlSchemes = [
         { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' },
         { up: 'w', down: 's', left: 'a', right: 'd' },
         { up: 't', down: 'g', left: 'f', right: 'h' },
-        { up: 'i', down: 'k', left: 'j', right: 'l' }
+        { up: 'i', down: 'k', left: 'j', right: 'l' },
+        { up: '8', down: '5', left: '4', right: '6' },
+        { up: 'p', down: ';', left: 'l', right: '\'' }
       ];
-      
+    
       // Create players for each online player (up to 6 players)
-      Object.values(onlinePlayers).forEach((player, index) => {
+      sortedPlayersInfo.forEach((playerInfo, index) => {
         if (index < 6) {
-          players.push({ 
-            x: startPositions[index].x, 
-            y: startPositions[index].y, 
-            vx: 0, 
-            vy: 0, 
-            w: 30, 
-            h: 30, 
-            color: colors[index], 
-            isIt: false, 
-            controls: controlSchemes[index] || controlSchemes[0],
+          const isLocal = playerInfo.id === userId;
+          players.push({
+            x: startPositions[index].x,
+            y: startPositions[index].y,
+            vx: 0,
+            vy: 0,
+            w: 30,
+            h: 30,
+            color: colors[index],
+            isIt: false,
+            controls: isLocal ? controlSchemes[index] : null,
             canDoubleJump: false,
             jumps: 0,
             lastJumpTime: 0,
-            id: player.id,
-            name: player.name,
-            isLocal: player.id === userId // Mark if this is the local player
+            id: playerInfo.id,
+            name: playerInfo.name
           });
         }
       });
-      
+    
       // Add smart circle if enabled
       if (robotMode && players.length < 6) {
         smartCircle = {
@@ -1323,77 +1291,41 @@
           speed: 3.5,
           isIt: false,
           color: 'orange',
-          targetCooldown: 0
+          targetCooldown: 0,
+          id: 'robot'
         };
       }
-      
-      // Randomly assign who is "it"
-      assignRandomIt();
-      
-      spawnTeleporters();
-      
+    
+      // Only admin initializes game elements
+      if (isPartyAdmin) {
+        randomizePlatforms();
+        partyRef.child('platforms').set(currentPlatforms);
+        assignRandomIt();
+        players.forEach(p => {
+          playerStatesRef.child(p.id).set({
+            x: p.x,
+            y: p.y,
+            vx: p.vx,
+            vy: p.vy,
+            isIt: p.isIt
+          });
+        });
+        if (smartCircle) {
+          playerStatesRef.child('robot').set({
+            x: smartCircle.x,
+            y: smartCircle.y,
+            vx: smartCircle.vx,
+            vy: smartCircle.vy,
+            isIt: smartCircle.isIt
+          });
+        }
+        spawnTeleporters();
+        partyRef.child('teleporters').set(teleporters);
+      }
+    
       // Start countdown
       startCountdown();
     }
-
-    function setupOnlineGameForNonAdmin() {
-      // Non-admin players just set up the UI and wait for game state updates
-      timeSetup.style.display = 'none';
-      partyIdDisplay.style.display = 'none';
-      pauseBtn.style.display = 'block';
-      ui.style.display = 'block';
-      ui.textContent = `Time: ${timer}`;
-      
-      // Set canvas background based on admin's selection
-      switch(selectedBackground) {
-        case 1: canvas.style.background = 'linear-gradient(135deg, #ff6ec4, #7873f5)'; break;
-        case 2: canvas.style.background = 'linear-gradient(135deg, #667eea, #764ba2)'; break;
-        case 3: canvas.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)'; break;
-      }
-      
-      // Non-admin players don't run the game logic, they just display it
-      // The admin will update the game state in Firebase
-      gameStarted = true;
-      
-      // Start a simplified game loop that just renders the current state
-      // The actual game logic runs only on the admin's machine
-      animationId = requestAnimationFrame(nonAdminGameLoop);
-    }
-
-    function nonAdminGameLoop() {
-      if (gameOver) {
-        showGameOver();
-        return;
-      }
-      
-      if (gamePaused) {
-        return;
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw platforms (these are static and same for all players)
-      drawPlatforms();
-      
-      // Draw teleporters (static)
-      drawTeleporters();
-      
-      // Draw power-ups (these would need to be synced from admin)
-      drawPowerUps();
-      
-      // Draw players (positions would need to be synced from admin)
-      // For now, just draw placeholder players
-      drawPlayers();
-      
-      // Draw smart circle if exists
-      drawSmartCircle();
-      
-      // Update timer from game state (handled in the gameState listener)
-      ui.textContent = `Time: ${timer}`;
-      
-      animationId = requestAnimationFrame(nonAdminGameLoop);
-    }
-
     function resetGameState() {
       players = [];
       smartCircle = null;
@@ -1411,23 +1343,21 @@
         speedBoost: []
       };
     }
-
     function assignRandomIt() {
       const totalEntities = players.length + (robotMode ? 1 : 0);
       const randomIndex = Math.floor(Math.random() * totalEntities);
-      
+    
       if (randomIndex < players.length) {
         players[randomIndex].isIt = true;
       } else if (robotMode && smartCircle) {
         smartCircle.isIt = true;
       }
     }
-
     function startCountdown() {
       let countdown = 3;
       countdownDisplay.style.display = 'block';
       countdownDisplay.textContent = countdown;
-      
+    
       const countdownInterval = setInterval(() => {
         countdown--;
         if (countdown > 0) {
@@ -1438,35 +1368,17 @@
           setTimeout(() => {
             countdownDisplay.style.display = 'none';
             gameStarted = true;
-            
-            // For online games, only the admin runs the actual game logic
-            if (currentPartyId && isPartyAdmin) {
-              gameStateRef.update({ gameRunning: true });
-              gameLoop();
-            } else if (!currentPartyId) {
-              // Local game
-              gameLoop();
-            }
-            // Non-admin online players will use the nonAdminGameLoop
+            gameLoop();
           }, 500);
         }
       }, 1000);
     }
-
-    // The rest of the game functions (randomizePlatforms, spawnTeleporters, updatePowerUps, etc.)
-    // remain the same as in the previous implementation
-    
-    // ... [All the game logic functions would go here - they're the same as before]
-    
-    // For the sake of brevity, I'm including placeholder implementations
-    // In a real implementation, these would be the full functions
-    
     function randomizePlatforms() {
       currentPlatforms = basePlatforms.map(platform => {
         const minWidth = platform.w - 20;
         const maxWidth = platform.w + 50;
         const newWidth = Math.floor(Math.random() * (maxWidth - minWidth + 1)) + minWidth;
-        
+      
         return {
           x: platform.x,
           y: platform.y,
@@ -1475,7 +1387,6 @@
         };
       });
     }
-
     function spawnTeleporters() {
       const accessiblePositions = [
         { x: 150, y: 300 },
@@ -1485,103 +1396,777 @@
         { x: 350, y: 200 },
         { x: 850, y: 200 }
       ];
-      
+    
       const index1 = Math.floor(Math.random() * accessiblePositions.length);
       let index2;
       do {
         index2 = Math.floor(Math.random() * accessiblePositions.length);
       } while (index2 === index1);
-      
+    
       const pos1 = accessiblePositions[index1];
       const pos2 = accessiblePositions[index2];
-      
+    
       teleporters = [
         { x: pos1.x, y: pos1.y, radius: 12, active: true },
         { x: pos2.x, y: pos2.y, radius: 12, active: true }
       ];
     }
-
-    // ... [All other game functions would be implemented here]
-
+    // Power-up functions
+    function spawnPowerUp(type) {
+      const platform = currentPlatforms[Math.floor(Math.random() * currentPlatforms.length)];
+      const x = platform.x + Math.random() * (platform.w - 20);
+      const y = platform.y - 15;
+    
+      if (type === 'immunity') {
+        powerUps.push({
+          type: 'immunity',
+          x: x,
+          y: y,
+          width: 20,
+          height: 20,
+          color: '#3498db',
+          spawnTime: frameCount,
+          active: true
+        });
+      } else if (type === 'timeSlow') {
+        powerUps.push({
+          type: 'timeSlow',
+          x: x,
+          y: y,
+          radius: 10,
+          color: '#9b59b6',
+          spawnTime: frameCount,
+          active: true
+        });
+      } else if (type === 'speedBoost') {
+        powerUps.push({
+          type: 'speedBoost',
+          x: x,
+          y: y,
+          width: 20,
+          height: 20,
+          color: '#2ecc71',
+          spawnTime: frameCount,
+          active: true
+        });
+      }
+    }
+    function updatePowerUps() {
+      if (currentPartyId) return; // disable for online
+      if (!gameStarted || gamePaused || !bluffsEnabled) return;
+    
+      // Update spawn timers
+      immunitySpawnTimer++;
+      timeSlowSpawnTimer++;
+      speedBoostSpawnTimer++;
+    
+      // Spawn power-ups periodically
+      if (immunitySpawnTimer >= 900) {
+        spawnPowerUp('immunity');
+        immunitySpawnTimer = 0;
+      }
+    
+      if (timeSlowSpawnTimer >= 1200) {
+        spawnPowerUp('timeSlow');
+        timeSlowSpawnTimer = 0;
+      }
+    
+      if (speedBoostSpawnTimer >= 1080) {
+        spawnPowerUp('speedBoost');
+        speedBoostSpawnTimer = 0;
+      }
+    
+      // Remove expired power-ups
+      powerUps = powerUps.filter(powerUp => {
+        return frameCount - powerUp.spawnTime < 300;
+      });
+    
+      // Check for collisions with players
+      for (let i = 0; i < powerUps.length; i++) {
+        const powerUp = powerUps[i];
+      
+        for (const player of players) {
+          if (detectPowerUpCollision(player, powerUp)) {
+            applyPowerUp(player, powerUp);
+            powerUps.splice(i, 1);
+            i--;
+            break;
+          }
+        }
+      
+        // Check for collision with smart circle
+        if (smartCircle && detectSmartCirclePowerUpCollision(smartCircle, powerUp)) {
+          if ((powerUp.type === 'speedBoost' || powerUp.type === 'immunity') &&
+              !smartCircle.isIt) {
+            applyPowerUp(smartCircle, powerUp);
+            powerUps.splice(i, 1);
+            i--;
+          }
+        }
+      }
+    
+      // Update active effects
+      updateActiveEffects();
+    }
+    function detectPowerUpCollision(player, powerUp) {
+      if (powerUp.type === 'immunity' || powerUp.type === 'speedBoost') {
+        return (
+          player.x < powerUp.x + powerUp.width &&
+          player.x + player.w > powerUp.x &&
+          player.y < powerUp.y + powerUp.height &&
+          player.y + player.h > powerUp.y
+        );
+      } else if (powerUp.type === 'timeSlow') {
+        const dx = (player.x + player.w/2) - powerUp.x;
+        const dy = (player.y + player.h/2) - powerUp.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < powerUp.radius + player.w/2;
+      }
+      return false;
+    }
+    function detectSmartCirclePowerUpCollision(smartCircle, powerUp) {
+      if (powerUp.type === 'immunity' || powerUp.type === 'speedBoost') {
+        const dx = smartCircle.x - Math.max(powerUp.x, Math.min(smartCircle.x, powerUp.x + powerUp.width));
+        const dy = smartCircle.y - Math.max(powerUp.y, Math.min(smartCircle.y, powerUp.y + powerUp.height));
+        return (dx * dx + dy * dy) < (smartCircle.radius * smartCircle.radius);
+      } else if (powerUp.type === 'timeSlow') {
+        const dx = smartCircle.x - powerUp.x;
+        const dy = smartCircle.y - powerUp.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < smartCircle.radius + powerUp.radius;
+      }
+      return false;
+    }
+    function applyPowerUp(entity, powerUp) {
+      if (powerUp.type === 'immunity') {
+        activeEffects.immunity.push({
+          entity: entity,
+          endTime: frameCount + 300
+        });
+      } else if (powerUp.type === 'timeSlow') {
+        const slowedPlayers = [];
+        for (const player of players) {
+          if (!player.isIt) {
+            slowedPlayers.push(player);
+          }
+        }
+        if (smartCircle && !smartCircle.isIt) {
+          slowedPlayers.push(smartCircle);
+        }
+      
+        activeEffects.timeSlow = {
+          active: true,
+          endTime: frameCount + 300,
+          slowedPlayers: slowedPlayers
+        };
+      } else if (powerUp.type === 'speedBoost') {
+        activeEffects.speedBoost.push({
+          entity: entity,
+          endTime: frameCount + 300
+        });
+      }
+    }
+    function updateActiveEffects() {
+      // Update immunity effects
+      activeEffects.immunity = activeEffects.immunity.filter(effect => {
+        return frameCount < effect.endTime;
+      });
+    
+      // Update time slow effect
+      if (activeEffects.timeSlow.active && frameCount >= activeEffects.timeSlow.endTime) {
+        activeEffects.timeSlow.active = false;
+        activeEffects.timeSlow.slowedPlayers = [];
+      }
+    
+      // Update speed boost effects
+      activeEffects.speedBoost = activeEffects.speedBoost.filter(effect => {
+        return frameCount < effect.endTime;
+      });
+    }
+    function hasImmunity(entity) {
+      return activeEffects.immunity.some(effect => effect.entity === entity);
+    }
+    function isPlayerSlowed(player) {
+      if (!activeEffects.timeSlow.active) return false;
+      return activeEffects.timeSlow.slowedPlayers.includes(player);
+    }
+    function isSmartCircleSlowed() {
+      if (!activeEffects.timeSlow.active || !smartCircle) return false;
+      return activeEffects.timeSlow.slowedPlayers.includes(smartCircle);
+    }
+    function hasSpeedBoost(entity) {
+      return activeEffects.speedBoost.some(effect => effect.entity === entity);
+    }
+    function drawPowerUps() {
+      if (!bluffsEnabled) return;
+    
+      powerUps.forEach(powerUp => {
+        if (powerUp.type === 'immunity') {
+          // Draw shield shape (diamond)
+          ctx.fillStyle = powerUp.color;
+          ctx.beginPath();
+          ctx.moveTo(powerUp.x + powerUp.width/2, powerUp.y);
+          ctx.lineTo(powerUp.x + powerUp.width, powerUp.y + powerUp.height/2);
+          ctx.lineTo(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height);
+          ctx.lineTo(powerUp.x, powerUp.y + powerUp.height/2);
+          ctx.closePath();
+          ctx.fill();
+        
+          // Add glow effect
+          ctx.shadowColor = powerUp.color;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else if (powerUp.type === 'timeSlow') {
+          // Draw clock shape
+          ctx.fillStyle = powerUp.color;
+          ctx.beginPath();
+          ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
+          ctx.fill();
+        
+          // Draw clock hands
+          ctx.strokeStyle = 'white';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(powerUp.x, powerUp.y);
+          ctx.lineTo(powerUp.x, powerUp.y - powerUp.radius/2);
+          ctx.stroke();
+        
+          ctx.beginPath();
+          ctx.moveTo(powerUp.x, powerUp.y);
+          ctx.lineTo(powerUp.x + powerUp.radius/2, powerUp.y);
+          ctx.stroke();
+        
+          // Add glow effect
+          ctx.shadowColor = powerUp.color;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else if (powerUp.type === 'speedBoost') {
+          // Draw lightning bolt shape
+          ctx.fillStyle = powerUp.color;
+          ctx.beginPath();
+          ctx.moveTo(powerUp.x + powerUp.width/2, powerUp.y);
+          ctx.lineTo(powerUp.x + powerUp.width/3, powerUp.y + powerUp.height/2);
+          ctx.lineTo(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2);
+          ctx.lineTo(powerUp.x + powerUp.width/3, powerUp.y + powerUp.height);
+          ctx.lineTo(powerUp.x + powerUp.width*2/3, powerUp.y + powerUp.height/2);
+          ctx.lineTo(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2);
+          ctx.closePath();
+          ctx.fill();
+        
+          // Add glow effect
+          ctx.shadowColor = powerUp.color;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      });
+    }
+    function updateSmartCircle() {
+      if (!smartCircle || !gameStarted || gamePaused) return;
+      if (!isPartyAdmin) return; // only admin updates robot
+    
+      if (smartCircle.targetCooldown > 0) smartCircle.targetCooldown--;
+    
+      let target = null;
+      let minDistance = Infinity;
+    
+      // Apply speed boost to smart circle if active
+      const speedMultiplier = hasSpeedBoost(smartCircle) ? 1.5 : 1;
+      const currentSpeed = smartCircle.speed * speedMultiplier;
+    
+      // Apply time slow effect to smart circle if active
+      const timeSlowMultiplier = isSmartCircleSlowed() ? 0.5 : 1;
+      const finalSpeed = currentSpeed * timeSlowMultiplier;
+    
+      // Check for nearby beneficial power-ups if it's safe and not "it"
+      if (!smartCircle.isIt && powerUps.length > 0 && bluffsEnabled) {
+        const itPlayer = players.find(p => p && p.isIt);
+        let safeToCollect = true;
+      
+        // Check if it's safe to collect power-ups (no "it" player nearby)
+        if (itPlayer) {
+          const dx = itPlayer.x + itPlayer.w/2 - smartCircle.x;
+          const dy = itPlayer.y + itPlayer.h/2 - smartCircle.y;
+          const distanceToIt = Math.sqrt(dx * dx + dy * dy);
+        
+          // If "it" player is too close, don't go for power-ups
+          if (distanceToIt < 200) {
+            safeToCollect = false;
+          }
+        }
+      
+        // If safe, find the closest beneficial power-up (only speed boost and immunity)
+        if (safeToCollect) {
+          for (const powerUp of powerUps) {
+            // Smart circle only collects beneficial power-ups (not time slow)
+            if (powerUp.type === 'timeSlow') continue;
+          
+            const dx = powerUp.x - smartCircle.x;
+            const dy = powerUp.y - smartCircle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+          
+            if (distance < minDistance) {
+              minDistance = distance;
+              target = { x: powerUp.x, y: powerUp.y };
+            }
+          }
+        }
+      }
+    
+      // If no power-up target or not safe, use normal behavior
+      if (!target) {
+        if (smartCircle.isIt) {
+          // Smart circle is "it" - chase nearest player
+          for (const player of players) {
+            if (player && typeof player.x !== 'undefined' && typeof player.y !== 'undefined') {
+              const dx = player.x + player.w/2 - smartCircle.x;
+              const dy = player.y + player.h/2 - smartCircle.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+            
+              if (distance < minDistance) {
+                minDistance = distance;
+                target = { x: player.x + player.w/2, y: player.y + player.h/2 };
+              }
+            }
+          }
+        } else {
+          // Smart circle is not "it" - avoid the "it" player
+          const itPlayer = players.find(p => p && p.isIt);
+          if (itPlayer && typeof itPlayer.x !== 'undefined' && typeof itPlayer.y !== 'undefined') {
+            const dx = itPlayer.x + itPlayer.w/2 - smartCircle.x;
+            const dy = itPlayer.y + itPlayer.h/2 - smartCircle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+          
+            if (distance < 200) {
+              // Move away from "it" player
+              target = {
+                x: smartCircle.x - dx,
+                y: smartCircle.y - dy
+              };
+            } else {
+              // Move randomly when safe
+              if (smartCircle.targetCooldown <= 0) {
+                target = {
+                  x: Math.random() * canvas.width,
+                  y: Math.random() * canvas.height
+                };
+                smartCircle.targetCooldown = 120; // Change direction every 2 seconds
+              }
+            }
+          }
+        }
+      }
+    
+      if (target) {
+        const dx = target.x - smartCircle.x;
+        const dy = target.y - smartCircle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+      
+        if (distance > 0) {
+          smartCircle.vx = (dx / distance) * finalSpeed;
+          smartCircle.vy = (dy / distance) * finalSpeed;
+        }
+      }
+    
+      smartCircle.x += smartCircle.vx;
+      smartCircle.y += smartCircle.vy;
+    
+      // Keep smart circle within bounds
+      smartCircle.x = Math.max(smartCircle.radius, Math.min(canvas.width - smartCircle.radius, smartCircle.x));
+      smartCircle.y = Math.max(smartCircle.radius, Math.min(canvas.height - smartCircle.radius, smartCircle.y));
+    
+      // Handle teleporter collision for smart circle
+      if (teleporters && teleporters.length >= 2 && teleporters[0].active && teleporters[1].active) {
+        for (let i = 0; i < teleporters.length; i++) {
+          const tp = teleporters[i];
+          if (tp && typeof tp.x !== 'undefined' && typeof tp.y !== 'undefined') {
+            const dx = smartCircle.x - tp.x;
+            const dy = smartCircle.y - tp.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+          
+            if (dist < tp.radius + smartCircle.radius) {
+              const targetTp = teleporters[1 - i];
+              if (targetTp && typeof targetTp.x !== 'undefined' && typeof targetTp.y !== 'undefined') {
+                smartCircle.x = targetTp.x;
+                smartCircle.y = targetTp.y;
+              
+                smartCircle.vx = (Math.random() - 0.5) * 4;
+                smartCircle.vy = (Math.random() - 0.5) * 4;
+              
+                partyRef.child('teleporters/0/active').set(false);
+                partyRef.child('teleporters/1/active').set(false);
+                teleportCooldown = frameCount;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    function updatePlayer(p) {
+      if (!gameStarted || gamePaused) return;
+      if (currentPartyId && p.id !== userId) return; // only update local player in online mode
+    
+      // Apply time slow effect if active
+      const timeSlowMultiplier = isPlayerSlowed(p) ? 0.5 : 1;
+    
+      // Apply speed boost effect if active
+      const speedBoostMultiplier = hasSpeedBoost(p) ? 1.5 : 1;
+    
+      // Combined speed multiplier
+      const speedMultiplier = timeSlowMultiplier * speedBoostMultiplier;
+    
+      // Handle human player movement
+      if (keys[p.controls.left]) p.vx = -4 * speedMultiplier;
+      else if (keys[p.controls.right]) p.vx = 4 * speedMultiplier;
+      else p.vx = 0;
+      // Handle jumping and double jumping
+      const currentTime = Date.now();
+      const jumpKey = p.controls.up;
+    
+      // Reset jumps when grounded
+      if (isGrounded(p)) {
+        p.jumps = 0;
+        p.canDoubleJump = true;
+      }
+    
+      // Check for jump input
+      if (keyState[jumpKey] && keyState[jumpKey].justPressed) {
+        // First jump (on ground)
+        if (p.jumps === 0 && isGrounded(p)) {
+          p.vy = -10;
+          p.jumps = 1;
+          p.lastJumpTime = currentTime;
+          keyState[jumpKey].justPressed = false; // Consume the key press
+        }
+        // Double jump (in air, within 700ms of first jump)
+        else if (p.jumps === 1 && p.canDoubleJump && (currentTime - p.lastJumpTime) <= 700) {
+          p.vy = -10;
+          p.jumps = 2;
+          p.canDoubleJump = false;
+          keyState[jumpKey].justPressed = false; // Consume the key press
+        }
+      }
+      p.vy += gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+      // Ground collision
+      if (p.y + p.h > canvas.height) {
+        p.y = canvas.height - p.h;
+        p.vy = 0;
+      }
+      // Platform collision
+      currentPlatforms.forEach(pl => {
+        if (p.vy >= 0 &&
+            p.x < pl.x + pl.w &&
+            p.x + p.w > pl.x &&
+            p.y + p.h >= pl.y &&
+            p.y + p.h <= pl.y + pl.h + 5) {
+          p.y = pl.y - p.h;
+          p.vy = 0;
+        }
+      
+        if (p.vy < 0 &&
+            p.x < pl.x + pl.w &&
+            p.x + p.w > pl.x &&
+            p.y <= pl.y + pl.h &&
+            p.y + p.h >= pl.y) {
+          p.y = pl.y + pl.h;
+          p.vy = 0;
+        }
+      
+        if (p.x + p.w > pl.x && p.x < pl.x + pl.w &&
+            p.y + p.h > pl.y && p.y < pl.y + pl.h) {
+          if (p.vx > 0) {
+            p.x = pl.x - p.w;
+          } else if (p.vx < 0) {
+            p.x = pl.x + pl.w;
+          }
+        }
+      });
+      // Bounce pad
+      if (p.x < bouncePad.x + bouncePad.w &&
+          p.x + p.w > bouncePad.x &&
+          p.y + p.h >= bouncePad.y &&
+          p.y + p.h <= bouncePad.y + bouncePad.h + 5) {
+        p.vy = -20;
+      }
+      // Teleporters
+      if (teleporters[0].active && teleporters[1].active) {
+        for (let i = 0; i < teleporters.length; i++) {
+          const tp = teleporters[i];
+          const dx = (p.x + p.w/2) - tp.x;
+          const dy = (p.y + p.h/2) - tp.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+        
+          if (dist < tp.radius + p.w/2) {
+            const target = teleporters[1 - i];
+            p.x = target.x - p.w/2;
+            p.y = target.y - p.h/2;
+          
+            p.vx = (Math.random() - 0.5) * 4;
+            p.vy = -2;
+          
+            partyRef.child('teleporters/0/active').set(false);
+            partyRef.child('teleporters/1/active').set(false);
+            teleportCooldown = frameCount;
+            break;
+          }
+        }
+      }
+      // Keep inside canvas
+      p.x = Math.max(0, Math.min(canvas.width - p.w, p.x));
+      p.y = Math.min(canvas.height - p.h, p.y);
+    }
+    function isGrounded(p) {
+      return (
+        p.y + p.h >= canvas.height ||
+        currentPlatforms.some(pl =>
+          p.x < pl.x + pl.w &&
+          p.x + p.w > pl.x &&
+          p.y + p.h >= pl.y &&
+          p.y + p.h <= pl.y + pl.h + 5
+        )
+      );
+    }
+    function detectPlayerTag(p1, p2) {
+      // Only check immunity for the player being tagged (p2), not the one who is "it" (p1)
+      if (hasImmunity(p2)) return false;
+    
+      return (
+        p1.x < p2.x + p2.w &&
+        p1.x + p1.w > p2.x &&
+        p1.y < p2.y + p2.h &&
+        p1.y + p1.h > p2.y
+      );
+    }
+    function detectCirclePlayerTag(circle, player) {
+      if (!circle || !player || typeof circle.x === 'undefined' || typeof player.x === 'undefined') {
+        return false;
+      }
+    
+      // Only check immunity for the player being tagged, not the circle that is "it"
+      if (hasImmunity(player)) return false;
+    
+      const dx = (player.x + player.w/2) - circle.x;
+      const dy = (player.y + player.h/2) - circle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < circle.radius + player.w/2;
+    }
+    function drawTagIndicator(entity) {
+      let orbX, orbY;
+      if (entity.radius) { // Smart circle
+        orbX = entity.x;
+        orbY = entity.y - 20;
+      } else { // Player
+        orbX = entity.x + entity.w / 2;
+        orbY = entity.y - 12;
+      }
+    
+      ctx.beginPath();
+      ctx.arc(orbX, orbY, 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'gold';
+      ctx.shadowColor = 'gold';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    function showGameOver() {
+      let winner = '';
+      const itPlayer = players.find(p => p.isIt);
+    
+      if (itPlayer) {
+        winner = `${itPlayer.color.toUpperCase()} player was IT!`;
+      } else if (smartCircle && smartCircle.isIt) {
+        winner = 'SMART CIRCLE was IT!';
+      }
+    
+      winnerText.textContent = winner;
+      gameOverDisplay.style.display = 'block';
+    }
+    function drawPlatforms() {
+      // Draw platforms
+      currentPlatforms.forEach(pl => {
+        ctx.fillStyle = '#8a5c36';
+        ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
+        ctx.fillStyle = '#5d4037';
+        ctx.fillRect(pl.x, pl.y, pl.w, 4);
+      });
+      // Draw bounce pad
+      ctx.fillStyle = '#00c853';
+      ctx.fillRect(bouncePad.x, bouncePad.y, bouncePad.w, bouncePad.h);
+      for (let i = 0; i < bouncePad.w; i += 8) {
+        ctx.fillStyle = '#009624';
+        ctx.fillRect(bouncePad.x + i, bouncePad.y, 4, bouncePad.h);
+      }
+    }
+    function drawPlayers() {
+      players.forEach(p => {
+        // Draw player shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(p.x + 3, p.y + 3, p.w, p.h);
+      
+        // Draw immunity effect if active
+        if (hasImmunity(p)) {
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(p.x - 2, p.y - 2, p.w + 4, p.h + 4);
+        }
+      
+        // Draw speed boost effect if active
+        if (hasSpeedBoost(p)) {
+          ctx.strokeStyle = '#2ecc71';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(p.x - 2, p.y - 2, p.w + 4, p.h + 4);
+        }
+      
+        // Draw player
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+      
+        // Draw player details
+        ctx.fillStyle = '#000';
+        ctx.fillRect(p.x + 8, p.y + 8, 6, 6);
+        ctx.fillRect(p.x + p.w - 14, p.y + 8, 6, 6);
+      
+        if (p.isIt) drawTagIndicator(p);
+      });
+    }
+    function drawSmartCircle() {
+      if (!smartCircle) return;
+    
+      // Draw shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.beginPath();
+      ctx.arc(smartCircle.x + 2, smartCircle.y + 2, smartCircle.radius, 0, Math.PI * 2);
+      ctx.fill();
+    
+      // Draw immunity effect if active
+      if (hasImmunity(smartCircle)) {
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(smartCircle.x, smartCircle.y, smartCircle.radius + 2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    
+      // Draw speed boost effect if active
+      if (hasSpeedBoost(smartCircle)) {
+        ctx.strokeStyle = '#2ecc71';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(smartCircle.x, smartCircle.y, smartCircle.radius + 2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    
+      // Draw circle
+      ctx.fillStyle = smartCircle.color;
+      ctx.beginPath();
+      ctx.arc(smartCircle.x, smartCircle.y, smartCircle.radius, 0, Math.PI * 2);
+      ctx.fill();
+    
+      // Draw inner details
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(smartCircle.x - 4, smartCircle.y - 4, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(smartCircle.x + 4, smartCircle.y - 4, 2, 0, Math.PI * 2);
+      ctx.fill();
+    
+      if (smartCircle.isIt) drawTagIndicator(smartCircle);
+    }
+    function drawTeleporters() {
+      teleporters.forEach(tp => {
+        if (tp.active) {
+          // Draw glow effect
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius + 3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+          ctx.shadowColor = '#ff0';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+        
+          // Draw teleporter
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffeb3b';
+          ctx.fill();
+        
+          // Draw inner circle
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius / 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffc107';
+          ctx.fill();
+        
+          ctx.shadowBlur = 0;
+        }
+      });
+    }
     // Pause functionality
     pauseBtn.addEventListener('click', togglePause);
-    
+  
     function togglePause() {
       if (!gameStarted || gameOver) return;
-      
+    
       gamePaused = !gamePaused;
-      
+    
       if (gamePaused) {
         pauseMenu.style.display = 'block';
         cancelAnimationFrame(animationId);
       } else {
         pauseMenu.style.display = 'none';
-        if (currentPartyId && !isPartyAdmin) {
-          nonAdminGameLoop();
-        } else {
-          gameLoop();
-        }
-      }
-    }
-    
-    function resumeGame() {
-      gamePaused = false;
-      pauseMenu.style.display = 'none';
-      if (currentPartyId && !isPartyAdmin) {
-        nonAdminGameLoop();
-      } else {
         gameLoop();
       }
     }
-    
+  
+    function resumeGame() {
+      gamePaused = false;
+      pauseMenu.style.display = 'none';
+      gameLoop();
+    }
+  
     function resetToSetup() {
       // Clean up Firebase listeners and data
       if (currentPartyId) {
         if (playersRef) {
           playersRef.child(userId).remove();
         }
-        if (isPartyAdmin && partyRef) {
-          partyRef.remove();
-        }
-        
-        // Remove listeners
-        if (playersRef) playersRef.off();
-        if (gameSettingsRef) gameSettingsRef.off();
-        if (partyRef) partyRef.off();
-        if (gameStateRef) gameStateRef.off();
       }
-      
+    
       currentPartyId = null;
       isPartyAdmin = false;
       onlinePlayers = {};
-      
+    
       gamePaused = false;
       gameStarted = false;
       gameOver = false;
-      
+    
       // Hide all screens except setup
       document.querySelectorAll('.screen').forEach(screen => {
         screen.style.display = 'none';
       });
       setupScreen.style.display = 'block';
-      
+    
       pauseBtn.style.display = 'none';
       ui.style.display = 'none';
       partyInfo.style.display = 'none';
       playerListElement.style.display = 'none';
       countdownDisplay.style.display = 'none';
-      
+    
       // Reset settings
       robotMode = false;
       robotToggleBtn.classList.remove('active');
       robotToggleBtn.textContent = 'OFF';
       robotToggleBtn.disabled = false;
       robotToggleBtn.style.opacity = '1';
-      
+    
       bluffsEnabled = true;
       bluffsToggleBtn.classList.add('active');
       bluffsToggleBtn.textContent = 'ON';
-      
+    
       selectedBackground = 1;
       document.querySelectorAll('.background-option').forEach((opt, index) => {
         if (index === 0) {
@@ -1590,221 +2175,102 @@
           opt.classList.remove('selected');
         }
       });
-      
+    
       timeInput.value = '60';
-      
+    
       ui.textContent = 'Time: 0';
       if (animationId) {
         cancelAnimationFrame(animationId);
       }
     }
-
     function gameLoop() {
       if (gameOver) {
         showGameOver();
         return;
       }
-      
+    
       if (gamePaused) {
         return;
       }
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frameCount++;
-
       drawPlatforms();
-
       // Respawn teleporters
-      if (!teleporters[0].active && frameCount - teleportCooldown > 300) {
+      if (isPartyAdmin && !teleporters[0].active && frameCount - teleportCooldown > 300) {
         spawnTeleporters();
+        partyRef.child('teleporters').set(teleporters);
       }
-
       drawTeleporters();
-
       // Update and draw power-ups
       updatePowerUps();
       drawPowerUps();
-
-      // Update and draw players
-      players.forEach(p => {
-        updatePlayer(p);
-      });
-      drawPlayers();
-
-      // Update smart circle
-      updateSmartCircle();
-      drawSmartCircle();
-
-      // Tag logic between players
-      const itPlayer = players.find(p => p.isIt);
-      
-      if (itPlayer) {
-        const otherPlayers = players.filter(p => !p.isIt);
-
-        for (const otherPlayer of otherPlayers) {
-          if (detectPlayerTag(itPlayer, otherPlayer) && Date.now() - lastTagTime > 1000) {
-            itPlayer.isIt = false;
-            otherPlayer.isIt = true;
-            lastTagTime = Date.now();
+      // Update local player
+      const localPlayer = players.find(p => p.id === userId);
+      if (localPlayer) {
+        updatePlayer(localPlayer);
+        playerStatesRef.child(userId).set({
+          x: localPlayer.x,
+          y: localPlayer.y,
+          vx: localPlayer.vx,
+          vy: localPlayer.vy,
+          isIt: localPlayer.isIt
+        });
+      }
+      // Admin updates smart circle
+      if (isPartyAdmin && smartCircle) {
+        updateSmartCircle();
+        playerStatesRef.child('robot').set({
+          x: smartCircle.x,
+          y: smartCircle.y,
+          vx: smartCircle.vx,
+          vy: smartCircle.vy,
+          isIt: smartCircle.isIt
+        });
+      }
+      // Tag logic for local "it" player
+      if (localPlayer && localPlayer.isIt && Date.now() - lastTagTime > 1000) {
+        let tagged = null;
+        for (const other of players) {
+          if (other.id !== userId && detectPlayerTag(localPlayer, other)) {
+            tagged = other.id;
             break;
           }
         }
-      }
-
-      // Tag logic with smart circle
-      if (smartCircle) {
-        if (smartCircle.isIt) {
-          // Smart circle tags players
-          for (const player of players) {
-            if (player && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
-              smartCircle.isIt = false;
-              player.isIt = true;
-              lastTagTime = Date.now();
-              break;
-            }
-          }
-        } else {
-          // Players tag smart circle
-          for (const player of players) {
-            if (player && player.isIt && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
-              player.isIt = false;
-              smartCircle.isIt = true;
-              lastTagTime = Date.now();
-              break;
-            }
-          }
+        if (!tagged && smartCircle && detectCirclePlayerTag(localPlayer, smartCircle)) {
+          tagged = 'robot';
+        }
+        if (tagged) {
+          partyRef.child('tagEvent').set({tagged: tagged, time: Date.now()});
         }
       }
-
       // Timer
-      if (frameCount % 60 === 0 && timer > 0) {
-        timer--;
+      if (currentPartyId) {
+        const elapsed = Date.now() - serverStartTime;
+        timer = Math.max(0, initialTimer - Math.floor(elapsed / 1000));
         ui.textContent = `Time: ${timer}`;
-        
-        // Update timer in Firebase for online games
-        if (currentPartyId && isPartyAdmin) {
-          gameStateRef.update({ timer: timer });
+      } else {
+        if (frameCount % 60 === 0 && timer > 0) {
+          timer--;
+          ui.textContent = `Time: ${timer}`;
         }
       }
-
-      if (timer === 0 && !gameOver) {
+      if (timer <= 0 && !gameOver) {
         gameOver = true;
-        // Determine winner
-        let winner = '';
-        const itPlayer = players.find(p => p.isIt);
-        
-        if (itPlayer) {
-          winner = `${itPlayer.color.toUpperCase()} player was IT!`;
-        } else if (smartCircle && smartCircle.isIt) {
-          winner = 'SMART CIRCLE was IT!';
-        }
-        
-        // Update game state in Firebase
-        if (currentPartyId && isPartyAdmin) {
-          gameStateRef.update({ 
-            gameRunning: false,
-            winner: winner
-          });
-        }
-        
-        showGameOver();
       }
-
+      drawPlayers();
+      drawSmartCircle();
       animationId = requestAnimationFrame(gameLoop);
     }
-
     // Initialize the game
     window.addEventListener('load', function() {
       // Set initial UI state
       ui.style.display = 'none';
       pauseBtn.style.display = 'none';
       setupScreen.style.display = 'block';
+      readyBtn.style.display = 'none';
+      startGameBtn.disabled = true;
+      startGameBtn.style.opacity = '0.6';
     });
-
-    // Placeholder implementations for game functions
-    function updatePowerUps() {
-      // Implementation would go here
-    }
-
-    function drawPowerUps() {
-      // Implementation would go here
-    }
-
-    function detectPowerUpCollision(player, powerUp) {
-      // Implementation would go here
-      return false;
-    }
-
-    function applyPowerUp(entity, powerUp) {
-      // Implementation would go here
-    }
-
-    function updateActiveEffects() {
-      // Implementation would go here
-    }
-
-    function hasImmunity(entity) {
-      // Implementation would go here
-      return false;
-    }
-
-    function isPlayerSlowed(player) {
-      // Implementation would go here
-      return false;
-    }
-
-    function isSmartCircleSlowed() {
-      // Implementation would go here
-      return false;
-    }
-
-    function hasSpeedBoost(entity) {
-      // Implementation would go here
-      return false;
-    }
-
-    function updateSmartCircle() {
-      // Implementation would go here
-    }
-
-    function updatePlayer(p) {
-      // Implementation would go here
-    }
-
-    function isGrounded(p) {
-      // Implementation would go here
-      return false;
-    }
-
-    function detectPlayerTag(p1, p2) {
-      // Implementation would go here
-      return false;
-    }
-
-    function detectCirclePlayerTag(circle, player) {
-      // Implementation would go here
-      return false;
-    }
-
-    function drawTagIndicator(entity) {
-      // Implementation would go here
-    }
-
-    function drawPlatforms() {
-      // Implementation would go here
-    }
-
-    function drawPlayers() {
-      // Implementation would go here
-    }
-
-    function drawSmartCircle() {
-      // Implementation would go here
-    }
-
-    function drawTeleporters() {
-      // Implementation would go here
-    }
   </script>
 </body>
 </html>
