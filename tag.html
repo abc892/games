@@ -681,14 +681,16 @@
       partyRef.set({
         created: Date.now(),
         admin: userId,
-        status: 'waiting'
+        status: 'waiting',
+        lastActive: Date.now()
       });
       
       // Add current user as first player
       localPlayerId = userId;
+      const playerCount = Object.keys(onlinePlayers).length;
       playersRef.child(userId).set({
         id: userId,
-        name: 'Player ' + (Object.keys(onlinePlayers).length + 1),
+        name: 'Player ' + (playerCount + 1),
         joined: Date.now(),
         isAdmin: true,
         ready: false
@@ -711,12 +713,15 @@
       partyIdElement.textContent = currentPartyId;
       currentPartyIdElement.textContent = currentPartyId;
       
-      // Set up disconnect handler
-      playersRef.child(userId).onDisconnect().remove(() => {
-        if (isPartyAdmin) {
-          transferAdmin();
-        }
+      // Set up disconnect handler - FIXED: Don't remove immediately on disconnect
+      const userPlayerRef = playersRef.child(userId);
+      userPlayerRef.onDisconnect().update({
+        online: false,
+        lastSeen: Date.now()
       });
+      
+      // Set up party cleanup after 1 hour of inactivity
+      partyRef.onDisconnect().remove();
     }
 
     function showJoinParty() {
@@ -742,11 +747,12 @@
       playersRef = database.ref('parties/' + currentPartyId + '/players');
       gameSettingsRef = database.ref('parties/' + currentPartyId + '/settings');
       
-      // Check if party exists
+      // Check if party exists - FIXED: Properly handle the async flow
       partyRef.once('value').then(snapshot => {
         if (!snapshot.exists()) {
           joinError.textContent = 'Party not found. Please check the party ID.';
           joinError.style.display = 'block';
+          currentPartyId = null;
           return;
         }
         
@@ -754,17 +760,32 @@
         if (partyData.status === 'playing') {
           joinError.textContent = 'Game is already in progress. Please try another party.';
           joinError.style.display = 'block';
+          currentPartyId = null;
           return;
         }
+        
+        // Get current players count for naming
+        return playersRef.once('value');
+      }).then(playersSnapshot => {
+        if (!playersSnapshot) return; // Exit if previous check failed
+        
+        const playersData = playersSnapshot.val() || {};
+        const playerCount = Object.keys(playersData).length;
         
         // Add player to party
         localPlayerId = userId;
         playersRef.child(userId).set({
           id: userId,
-          name: 'Player ' + (Object.keys(onlinePlayers).length + 1),
+          name: 'Player ' + (playerCount + 1),
           joined: Date.now(),
           isAdmin: false,
-          ready: false
+          ready: false,
+          online: true
+        });
+        
+        // Update party last active
+        partyRef.update({
+          lastActive: Date.now()
         });
         
         // Set up listeners
@@ -776,11 +797,16 @@
         currentPartyIdElement.textContent = currentPartyId;
         
         // Set up disconnect handler
-        playersRef.child(userId).onDisconnect().remove();
+        const userPlayerRef = playersRef.child(userId);
+        userPlayerRef.onDisconnect().update({
+          online: false,
+          lastSeen: Date.now()
+        });
         
       }).catch(error => {
         joinError.textContent = 'Error joining party: ' + error.message;
         joinError.style.display = 'block';
+        currentPartyId = null;
       });
     }
 
@@ -792,12 +818,20 @@
         updateWaitingPlayers();
         
         // Update player count
-        playerCountElement.textContent = Object.keys(onlinePlayers).length;
+        const onlineCount = Object.keys(onlinePlayers).length;
+        playerCountElement.textContent = onlineCount;
         
-        // Show UI elements
-        if (Object.keys(onlinePlayers).length > 0) {
+        // Show/hide UI elements based on player count
+        if (onlineCount > 0) {
           partyInfo.style.display = 'block';
           playerListElement.style.display = 'block';
+        }
+        
+        // Update party last active
+        if (partyRef) {
+          partyRef.update({
+            lastActive: Date.now()
+          });
         }
       });
       
@@ -903,17 +937,23 @@
         playersRef.child(newAdmin.id).update({ isAdmin: true });
         partyRef.update({ admin: newAdmin.id });
       } else {
-        // No players left, delete party
-        partyRef.remove();
+        // No players left, delete party after delay
+        setTimeout(() => {
+          if (Object.keys(onlinePlayers).length === 0) {
+            partyRef.remove();
+          }
+        }, 5000);
       }
     }
 
     function leaveParty() {
       if (currentPartyId) {
+        // Remove player from party
         if (playersRef) {
           playersRef.child(userId).remove();
         }
         
+        // If admin and leaving, transfer admin
         if (isPartyAdmin) {
           transferAdmin();
         }
