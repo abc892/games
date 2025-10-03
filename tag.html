@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Arena Tag Showdown</title>
+  <title>Arena Tag Showdown - Fixed</title>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -549,6 +549,7 @@
     const waitingPlayers = document.getElementById('waiting-players');
     const readyBtn = document.getElementById('ready-btn');
     const startGameBtn = document.getElementById('start-game-btn');
+    
     // Input handling
     const keys = {};
     const keyState = {};
@@ -573,6 +574,7 @@
         keyState[e.key].justPressed = false;
       }
     });
+    
     // Online multiplayer variables
     let userId = generateUserId();
     let currentPartyId = null;
@@ -581,13 +583,12 @@
     let playersRef = null;
     let gameSettingsRef = null;
     let playerStatesRef = null;
-    let inputsRef = null;
     let onlinePlayers = {};
     let localPlayerId = null;
     let currentAdmin = null;
     let serverStartTime = 0;
     let initialTimer = 0;
-    let inputs = {};
+    
     // Game state variables
     let players = [];
     let smartCircle = null;
@@ -628,6 +629,7 @@
     let frameCount = 0;
     let gameOver = false;
     let animationId = null;
+    
     // Power-up system
     let powerUps = [];
     let immunitySpawnTimer = 0;
@@ -638,6 +640,7 @@
       timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
       speedBoost: []
     };
+    
     // Generate unique user ID
     function generateUserId() {
       let id = localStorage.getItem('tagGameUserId');
@@ -647,25 +650,30 @@
       }
       return id;
     }
+    
     // Online Multiplayer Functions
     function showOnlineSetup() {
       setupScreen.style.display = 'none';
       onlineSetup.style.display = 'block';
     }
+    
     function goBackToMain() {
       onlineSetup.style.display = 'none';
       setupScreen.style.display = 'block';
       joinError.style.display = 'none';
     }
+    
     function goBackToOnlineSetup() {
       joinPartyScreen.style.display = 'none';
       onlineSetup.style.display = 'block';
       joinError.style.display = 'none';
       partyIdInput.value = '';
     }
+    
     function generatePartyId() {
       return Math.floor(1000 + Math.random() * 9000).toString();
     }
+    
     function createParty() {
       currentPartyId = generatePartyId();
       isPartyAdmin = true;
@@ -675,7 +683,6 @@
       playersRef = database.ref('parties/' + currentPartyId + '/players');
       gameSettingsRef = database.ref('parties/' + currentPartyId + '/settings');
       playerStatesRef = database.ref('parties/' + currentPartyId + '/playerStates');
-      inputsRef = database.ref('parties/' + currentPartyId + '/inputs');
     
       // Initialize party data
       partyRef.set({
@@ -714,12 +721,14 @@
       // Set up disconnect handler
       playersRef.child(userId).onDisconnect().remove();
     }
+    
     function showJoinParty() {
       onlineSetup.style.display = 'none';
       joinPartyScreen.style.display = 'block';
       partyIdInput.focus();
       joinError.style.display = 'none';
     }
+    
     function joinParty() {
       const partyId = partyIdInput.value.trim();
       if (partyId.length !== 4 || !/^\d+$/.test(partyId)) {
@@ -736,7 +745,6 @@
       playersRef = database.ref('parties/' + currentPartyId + '/players');
       gameSettingsRef = database.ref('parties/' + currentPartyId + '/settings');
       playerStatesRef = database.ref('parties/' + currentPartyId + '/playerStates');
-      inputsRef = database.ref('parties/' + currentPartyId + '/inputs');
     
       // Check if party exists
       partyRef.once('value').then(snapshot => {
@@ -784,6 +792,7 @@
         joinError.style.display = 'block';
       });
     }
+    
     function setupPartyListeners() {
       // Listen for player changes
       playersRef.on('value', snapshot => {
@@ -821,10 +830,14 @@
         const settings = snapshot.val();
         if (settings) {
           // Update local settings to match party settings
-          timeInput.value = settings.timeLimit;
           selectedBackground = settings.background;
           bluffsEnabled = settings.bluffsEnabled;
           robotMode = settings.robotMode;
+        
+          // Only update time input for non-admin players
+          if (!isPartyAdmin) {
+            timeInput.value = settings.timeLimit;
+          }
         
           // Update UI to reflect settings
           updateSettingsUI();
@@ -894,12 +907,8 @@
       partyRef.child('teleporters').on('value', snapshot => {
         teleporters = snapshot.val() || [];
       });
-    
-      // Listen for inputs
-      inputsRef.on('value', snapshot => {
-        inputs = snapshot.val() || {};
-      });
     }
+    
     function updateWaitingPlayers() {
       if (!isPartyAdmin) return;
     
@@ -907,10 +916,12 @@
       Object.values(onlinePlayers).forEach(player => {
         html += `• ${player.name}`;
         if (player.isAdmin) html += ' 👑';
+        if (player.ready) html += ' ✅';
         html += '<br>';
       });
       waitingPlayers.innerHTML = html;
     }
+    
     function updateSettingsUI() {
       // Update background selection
       document.querySelectorAll('.background-option').forEach((opt, index) => {
@@ -971,6 +982,7 @@
         startGameBtn.style.opacity = '1';
       }
     }
+    
     function updatePlayerList() {
       let html = '<strong>Players:</strong><br>';
       Object.values(onlinePlayers).forEach(player => {
@@ -983,6 +995,7 @@
       });
       playerListElement.innerHTML = html;
     }
+    
     function toggleReady() {
       const myPlayer = onlinePlayers[userId];
       if (myPlayer) {
@@ -990,6 +1003,7 @@
         playersRef.child(userId).update({ready: newReady});
       }
     }
+    
     function checkAdminPresence() {
       if (currentAdmin && !onlinePlayers[currentAdmin]) {
         const remainingPlayers = Object.values(onlinePlayers).sort((a, b) => a.joined - b.joined);
@@ -1004,6 +1018,7 @@
         }
       }
     }
+    
     function transferAdmin() {
       if (!isPartyAdmin) return;
     
@@ -1022,6 +1037,7 @@
         partyRef.remove();
       }
     }
+    
     function leaveParty() {
       if (currentPartyId) {
         if (playersRef) {
@@ -1031,18 +1047,21 @@
     
       resetToSetup();
     }
+    
     function cancelPartyCreation() {
       if (currentPartyId && isPartyAdmin) {
         partyRef.remove();
       }
       resetToSetup();
     }
+    
     function startGameFromParty() {
       if (currentPartyId && isPartyAdmin) {
         partyIdDisplay.style.display = 'none';
         timeSetup.style.display = 'block';
       }
     }
+    
     // Local Game Functions
     function selectPlayers(number) {
       numPlayers = number;
@@ -1062,6 +1081,7 @@
       timeSetup.style.display = 'block';
       updateSettingsUI();
     }
+    
     function toggleRobotMode() {
       if (currentPartyId && !isPartyAdmin) return;
     
@@ -1073,6 +1093,7 @@
         gameSettingsRef.update({ robotMode: robotMode });
       }
     }
+    
     function toggleBluffs() {
       if (currentPartyId && !isPartyAdmin) return;
     
@@ -1084,6 +1105,7 @@
         gameSettingsRef.update({ bluffsEnabled: bluffsEnabled });
       }
     }
+    
     function selectBackground(bgNum) {
       if (currentPartyId && !isPartyAdmin) return;
     
@@ -1100,6 +1122,7 @@
         gameSettingsRef.update({ background: bgNum });
       }
     }
+    
     function goBack() {
       if (currentPartyId) {
         if (isPartyAdmin) {
@@ -1120,6 +1143,7 @@
         robotToggleBtn.style.opacity = '1';
       }
     }
+    
     function startGame() {
       if (currentPartyId && isPartyAdmin) {
         const settings = {
@@ -1140,6 +1164,7 @@
         startLocalGame();
       }
     }
+    
     function startLocalGame() {
       const timeLimit = parseInt(timeInput.value);
       if (isNaN(timeLimit) || timeLimit < 10) {
@@ -1173,10 +1198,10 @@
     
       const colors = ['red', 'green', 'blue', 'yellow'];
       const startPositions = [
-        { x: 100, y: 100 },
-        { x: 1000, y: 100 },
         { x: 100, y: 500 },
-        { x: 1000, y: 500 }
+        { x: 1000, y: 500 },
+        { x: 100, y: 200 },
+        { x: 1000, y: 200 }
       ];
     
       const controlSchemes = [
@@ -1227,6 +1252,7 @@
       // Start countdown
       startCountdown();
     }
+    
     function startOnlineGame() {
       // Set canvas background
       switch(selectedBackground) {
@@ -1234,9 +1260,6 @@
         case 2: canvas.style.background = 'linear-gradient(135deg, #667eea, #764ba2)'; break;
         case 3: canvas.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)'; break;
       }
-    
-      // Disable power-ups for online mode to avoid sync issues
-      bluffsEnabled = false;
     
       // Initialize game state
       timeSetup.style.display = 'none';
@@ -1252,8 +1275,8 @@
       const sortedPlayersInfo = Object.values(onlinePlayers).sort((a, b) => a.joined - b.joined);
       const colors = ['red', 'green', 'blue', 'yellow', 'purple', 'orange'];
       const startPositions = [
-        { x: 100, y: 100 }, { x: 1000, y: 100 },
         { x: 100, y: 500 }, { x: 1000, y: 500 },
+        { x: 100, y: 200 }, { x: 1000, y: 200 },
         { x: 300, y: 300 }, { x: 800, y: 300 }
       ];
     
@@ -1330,13 +1353,12 @@
         }
         spawnTeleporters();
         partyRef.child('teleporters').set(teleporters);
-      } else {
-        currentPlatforms = basePlatforms;
       }
     
       // Start countdown
       startCountdown();
     }
+    
     function resetGameState() {
       players = [];
       smartCircle = null;
@@ -1354,6 +1376,7 @@
         speedBoost: []
       };
     }
+    
     function assignRandomIt() {
       const totalEntities = players.length + (robotMode ? 1 : 0);
       const randomIndex = Math.floor(Math.random() * totalEntities);
@@ -1364,6 +1387,7 @@
         smartCircle.isIt = true;
       }
     }
+    
     function startCountdown() {
       let countdown = 3;
       countdownDisplay.style.display = 'block';
@@ -1384,6 +1408,7 @@
         }
       }, 1000);
     }
+    
     function randomizePlatforms() {
       currentPlatforms = basePlatforms.map(platform => {
         const minWidth = platform.w - 20;
@@ -1398,6 +1423,7 @@
         };
       });
     }
+    
     function spawnTeleporters() {
       const accessiblePositions = [
         { x: 150, y: 300 },
@@ -1422,6 +1448,7 @@
         { x: pos2.x, y: pos2.y, radius: 12, active: true }
       ];
     }
+    
     // Power-up functions
     function spawnPowerUp(type) {
       const platform = currentPlatforms[Math.floor(Math.random() * currentPlatforms.length)];
@@ -1462,6 +1489,7 @@
         });
       }
     }
+    
     function updatePowerUps() {
       if (currentPartyId) return; // disable for online
       if (!gameStarted || gamePaused || !bluffsEnabled) return;
@@ -1519,6 +1547,7 @@
       // Update active effects
       updateActiveEffects();
     }
+    
     function detectPowerUpCollision(player, powerUp) {
       if (powerUp.type === 'immunity' || powerUp.type === 'speedBoost') {
         return (
@@ -1535,6 +1564,7 @@
       }
       return false;
     }
+    
     function detectSmartCirclePowerUpCollision(smartCircle, powerUp) {
       if (powerUp.type === 'immunity' || powerUp.type === 'speedBoost') {
         const dx = smartCircle.x - Math.max(powerUp.x, Math.min(smartCircle.x, powerUp.x + powerUp.width));
@@ -1548,6 +1578,7 @@
       }
       return false;
     }
+    
     function applyPowerUp(entity, powerUp) {
       if (powerUp.type === 'immunity') {
         activeEffects.immunity.push({
@@ -1577,6 +1608,7 @@
         });
       }
     }
+    
     function updateActiveEffects() {
       // Update immunity effects
       activeEffects.immunity = activeEffects.immunity.filter(effect => {
@@ -1594,20 +1626,25 @@
         return frameCount < effect.endTime;
       });
     }
+    
     function hasImmunity(entity) {
       return activeEffects.immunity.some(effect => effect.entity === entity);
     }
+    
     function isPlayerSlowed(player) {
       if (!activeEffects.timeSlow.active) return false;
       return activeEffects.timeSlow.slowedPlayers.includes(player);
     }
+    
     function isSmartCircleSlowed() {
       if (!activeEffects.timeSlow.active || !smartCircle) return false;
       return activeEffects.timeSlow.slowedPlayers.includes(smartCircle);
     }
+    
     function hasSpeedBoost(entity) {
       return activeEffects.speedBoost.some(effect => effect.entity === entity);
     }
+    
     function drawPowerUps() {
       if (!bluffsEnabled) return;
     
@@ -1674,6 +1711,7 @@
         }
       });
     }
+    
     function updateSmartCircle() {
       if (!smartCircle || !gameStarted || gamePaused) return;
       if (!isPartyAdmin) return; // only admin updates robot
@@ -1816,6 +1854,7 @@
         }
       }
     }
+    
     function updatePlayer(p) {
       if (!gameStarted || gamePaused) return;
       if (currentPartyId && p.id !== userId) return; // only update local player in online mode
@@ -1833,6 +1872,7 @@
       if (keys[p.controls.left]) p.vx = -4 * speedMultiplier;
       else if (keys[p.controls.right]) p.vx = 4 * speedMultiplier;
       else p.vx = 0;
+      
       // Handle jumping and double jumping
       const currentTime = Date.now();
       const jumpKey = p.controls.up;
@@ -1860,14 +1900,17 @@
           keyState[jumpKey].justPressed = false; // Consume the key press
         }
       }
+      
       p.vy += gravity;
       p.x += p.vx;
       p.y += p.vy;
+      
       // Ground collision
       if (p.y + p.h > canvas.height) {
         p.y = canvas.height - p.h;
         p.vy = 0;
       }
+      
       // Platform collision
       currentPlatforms.forEach(pl => {
         if (p.vy >= 0 &&
@@ -1897,6 +1940,7 @@
           }
         }
       });
+      
       // Bounce pad
       if (p.x < bouncePad.x + bouncePad.w &&
           p.x + p.w > bouncePad.x &&
@@ -1904,6 +1948,7 @@
           p.y + p.h <= bouncePad.y + bouncePad.h + 5) {
         p.vy = -20;
       }
+      
       // Teleporters
       if (teleporters[0].active && teleporters[1].active) {
         for (let i = 0; i < teleporters.length; i++) {
@@ -1927,10 +1972,12 @@
           }
         }
       }
+      
       // Keep inside canvas
       p.x = Math.max(0, Math.min(canvas.width - p.w, p.x));
       p.y = Math.min(canvas.height - p.h, p.y);
     }
+    
     function isGrounded(p) {
       return (
         p.y + p.h >= canvas.height ||
@@ -1942,6 +1989,7 @@
         )
       );
     }
+    
     function detectPlayerTag(p1, p2) {
       // Only check immunity for the player being tagged (p2), not the one who is "it" (p1)
       if (hasImmunity(p2)) return false;
@@ -1953,6 +2001,7 @@
         p1.y + p1.h > p2.y
       );
     }
+    
     function detectCirclePlayerTag(circle, player) {
       if (!circle || !player || typeof circle.x === 'undefined' || typeof player.x === 'undefined') {
         return false;
@@ -1966,6 +2015,7 @@
       const distance = Math.sqrt(dx * dx + dy * dy);
       return distance < circle.radius + player.w/2;
     }
+    
     function drawTagIndicator(entity) {
       let orbX, orbY;
       if (entity.radius) { // Smart circle
@@ -1984,6 +2034,7 @@
       ctx.fill();
       ctx.shadowBlur = 0;
     }
+    
     function showGameOver() {
       let winner = '';
       const itPlayer = players.find(p => p.isIt);
@@ -1997,6 +2048,7 @@
       winnerText.textContent = winner;
       gameOverDisplay.style.display = 'block';
     }
+    
     function drawPlatforms() {
       // Draw platforms
       currentPlatforms.forEach(pl => {
@@ -2005,6 +2057,7 @@
         ctx.fillStyle = '#5d4037';
         ctx.fillRect(pl.x, pl.y, pl.w, 4);
       });
+      
       // Draw bounce pad
       ctx.fillStyle = '#00c853';
       ctx.fillRect(bouncePad.x, bouncePad.y, bouncePad.w, bouncePad.h);
@@ -2013,6 +2066,7 @@
         ctx.fillRect(bouncePad.x + i, bouncePad.y, 4, bouncePad.h);
       }
     }
+    
     function drawPlayers() {
       players.forEach(p => {
         // Draw player shadow
@@ -2045,6 +2099,7 @@
         if (p.isIt) drawTagIndicator(p);
       });
     }
+    
     function drawSmartCircle() {
       if (!smartCircle) return;
     
@@ -2089,6 +2144,7 @@
     
       if (smartCircle.isIt) drawTagIndicator(smartCircle);
     }
+    
     function drawTeleporters() {
       teleporters.forEach(tp => {
         if (tp.active) {
@@ -2116,6 +2172,7 @@
         }
       });
     }
+    
     // Pause functionality
     pauseBtn.addEventListener('click', togglePause);
   
@@ -2194,6 +2251,7 @@
         cancelAnimationFrame(animationId);
       }
     }
+    
     function gameLoop() {
       if (gameOver) {
         showGameOver();
@@ -2203,115 +2261,83 @@
       if (gamePaused) {
         return;
       }
+      
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frameCount++;
+      
       drawPlatforms();
+      
       // Respawn teleporters
       if (isPartyAdmin && !teleporters[0].active && frameCount - teleportCooldown > 300) {
         spawnTeleporters();
         partyRef.child('teleporters').set(teleporters);
       }
+      
       drawTeleporters();
+      
       // Update and draw power-ups
       updatePowerUps();
       drawPowerUps();
-      if (currentPartyId) {
-        // all send inputs
-        inputsRef.child(userId).set({
-          keys: {...keys},
-          keyState: {...keyState}
-        });
-        if (isPartyAdmin) {
-          // simulate
-          players.forEach(p => {
-            const playerInputs = inputs[p.id] || {};
-            const tempKeys = {...keys};
-            const tempKeyState = {...keyState};
-            keys = playerInputs.keys || {};
-            keyState = playerInputs.keyState || {};
-            updatePlayer(p);
-            keys = tempKeys;
-            keyState = tempKeyState;
-            playerStatesRef.child(p.id).set({
-              x: p.x,
-              y: p.y,
-              vx: p.vx,
-              vy: p.vy,
-              isIt: p.isIt
-            });
+      
+      // Update local player
+      const localPlayer = players.find(p => p.id === userId);
+      if (localPlayer) {
+        updatePlayer(localPlayer);
+        if (playerStatesRef) {
+          playerStatesRef.child(userId).set({
+            x: localPlayer.x,
+            y: localPlayer.y,
+            vx: localPlayer.vx,
+            vy: localPlayer.vy,
+            isIt: localPlayer.isIt
           });
-          if (smartCircle) {
-            updateSmartCircle();
-            playerStatesRef.child('robot').set({
-              x: smartCircle.x,
-              y: smartCircle.y,
-              vx: smartCircle.vx,
-              vy: smartCircle.vy,
-              isIt: smartCircle.isIt
-            });
-          }
-          // tag logic
-          const itEntity = players.find(p => p.isIt) || (smartCircle && smartCircle.isIt ? smartCircle : null);
-          if (itEntity && Date.now() - lastTagTime > 1000) {
-            let tagged = null;
-            for (const other of players) {
-              if (other.isIt) continue;
-              if (detectPlayerTag(itEntity, other)) {
-                tagged = other.id;
-                break;
-              }
-            }
-            if (!tagged && smartCircle && !smartCircle.isIt && detectCirclePlayerTag(itEntity, smartCircle)) {
-              tagged = 'robot';
-            }
-            if (tagged) {
-              partyRef.child('tagEvent').set({tagged: tagged, time: Date.now()});
-            }
+        }
+      }
+      
+      // Admin updates smart circle
+      if (isPartyAdmin && smartCircle) {
+        updateSmartCircle();
+        if (playerStatesRef) {
+          playerStatesRef.child('robot').set({
+            x: smartCircle.x,
+            y: smartCircle.y,
+            vx: smartCircle.vx,
+            vy: smartCircle.vy,
+            isIt: smartCircle.isIt
+          });
+        }
+      }
+      
+      // Tag logic for local "it" player
+      if (localPlayer && localPlayer.isIt && Date.now() - lastTagTime > 1000) {
+        let tagged = null;
+        for (const other of players) {
+          if (other.id !== userId && detectPlayerTag(localPlayer, other)) {
+            tagged = other.id;
+            break;
           }
         }
-      } else {
-        // local
-        players.forEach(p => {
-          updatePlayer(p);
-        });
-        if (smartCircle) updateSmartCircle();
-        // Local tag logic
-        const itPlayer = players.find(p => p.isIt);
-        if (itPlayer) {
-          const otherPlayers = players.filter(p => !p.isIt);
-          for (const otherPlayer of otherPlayers) {
-            if (detectPlayerTag(itPlayer, otherPlayer) && Date.now() - lastTagTime > 1000) {
-              itPlayer.isIt = false;
-              otherPlayer.isIt = true;
-              lastTagTime = Date.now();
-              break;
-            }
-          }
+        if (!tagged && smartCircle && detectCirclePlayerTag(localPlayer, smartCircle)) {
+          tagged = 'robot';
         }
-        if (smartCircle) {
-          if (smartCircle.isIt) {
-            // Smart circle tags players
-            for (const player of players) {
-              if (player && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
-                smartCircle.isIt = false;
-                player.isIt = true;
-                lastTagTime = Date.now();
-                break;
-              }
-            }
+        if (tagged) {
+          if (partyRef) {
+            partyRef.child('tagEvent').set({tagged: tagged, time: Date.now()});
           } else {
-            // Players tag smart circle
-            for (const player of players) {
-              if (player && player.isIt && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
-                player.isIt = false;
-                smartCircle.isIt = true;
-                lastTagTime = Date.now();
-                break;
-              }
+            // Handle tag locally
+            lastTagTime = Date.now();
+            players.forEach(p => p.isIt = false);
+            if (smartCircle) smartCircle.isIt = false;
+            if (tagged === 'robot' && smartCircle) {
+              smartCircle.isIt = true;
+            } else {
+              const taggedPlayer = players.find(p => p.id === tagged);
+              if (taggedPlayer) taggedPlayer.isIt = true;
             }
           }
         }
       }
+      
       // Timer
       if (currentPartyId) {
         const elapsed = Date.now() - serverStartTime;
@@ -2323,13 +2349,17 @@
           ui.textContent = `Time: ${timer}`;
         }
       }
+      
       if (timer <= 0 && !gameOver) {
         gameOver = true;
       }
+      
       drawPlayers();
       drawSmartCircle();
+      
       animationId = requestAnimationFrame(gameLoop);
     }
+    
     // Initialize the game
     window.addEventListener('load', function() {
       // Set initial UI state
