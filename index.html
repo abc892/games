@@ -130,13 +130,13 @@
     <div class="patch-notes-content">
       <!-- YOU CAN EDIT THE PATCH NOTES BELOW THIS LINE -->
       <strong>Latest Updates:</strong><br>
+      • Added Interactive Calculator (Casio fx-991ES Plus)<br>
       • Added Background selection in tag game<br>
       • Added changes to Tag game<br>
       • Added Speed Power-up<br>
       <br>
       <strong>New Feature:</strong><br>
-      • Real-time online user counter (Instant Updates!)<br>
-      • Online Party System for Tag Game
+      • Real-time online user counter (Instant Updates!)
       <!-- YOU CAN EDIT THE PATCH NOTES ABOVE THIS LINE -->
     </div>
   </div>
@@ -147,6 +147,15 @@
   </header>
 
   <div class="game-links">
+    
+    <!-- Calculator -->
+    <div class="game-container">
+      <h2>🧮 Scientific Calculator</h2>
+      <p>Interactive Casio fx-991ES Plus replica</p>
+      <a href="calculator.html" class="play-btn">Use Calculator</a>
+      <br>
+      <button class="download-btn" onclick="downloadGame('calculator.html', 'Scientific Calculator')">Download Calculator</button>
+    </div>
     
     <!-- Chess Game -->
     <div class="game-container">
@@ -160,7 +169,7 @@
     <!-- Tag Game -->
     <div class="game-container">
       <h2>🏃 Tag Game</h2>
-      <p>Fun chasing game with friends - Now with Online Parties!</p>
+      <p>Fun chasing game with friends</p>
       <a href="tag.html" class="play-btn">Play Tag Game</a>
       <br>
       <button class="download-btn" onclick="downloadGame('tag.html', 'Tag Game')">Download Tag Game</button>
@@ -230,9 +239,7 @@
         id: userId,
         connected: true,
         lastSeen: Date.now(),
-        userAgent: navigator.userAgent.substring(0, 50),
-        // Store username for party system
-        username: localStorage.getItem('gameHubUsername') || 'Player' + Math.floor(Math.random() * 1000)
+        userAgent: navigator.userAgent.substring(0, 50)
       });
       
       // Set up onDisconnect to remove user immediately when they leave
