@@ -135,7 +135,8 @@
       • Added Speed Power-up<br>
       <br>
       <strong>New Feature:</strong><br>
-      • Real-time online user counter (Instant Updates!)
+      • Real-time online user counter (Instant Updates!)<br>
+      • Online Party System for Tag Game
       <!-- YOU CAN EDIT THE PATCH NOTES ABOVE THIS LINE -->
     </div>
   </div>
@@ -159,7 +160,7 @@
     <!-- Tag Game -->
     <div class="game-container">
       <h2>🏃 Tag Game</h2>
-      <p>Fun chasing game with friends</p>
+      <p>Fun chasing game with friends - Now with Online Parties!</p>
       <a href="tag.html" class="play-btn">Play Tag Game</a>
       <br>
       <button class="download-btn" onclick="downloadGame('tag.html', 'Tag Game')">Download Tag Game</button>
@@ -229,7 +230,9 @@
         id: userId,
         connected: true,
         lastSeen: Date.now(),
-        userAgent: navigator.userAgent.substring(0, 50)
+        userAgent: navigator.userAgent.substring(0, 50),
+        // Store username for party system
+        username: localStorage.getItem('gameHubUsername') || 'Player' + Math.floor(Math.random() * 1000)
       });
       
       // Set up onDisconnect to remove user immediately when they leave
