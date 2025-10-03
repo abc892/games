@@ -8,25 +8,38 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
-      overflow: hidden;
+      padding: 0;
+    }
+    
+    body {
       font-family: 'Arial', sans-serif;
       background: #1a1a2e;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      overflow: hidden;
+      color: white;
     }
+    
     .game-container {
       position: relative;
+      width: 1200px;
+      height: 700px;
     }
+    
     canvas {
       display: block;
       border: 4px solid #fff;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       border-radius: 8px;
+      background: linear-gradient(135deg, #ff6ec4, #7873f5);
     }
+    
+    /* UI Elements */
     #ui {
       position: absolute;
       top: 10px;
@@ -38,6 +51,7 @@
       padding: 8px 15px;
       border-radius: 20px;
     }
+    
     #home-btn {
       position: absolute;
       top: 10px;
@@ -52,9 +66,11 @@
       z-index: 15;
       display: block;
     }
+    
     #home-btn:hover {
       background: #005fa3;
     }
+    
     #pause-btn {
       position: absolute;
       top: 10px;
@@ -68,101 +84,56 @@
       z-index: 10;
       font-size: 18px;
     }
+    
     #pause-btn:hover {
       background: rgba(0, 0, 0, 0.7);
     }
-    #gameOver {
+    
+    /* Screens */
+    .screen {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 36px;
-      color: #fff;
-      background-color: rgba(0, 0, 0, 0.8);
+      background-color: rgba(0, 0, 0, 0.85);
       padding: 30px;
       border-radius: 15px;
       text-align: center;
-      display: none;
-      z-index: 20;
-      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
-      border: 2px solid gold;
+      z-index: 30;
+      color: white;
+      width: 500px;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+      border: 2px solid #444;
     }
+    
     #setup-screen {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.8);
-      padding: 30px;
-      border-radius: 15px;
-      text-align: center;
-      z-index: 30;
-      color: white;
-      width: 400px;
+      width: 450px;
     }
+    
     #online-setup {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.8);
-      padding: 30px;
-      border-radius: 15px;
-      text-align: center;
-      z-index: 30;
-      color: white;
-      width: 400px;
       display: none;
     }
+    
     #party-id-display {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.9);
-      padding: 40px;
-      border-radius: 15px;
-      text-align: center;
-      z-index: 35;
-      color: white;
-      width: 500px;
       display: none;
+      width: 550px;
     }
-    #party-id {
-      font-size: 48px;
-      font-weight: bold;
-      color: #4CAF50;
-      margin: 20px 0;
-      text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-    }
+    
     #join-party {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.8);
-      padding: 30px;
-      border-radius: 15px;
-      text-align: center;
-      z-index: 30;
-      color: white;
-      width: 400px;
       display: none;
     }
+    
     #time-setup {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.8);
-      padding: 30px;
-      border-radius: 15px;
-      text-align: center;
-      z-index: 30;
-      color: white;
-      width: 500px;
       display: none;
     }
+    
+    #gameOver {
+      display: none;
+      font-size: 36px;
+      border: 2px solid gold;
+      padding: 40px;
+    }
+    
     #countdown {
       position: absolute;
       top: 50%;
@@ -173,106 +144,151 @@
       z-index: 25;
       display: none;
     }
+    
     #pause-menu {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.9);
-      padding: 30px;
-      border-radius: 15px;
-      text-align: center;
-      z-index: 40;
-      color: white;
-      width: 300px;
       display: none;
-      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+      width: 350px;
       border: 2px solid #4CAF50;
     }
+    
+    /* Buttons */
     button {
       background: #4CAF50;
       border: none;
       color: white;
-      padding: 10px 20px;
+      padding: 12px 24px;
       text-align: center;
       text-decoration: none;
       display: inline-block;
       font-size: 16px;
       margin: 10px 5px;
       cursor: pointer;
-      border-radius: 5px;
-      transition: background 0.3s;
+      border-radius: 8px;
+      transition: all 0.3s;
+      font-weight: bold;
     }
+    
     button:hover {
       background: #45a049;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
+    
     .toggle-btn {
       background: #555;
+      padding: 10px 20px;
     }
+    
     .toggle-btn.active {
       background: #4CAF50;
     }
+    
     .back-btn {
       background: #f44336;
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 15px;
+      left: 15px;
       padding: 8px 15px;
       font-size: 14px;
     }
+    
     .back-btn:hover {
       background: #d32f2f;
     }
-    input {
-      padding: 10px;
+    
+    .online-option {
+      background: #2196F3;
+      margin: 15px;
+      padding: 15px 25px;
+      font-size: 18px;
+      width: 80%;
+    }
+    
+    .online-option:hover {
+      background: #1976D2;
+    }
+    
+    .local-option {
+      background: #4CAF50;
+      margin: 8px;
+      padding: 12px 20px;
       font-size: 16px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      margin: 10px 0;
+      width: 45%;
+    }
+    
+    .local-option:hover {
+      background: #45a049;
+    }
+    
+    .retry-btn {
+      background: #FF9800;
+      font-size: 18px;
+      padding: 15px 30px;
+      margin-top: 20px;
+    }
+    
+    .retry-btn:hover {
+      background: #F57C00;
+    }
+    
+    /* Inputs */
+    input {
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 2px solid #555;
+      margin: 15px 0;
       width: 150px;
       text-align: center;
+      background: #333;
+      color: white;
     }
+    
+    input:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+    
+    /* Sections */
     .mode-container {
-      margin-top: 20px;
+      margin-top: 25px;
       padding-top: 20px;
       border-top: 1px solid #444;
     }
+    
     .background-options {
       display: flex;
       justify-content: center;
       gap: 15px;
       margin: 20px 0;
     }
+    
     .background-option {
       width: 120px;
       height: 80px;
-      border: 2px solid transparent;
+      border: 3px solid transparent;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s;
     }
+    
     .background-option.selected {
       border-color: #4CAF50;
-      box-shadow: 0 0 10px #4CAF50;
+      box-shadow: 0 0 15px #4CAF50;
     }
+    
     .background-option:hover {
       transform: scale(1.05);
     }
+    
     .bluffs-container {
       margin: 20px 0;
       padding: 15px;
       background: rgba(255,255,255,0.1);
       border-radius: 10px;
     }
-    .retry-btn {
-      background: #FF9800;
-      font-size: 18px;
-      padding: 12px 25px;
-      margin-top: 15px;
-    }
-    .retry-btn:hover {
-      background: #F57C00;
-    }
+    
+    /* Party Elements */
     .party-info {
       position: absolute;
       top: 10px;
@@ -284,7 +300,9 @@
       border-radius: 20px;
       font-size: 14px;
       z-index: 10;
+      display: none;
     }
+    
     .player-list {
       position: absolute;
       top: 60px;
@@ -296,125 +314,159 @@
       font-size: 12px;
       z-index: 10;
       max-width: 150px;
+      display: none;
     }
+    
     .admin-badge {
       color: gold;
       font-weight: bold;
     }
+    
     .error-message {
       color: #ff4444;
       font-size: 14px;
       margin: 10px 0;
       display: none;
+      background: rgba(255, 68, 68, 0.1);
+      padding: 8px;
+      border-radius: 5px;
     }
-    .online-option {
-      background: #2196F3;
-      margin: 10px;
-      padding: 15px 20px;
-      font-size: 18px;
+    
+    /* Party ID Display */
+    #party-id {
+      font-size: 60px;
+      font-weight: bold;
+      color: #4CAF50;
+      margin: 20px 0;
+      text-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+      letter-spacing: 5px;
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 10px;
     }
-    .online-option:hover {
-      background: #1976D2;
+    
+    h2 {
+      margin-bottom: 20px;
+      color: #4CAF50;
+      font-size: 28px;
     }
-    .local-option {
-      background: #4CAF50;
-      margin: 5px;
-      padding: 10px 15px;
-      font-size: 16px;
+    
+    h3 {
+      margin: 15px 0;
+      color: #ddd;
     }
-    .local-option:hover {
-      background: #45a049;
+    
+    p {
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+    
+    /* Game Instructions */
+    .instructions {
+      background: rgba(255,255,255,0.05);
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px 0;
+      font-size: 14px;
+      text-align: left;
+    }
+    
+    .instructions h4 {
+      color: #4CAF50;
+      margin-bottom: 8px;
     }
   </style>
 </head>
 <body>
   <div class="game-container">
+    <!-- Navigation -->
     <a href="index.html" id="home-btn">🏠 Home</a>
-    <div id="ui" style="display: none;">Time: 0</div>
-    <button id="pause-btn" style="display: none;">Pause</button>
+    <div id="ui">Time: 0</div>
+    <button id="pause-btn">Pause</button>
     
     <!-- Party Information -->
-    <div id="party-info" class="party-info" style="display: none;">
+    <div id="party-info" class="party-info">
       Party: <span id="current-party-id">----</span> | Players: <span id="player-count">1</span>
     </div>
-    <div id="player-list" class="player-list" style="display: none;"></div>
+    <div id="player-list" class="player-list"></div>
     
-    <div id="gameOver">
-      <h2>Game Over!</h2>
-      <div id="winner-text" style="color:gold; font-weight:bold; margin: 20px 0; font-size: 24px;"></div>
-      <div style="margin: 20px 0;">
-        <p>Press SPACEBAR or click the button to play again</p>
-        <button class="retry-btn" onclick="resetToSetup()">🔄 Play Again</button>
-      </div>
-    </div>
-    <div id="countdown"></div>
-    <div id="pause-menu">
-      <h2>Game Paused</h2>
-      <button onclick="resumeGame()">Resume Game</button>
-      <button onclick="leaveParty()">Leave Party</button>
-    </div>
-    
-    <!-- Main Setup Screen -->
-    <div id="setup-screen">
-      <h2>Select Game Mode</h2>
+    <!-- Game Screens -->
+    <div id="setup-screen" class="screen">
+      <h2>🏃 Arena Tag Showdown</h2>
+      <p>Select your game mode:</p>
+      
       <button class="online-option" onclick="showOnlineSetup()">🌐 Online Multiplayer</button>
-      <br>
+      
       <h3>Local Play</h3>
-      <button class="local-option" onclick="selectPlayers(1)">1 Player</button>
-      <button class="local-option" onclick="selectPlayers(2)">2 Players</button>
-      <button class="local-option" onclick="selectPlayers(3)">3 Players</button>
-      <button class="local-option" onclick="selectPlayers(4)">4 Players</button>
+      <div>
+        <button class="local-option" onclick="selectPlayers(1)">1 Player</button>
+        <button class="local-option" onclick="selectPlayers(2)">2 Players</button>
+        <button class="local-option" onclick="selectPlayers(3)">3 Players</button>
+        <button class="local-option" onclick="selectPlayers(4)">4 Players</button>
+      </div>
       
       <div class="mode-container">
-        <h3>Robot Mode</h3>
+        <h3>🤖 Robot Mode</h3>
         <button id="robot-toggle" class="toggle-btn" onclick="toggleRobotMode()">OFF</button>
         <p>Adds a smart circle that seeks or avoids players</p>
       </div>
+      
+      <div class="instructions">
+        <h4>How to Play:</h4>
+        <p>• Avoid being "IT" when time runs out</p>
+        <p>• Use arrow keys or WASD to move</p>
+        <p>• Double-tap jump for double jump</p>
+        <p>• Collect power-ups for advantages</p>
+      </div>
     </div>
     
-    <!-- Online Setup Screen -->
-    <div id="online-setup">
+    <div id="online-setup" class="screen">
       <button class="back-btn" onclick="goBackToMain()">Back</button>
       <h2>Online Multiplayer</h2>
+      <p>Play with friends online!</p>
+      
       <button class="online-option" onclick="createParty()">🎉 Create Party</button>
-      <br><br>
       <button class="online-option" onclick="showJoinParty()">🔗 Join Party</button>
+      
+      <div class="instructions">
+        <h4>Online Play:</h4>
+        <p>• Create a party and share the 4-digit code</p>
+        <p>• Party creator controls game settings</p>
+        <p>• Up to 6 players can join a party</p>
+        <p>• If creator leaves, admin transfers to next player</p>
+      </div>
     </div>
     
-    <!-- Party ID Display -->
-    <div id="party-id-display">
+    <div id="party-id-display" class="screen">
       <h2>Your Party ID</h2>
       <div id="party-id">----</div>
       <p>Share this code with friends to join your party!</p>
       <p>Waiting for players to join...</p>
-      <div id="waiting-players" style="margin: 15px 0;"></div>
+      <div id="waiting-players" style="margin: 20px 0;"></div>
       <button onclick="cancelPartyCreation()">Cancel Party</button>
       <button onclick="startGameFromParty()" style="background: #2196F3;">Start Game</button>
     </div>
     
-    <!-- Join Party Screen -->
-    <div id="join-party">
+    <div id="join-party" class="screen">
       <button class="back-btn" onclick="goBackToOnlineSetup()">Back</button>
       <h2>Join Party</h2>
-      <p>Enter 4-digit Party ID:</p>
+      <p>Enter the 4-digit Party ID:</p>
       <input type="text" id="party-id-input" maxlength="4" pattern="[0-9]{4}" placeholder="1234">
       <div id="join-error" class="error-message">Party not found. Please check the ID.</div>
-      <br>
       <button onclick="joinParty()">Join Party</button>
     </div>
     
-    <!-- Time Setup Screen -->
-    <div id="time-setup" style="display: none;">
+    <div id="time-setup" class="screen">
       <button class="back-btn" onclick="goBack()">Back</button>
       <h2>Game Setup</h2>
       
       <div>
-        <h3>Time Limit (Seconds)</h3>
-        <input type="number" id="time-input" min="10" max="300" value="30">
+        <h3>⏱️ Time Limit (Seconds)</h3>
+        <input type="number" id="time-input" min="10" max="300" value="60">
       </div>
       
       <div>
-        <h3>Select Background</h3>
+        <h3>🎨 Select Background</h3>
         <div class="background-options">
           <div class="background-option selected" style="background: linear-gradient(135deg, #ff6ec4, #7873f5);" onclick="selectBackground(1)"></div>
           <div class="background-option" style="background: linear-gradient(135deg, #667eea, #764ba2);" onclick="selectBackground(2)"></div>
@@ -423,13 +475,32 @@
       </div>
       
       <div class="bluffs-container">
-        <h3>Power-ups (Bluffs)</h3>
-        <button id="bluffs-toggle" class="toggle-btn" onclick="toggleBluffs()">ON</button>
+        <h3>⚡ Power-ups (Bluffs)</h3>
+        <button id="bluffs-toggle" class="toggle-btn active" onclick="toggleBluffs()">ON</button>
         <p>Enable or disable power-ups during gameplay</p>
       </div>
       
-      <button onclick="startGame()">Start Game</button>
+      <button onclick="startGame()" style="padding: 15px 30px; font-size: 18px;">Start Game</button>
     </div>
+    
+    <div id="gameOver" class="screen">
+      <h2>Game Over!</h2>
+      <div id="winner-text" style="color:gold; font-weight:bold; margin: 20px 0; font-size: 24px;"></div>
+      <div style="margin: 20px 0;">
+        <p>Press SPACEBAR or click the button to play again</p>
+        <button class="retry-btn" onclick="resetToSetup()">🔄 Play Again</button>
+      </div>
+    </div>
+    
+    <div id="countdown"></div>
+    
+    <div id="pause-menu" class="screen">
+      <h2>Game Paused</h2>
+      <button onclick="resumeGame()">Resume Game</button>
+      <button onclick="leaveParty()">Leave Party</button>
+    </div>
+    
+    <!-- Game Canvas -->
     <canvas id="gameCanvas" width="1200" height="700"></canvas>
   </div>
 
@@ -475,8 +546,10 @@
     const playerListElement = document.getElementById('player-list');
     const waitingPlayers = document.getElementById('waiting-players');
 
+    // Input handling
     const keys = {};
     const keyState = {};
+    
     document.addEventListener('keydown', e => {
       keys[e.key] = true;
       if (!keyState[e.key]) {
@@ -485,10 +558,12 @@
         keyState[e.key].justPressed = true;
       }
       
+      // Spacebar to reset game when game over
       if (e.key === ' ' && gameOver) {
         resetToSetup();
       }
     });
+    
     document.addEventListener('keyup', e => {
       keys[e.key] = false;
       if (keyState[e.key]) {
@@ -506,6 +581,7 @@
     let onlinePlayers = {};
     let localPlayerId = null;
 
+    // Game state variables
     let players = [];
     let smartCircle = null;
     let numPlayers = 2;
@@ -578,14 +654,12 @@
     function goBackToMain() {
       onlineSetup.style.display = 'none';
       setupScreen.style.display = 'block';
-      // Clear any error messages
       joinError.style.display = 'none';
     }
 
     function goBackToOnlineSetup() {
       joinPartyScreen.style.display = 'none';
       onlineSetup.style.display = 'block';
-      // Clear error and input
       joinError.style.display = 'none';
       partyIdInput.value = '';
     }
@@ -622,7 +696,7 @@
       
       // Initialize game settings
       gameSettingsRef.set({
-        timeLimit: 30,
+        timeLimit: 60,
         background: 1,
         bluffsEnabled: true,
         robotMode: false
@@ -639,7 +713,6 @@
       
       // Set up disconnect handler
       playersRef.child(userId).onDisconnect().remove(() => {
-        // When admin leaves, check if we need to transfer admin
         if (isPartyAdmin) {
           transferAdmin();
         }
@@ -650,7 +723,6 @@
       onlineSetup.style.display = 'none';
       joinPartyScreen.style.display = 'block';
       partyIdInput.focus();
-      // Clear previous error
       joinError.style.display = 'none';
     }
 
@@ -722,7 +794,7 @@
         // Update player count
         playerCountElement.textContent = Object.keys(onlinePlayers).length;
         
-        // Show/hide UI elements based on player count
+        // Show UI elements
         if (Object.keys(onlinePlayers).length > 0) {
           partyInfo.style.display = 'block';
           playerListElement.style.display = 'block';
@@ -838,12 +910,10 @@
 
     function leaveParty() {
       if (currentPartyId) {
-        // Remove player from party
         if (playersRef) {
           playersRef.child(userId).remove();
         }
         
-        // If admin and leaving, transfer admin
         if (isPartyAdmin) {
           transferAdmin();
         }
@@ -861,7 +931,6 @@
 
     function startGameFromParty() {
       if (currentPartyId && isPartyAdmin) {
-        // Move to time setup screen for admin to configure game
         partyIdDisplay.style.display = 'none';
         timeSetup.style.display = 'block';
       }
@@ -887,33 +956,31 @@
     }
 
     function toggleRobotMode() {
-      if (currentPartyId && !isPartyAdmin) return; // Only admin can change settings
+      if (currentPartyId && !isPartyAdmin) return;
       
       robotMode = !robotMode;
       robotToggleBtn.classList.toggle('active', robotMode);
       robotToggleBtn.textContent = robotMode ? 'ON' : 'OFF';
       
-      // Update online settings if in a party
       if (currentPartyId && isPartyAdmin) {
         gameSettingsRef.update({ robotMode: robotMode });
       }
     }
 
     function toggleBluffs() {
-      if (currentPartyId && !isPartyAdmin) return; // Only admin can change settings
+      if (currentPartyId && !isPartyAdmin) return;
       
       bluffsEnabled = !bluffsEnabled;
       bluffsToggleBtn.classList.toggle('active', bluffsEnabled);
       bluffsToggleBtn.textContent = bluffsEnabled ? 'ON' : 'OFF';
       
-      // Update online settings if in a party
       if (currentPartyId && isPartyAdmin) {
         gameSettingsRef.update({ bluffsEnabled: bluffsEnabled });
       }
     }
 
     function selectBackground(bgNum) {
-      if (currentPartyId && !isPartyAdmin) return; // Only admin can change settings
+      if (currentPartyId && !isPartyAdmin) return;
       
       selectedBackground = bgNum;
       document.querySelectorAll('.background-option').forEach((opt, index) => {
@@ -924,7 +991,6 @@
         }
       });
       
-      // Update online settings if in a party
       if (currentPartyId && isPartyAdmin) {
         gameSettingsRef.update({ background: bgNum });
       }
@@ -932,7 +998,6 @@
 
     function goBack() {
       if (currentPartyId) {
-        // For online games, go back to appropriate screen
         if (isPartyAdmin) {
           timeSetup.style.display = 'none';
           partyIdDisplay.style.display = 'block';
@@ -941,7 +1006,6 @@
           onlineSetup.style.display = 'block';
         }
       } else {
-        // For local games
         timeSetup.style.display = 'none';
         setupScreen.style.display = 'block';
         
@@ -955,7 +1019,6 @@
 
     function startGame() {
       if (currentPartyId && isPartyAdmin) {
-        // For online games, update settings and signal start
         const settings = {
           timeLimit: parseInt(timeInput.value),
           background: selectedBackground,
@@ -969,7 +1032,6 @@
           status: 'playing'
         });
       } else {
-        // For local games, start directly
         startLocalGame();
       }
     }
@@ -981,7 +1043,7 @@
         return;
       }
       
-      // Set canvas background based on selection
+      // Set canvas background
       switch(selectedBackground) {
         case 1:
           canvas.style.background = 'linear-gradient(135deg, #ff6ec4, #7873f5)';
@@ -994,9 +1056,8 @@
           break;
       }
       
-      // Randomize platforms for this game
+      // Initialize game state
       randomizePlatforms();
-      
       timer = timeLimit;
       timeSetup.style.display = 'none';
       pauseBtn.style.display = 'block';
@@ -1004,21 +1065,7 @@
       ui.textContent = `Time: ${timer}`;
       
       // Reset game state
-      players = [];
-      smartCircle = null;
-      gameStarted = false;
-      gameOver = false;
-      frameCount = 0;
-      lastTagTime = 0;
-      powerUps = [];
-      immunitySpawnTimer = 0;
-      timeSlowSpawnTimer = 0;
-      speedBoostSpawnTimer = 0;
-      activeEffects = {
-        immunity: [],
-        timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
-        speedBoost: []
-      };
+      resetGameState();
       
       const colors = ['red', 'green', 'blue', 'yellow'];
       const startPositions = [
@@ -1069,14 +1116,7 @@
       }
       
       // Randomly assign who is "it"
-      const totalEntities = players.length + (robotMode ? 1 : 0);
-      const randomIndex = Math.floor(Math.random() * totalEntities);
-      
-      if (randomIndex < players.length) {
-        players[randomIndex].isIt = true;
-      } else if (robotMode && smartCircle) {
-        smartCircle.isIt = true;
-      }
+      assignRandomIt();
       
       spawnTeleporters();
       
@@ -1108,21 +1148,9 @@
       ui.textContent = `Time: ${timer}`;
       
       // Reset game state
-      players = [];
-      smartCircle = null;
-      gameStarted = false;
-      gameOver = false;
-      frameCount = 0;
-      lastTagTime = 0;
-      powerUps = [];
-      activeEffects = {
-        immunity: [],
-        timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
-        speedBoost: []
-      };
+      resetGameState();
       
       // Create players based on online players count
-      const onlinePlayerCount = Object.keys(onlinePlayers).length;
       const colors = ['red', 'green', 'blue', 'yellow', 'purple', 'orange'];
       const startPositions = [
         { x: 100, y: 100 }, { x: 1000, y: 100 },
@@ -1175,6 +1203,33 @@
       }
       
       // Randomly assign who is "it"
+      assignRandomIt();
+      
+      spawnTeleporters();
+      
+      // Start countdown
+      startCountdown();
+    }
+
+    function resetGameState() {
+      players = [];
+      smartCircle = null;
+      gameStarted = false;
+      gameOver = false;
+      frameCount = 0;
+      lastTagTime = 0;
+      powerUps = [];
+      immunitySpawnTimer = 0;
+      timeSlowSpawnTimer = 0;
+      speedBoostSpawnTimer = 0;
+      activeEffects = {
+        immunity: [],
+        timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
+        speedBoost: []
+      };
+    }
+
+    function assignRandomIt() {
       const totalEntities = players.length + (robotMode ? 1 : 0);
       const randomIndex = Math.floor(Math.random() * totalEntities);
       
@@ -1183,11 +1238,6 @@
       } else if (robotMode && smartCircle) {
         smartCircle.isIt = true;
       }
-      
-      spawnTeleporters();
-      
-      // Start countdown
-      startCountdown();
     }
 
     function startCountdown() {
@@ -1213,12 +1263,10 @@
 
     function randomizePlatforms() {
       currentPlatforms = basePlatforms.map(platform => {
-        // Random width between current-20 and current+50
         const minWidth = platform.w - 20;
         const maxWidth = platform.w + 50;
         const newWidth = Math.floor(Math.random() * (maxWidth - minWidth + 1)) + minWidth;
         
-        // Return new platform with same position and height, but randomized width
         return {
           x: platform.x,
           y: platform.y,
@@ -1255,12 +1303,9 @@
 
     // Power-up functions
     function spawnPowerUp(type) {
-      // Find a random platform to spawn the power-up on
       const platform = currentPlatforms[Math.floor(Math.random() * currentPlatforms.length)];
-      
-      // Calculate position on the platform
       const x = platform.x + Math.random() * (platform.w - 20);
-      const y = platform.y - 15; // Above the platform
+      const y = platform.y - 15;
       
       if (type === 'immunity') {
         powerUps.push({
@@ -1269,7 +1314,7 @@
           y: y,
           width: 20,
           height: 20,
-          color: '#3498db', // Blue
+          color: '#3498db',
           spawnTime: frameCount,
           active: true
         });
@@ -1279,7 +1324,7 @@
           x: x,
           y: y,
           radius: 10,
-          color: '#9b59b6', // Purple
+          color: '#9b59b6',
           spawnTime: frameCount,
           active: true
         });
@@ -1290,7 +1335,7 @@
           y: y,
           width: 20,
           height: 20,
-          color: '#2ecc71', // Green
+          color: '#2ecc71',
           spawnTime: frameCount,
           active: true
         });
@@ -1305,25 +1350,23 @@
       timeSlowSpawnTimer++;
       speedBoostSpawnTimer++;
       
-      // Spawn immunity power-up every 15 seconds (900 frames)
+      // Spawn power-ups periodically
       if (immunitySpawnTimer >= 900) {
         spawnPowerUp('immunity');
         immunitySpawnTimer = 0;
       }
       
-      // Spawn time slow power-up every 20 seconds (1200 frames)
       if (timeSlowSpawnTimer >= 1200) {
         spawnPowerUp('timeSlow');
         timeSlowSpawnTimer = 0;
       }
       
-      // Spawn speed boost power-up every 18 seconds (1080 frames)
       if (speedBoostSpawnTimer >= 1080) {
         spawnPowerUp('speedBoost');
         speedBoostSpawnTimer = 0;
       }
       
-      // Remove power-ups that have been active for more than 5 seconds (300 frames)
+      // Remove expired power-ups
       powerUps = powerUps.filter(powerUp => {
         return frameCount - powerUp.spawnTime < 300;
       });
@@ -1343,7 +1386,6 @@
         
         // Check for collision with smart circle
         if (smartCircle && detectSmartCirclePowerUpCollision(smartCircle, powerUp)) {
-          // Smart circle only collects beneficial power-ups
           if ((powerUp.type === 'speedBoost' || powerUp.type === 'immunity') && 
               !smartCircle.isIt) {
             applyPowerUp(smartCircle, powerUp);
@@ -1359,7 +1401,6 @@
 
     function detectPowerUpCollision(player, powerUp) {
       if (powerUp.type === 'immunity' || powerUp.type === 'speedBoost') {
-        // Rectangle collision for immunity (shield) and speed boost
         return (
           player.x < powerUp.x + powerUp.width &&
           player.x + player.w > powerUp.x &&
@@ -1367,7 +1408,6 @@
           player.y + player.h > powerUp.y
         );
       } else if (powerUp.type === 'timeSlow') {
-        // Circle collision for time slow (clock)
         const dx = (player.x + player.w/2) - powerUp.x;
         const dy = (player.y + player.h/2) - powerUp.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -1378,12 +1418,10 @@
 
     function detectSmartCirclePowerUpCollision(smartCircle, powerUp) {
       if (powerUp.type === 'immunity' || powerUp.type === 'speedBoost') {
-        // Rectangle-circle collision for immunity and speed boost
         const dx = smartCircle.x - Math.max(powerUp.x, Math.min(smartCircle.x, powerUp.x + powerUp.width));
         const dy = smartCircle.y - Math.max(powerUp.y, Math.min(smartCircle.y, powerUp.y + powerUp.height));
         return (dx * dx + dy * dy) < (smartCircle.radius * smartCircle.radius);
       } else if (powerUp.type === 'timeSlow') {
-        // Circle-circle collision for time slow
         const dx = smartCircle.x - powerUp.x;
         const dy = smartCircle.y - powerUp.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -1394,13 +1432,11 @@
 
     function applyPowerUp(entity, powerUp) {
       if (powerUp.type === 'immunity') {
-        // Grant immunity for 5 seconds (300 frames)
         activeEffects.immunity.push({
           entity: entity,
           endTime: frameCount + 300
         });
       } else if (powerUp.type === 'timeSlow') {
-        // Slow down all non-"it" players at the moment of collection for 5 seconds
         const slowedPlayers = [];
         for (const player of players) {
           if (!player.isIt) {
@@ -1417,7 +1453,6 @@
           slowedPlayers: slowedPlayers
         };
       } else if (powerUp.type === 'speedBoost') {
-        // Grant speed boost for 5 seconds (300 frames)
         activeEffects.speedBoost.push({
           entity: entity,
           endTime: frameCount + 300
@@ -2033,30 +2068,30 @@
       gamePaused = false;
       gameStarted = false;
       gameOver = false;
-      gameOverDisplay.style.display = 'none';
-      pauseMenu.style.display = 'none';
+      
+      // Hide all screens except setup
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.style.display = 'none';
+      });
       setupScreen.style.display = 'block';
+      
       pauseBtn.style.display = 'none';
       ui.style.display = 'none';
       partyInfo.style.display = 'none';
       playerListElement.style.display = 'none';
-      partyIdDisplay.style.display = 'none';
-      joinPartyScreen.style.display = 'none';
-      timeSetup.style.display = 'none';
+      countdownDisplay.style.display = 'none';
       
-      // Reset robot mode
+      // Reset settings
       robotMode = false;
       robotToggleBtn.classList.remove('active');
       robotToggleBtn.textContent = 'OFF';
       robotToggleBtn.disabled = false;
       robotToggleBtn.style.opacity = '1';
       
-      // Reset bluffs
       bluffsEnabled = true;
       bluffsToggleBtn.classList.add('active');
       bluffsToggleBtn.textContent = 'ON';
       
-      // Reset background
       selectedBackground = 1;
       document.querySelectorAll('.background-option').forEach((opt, index) => {
         if (index === 0) {
@@ -2065,6 +2100,8 @@
           opt.classList.remove('selected');
         }
       });
+      
+      timeInput.value = '60';
       
       ui.textContent = 'Time: 0';
       if (animationId) {
@@ -2164,7 +2201,9 @@
 
     // Initialize the game
     window.addEventListener('load', function() {
-      // Show main setup screen by default
+      // Set initial UI state
+      ui.style.display = 'none';
+      pauseBtn.style.display = 'none';
       setupScreen.style.display = 'block';
     });
   </script>
