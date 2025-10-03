@@ -581,11 +581,13 @@
     let playersRef = null;
     let gameSettingsRef = null;
     let playerStatesRef = null;
+    let inputsRef = null;
     let onlinePlayers = {};
     let localPlayerId = null;
     let currentAdmin = null;
     let serverStartTime = 0;
     let initialTimer = 0;
+    let inputs = {};
     // Game state variables
     let players = [];
     let smartCircle = null;
@@ -673,6 +675,7 @@
       playersRef = database.ref('parties/' + currentPartyId + '/players');
       gameSettingsRef = database.ref('parties/' + currentPartyId + '/settings');
       playerStatesRef = database.ref('parties/' + currentPartyId + '/playerStates');
+      inputsRef = database.ref('parties/' + currentPartyId + '/inputs');
     
       // Initialize party data
       partyRef.set({
@@ -733,6 +736,7 @@
       playersRef = database.ref('parties/' + currentPartyId + '/players');
       gameSettingsRef = database.ref('parties/' + currentPartyId + '/settings');
       playerStatesRef = database.ref('parties/' + currentPartyId + '/playerStates');
+      inputsRef = database.ref('parties/' + currentPartyId + '/inputs');
     
       // Check if party exists
       partyRef.once('value').then(snapshot => {
@@ -817,9 +821,7 @@
         const settings = snapshot.val();
         if (settings) {
           // Update local settings to match party settings
-          if (!isPartyAdmin) {
-            timeInput.value = settings.timeLimit;
-          }
+          timeInput.value = settings.timeLimit;
           selectedBackground = settings.background;
           bluffsEnabled = settings.bluffsEnabled;
           robotMode = settings.robotMode;
@@ -891,6 +893,11 @@
       // Listen for teleporters
       partyRef.child('teleporters').on('value', snapshot => {
         teleporters = snapshot.val() || [];
+      });
+    
+      // Listen for inputs
+      inputsRef.on('value', snapshot => {
+        inputs = snapshot.val() || {};
       });
     }
     function updateWaitingPlayers() {
@@ -1323,6 +1330,8 @@
         }
         spawnTeleporters();
         partyRef.child('teleporters').set(teleporters);
+      } else {
+        currentPlatforms = basePlatforms;
       }
     
       // Start countdown
@@ -2206,43 +2215,101 @@
       // Update and draw power-ups
       updatePowerUps();
       drawPowerUps();
-      // Update local player
-      const localPlayer = players.find(p => p.id === userId);
-      if (localPlayer) {
-        updatePlayer(localPlayer);
-        playerStatesRef.child(userId).set({
-          x: localPlayer.x,
-          y: localPlayer.y,
-          vx: localPlayer.vx,
-          vy: localPlayer.vy,
-          isIt: localPlayer.isIt
+      if (currentPartyId) {
+        // all send inputs
+        inputsRef.child(userId).set({
+          keys: {...keys},
+          keyState: {...keyState}
         });
-      }
-      // Admin updates smart circle
-      if (isPartyAdmin && smartCircle) {
-        updateSmartCircle();
-        playerStatesRef.child('robot').set({
-          x: smartCircle.x,
-          y: smartCircle.y,
-          vx: smartCircle.vx,
-          vy: smartCircle.vy,
-          isIt: smartCircle.isIt
-        });
-      }
-      // Tag logic for local "it" player
-      if (localPlayer && localPlayer.isIt && Date.now() - lastTagTime > 1000) {
-        let tagged = null;
-        for (const other of players) {
-          if (other.id !== userId && detectPlayerTag(localPlayer, other)) {
-            tagged = other.id;
-            break;
+        if (isPartyAdmin) {
+          // simulate
+          players.forEach(p => {
+            const playerInputs = inputs[p.id] || {};
+            const tempKeys = {...keys};
+            const tempKeyState = {...keyState};
+            keys = playerInputs.keys || {};
+            keyState = playerInputs.keyState || {};
+            updatePlayer(p);
+            keys = tempKeys;
+            keyState = tempKeyState;
+            playerStatesRef.child(p.id).set({
+              x: p.x,
+              y: p.y,
+              vx: p.vx,
+              vy: p.vy,
+              isIt: p.isIt
+            });
+          });
+          if (smartCircle) {
+            updateSmartCircle();
+            playerStatesRef.child('robot').set({
+              x: smartCircle.x,
+              y: smartCircle.y,
+              vx: smartCircle.vx,
+              vy: smartCircle.vy,
+              isIt: smartCircle.isIt
+            });
+          }
+          // tag logic
+          const itEntity = players.find(p => p.isIt) || (smartCircle && smartCircle.isIt ? smartCircle : null);
+          if (itEntity && Date.now() - lastTagTime > 1000) {
+            let tagged = null;
+            for (const other of players) {
+              if (other.isIt) continue;
+              if (detectPlayerTag(itEntity, other)) {
+                tagged = other.id;
+                break;
+              }
+            }
+            if (!tagged && smartCircle && !smartCircle.isIt && detectCirclePlayerTag(itEntity, smartCircle)) {
+              tagged = 'robot';
+            }
+            if (tagged) {
+              partyRef.child('tagEvent').set({tagged: tagged, time: Date.now()});
+            }
           }
         }
-        if (!tagged && smartCircle && detectCirclePlayerTag(localPlayer, smartCircle)) {
-          tagged = 'robot';
+      } else {
+        // local
+        players.forEach(p => {
+          updatePlayer(p);
+        });
+        if (smartCircle) updateSmartCircle();
+        // Local tag logic
+        const itPlayer = players.find(p => p.isIt);
+        if (itPlayer) {
+          const otherPlayers = players.filter(p => !p.isIt);
+          for (const otherPlayer of otherPlayers) {
+            if (detectPlayerTag(itPlayer, otherPlayer) && Date.now() - lastTagTime > 1000) {
+              itPlayer.isIt = false;
+              otherPlayer.isIt = true;
+              lastTagTime = Date.now();
+              break;
+            }
+          }
         }
-        if (tagged) {
-          partyRef.child('tagEvent').set({tagged: tagged, time: Date.now()});
+        if (smartCircle) {
+          if (smartCircle.isIt) {
+            // Smart circle tags players
+            for (const player of players) {
+              if (player && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
+                smartCircle.isIt = false;
+                player.isIt = true;
+                lastTagTime = Date.now();
+                break;
+              }
+            }
+          } else {
+            // Players tag smart circle
+            for (const player of players) {
+              if (player && player.isIt && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
+                player.isIt = false;
+                smartCircle.isIt = true;
+                lastTagTime = Date.now();
+                break;
+              }
+            }
+          }
         }
       }
       // Timer
