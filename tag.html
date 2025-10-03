@@ -817,7 +817,9 @@
         const settings = snapshot.val();
         if (settings) {
           // Update local settings to match party settings
-          timeInput.value = settings.timeLimit;
+          if (!isPartyAdmin) {
+            timeInput.value = settings.timeLimit;
+          }
           selectedBackground = settings.background;
           bluffsEnabled = settings.bluffsEnabled;
           robotMode = settings.robotMode;
@@ -2270,6 +2272,12 @@
       readyBtn.style.display = 'none';
       startGameBtn.disabled = true;
       startGameBtn.style.opacity = '0.6';
+    
+      timeInput.addEventListener('change', () => {
+        if (currentPartyId && isPartyAdmin) {
+          gameSettingsRef.update({ timeLimit: parseInt(timeInput.value) });
+        }
+      });
     });
   </script>
 </body>
