@@ -28,6 +28,14 @@
     #overlay .home{background:#7ee; color:#000}
     /* Home button top-left */
     #homeTop{position:fixed;top:12px;left:12px;padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+    /* Pause button top-left (next to home) */
+    #pauseBtn{position:fixed;top:12px;left:100px;padding:8px 12px;border-radius:8px;border:0;background:#ffa500;color:#fff;cursor:pointer;display:none}
+    /* Pause overlay */
+    #pauseOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);flex-direction:column;z-index:1001}
+    #pauseOverlay h2{color:#ffa500;margin-bottom:20px}
+    #pauseOverlay button{padding:12px 24px;border-radius:8px;border:0;cursor:pointer;margin:8px;font-size:16px}
+    #pauseOverlay .resume{background:#0f0;color:#000}
+    #pauseOverlay .pauseSettings{background:#ffd966;color:#000}
     /* small HUD */
     #hud{position:fixed;top:12px;right:12px;color:#dfeefb;font-weight:700}
   </style>
@@ -35,6 +43,7 @@
 <body>
   <div id="wrap">
     <button id="homeTop" onclick="location.href='index.html'">🏠 Home</button>
+    <button id="pauseBtn">⏸ Pause</button>
     <!-- Settings: RESTORED layout you liked -->
     <div id="settings">
       <h1>🧱 Brick Blaster</h1>
@@ -57,7 +66,6 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:10px">
         <button class="start-btn" id="startBtn">Start Game</button>
-        <button class="home-btn" onclick="location.href='index.html'">🏠 Home</button>
       </div>
     </div>
     <canvas id="gameCanvas" width="800" height="600" aria-label="Brick Blaster canvas"></canvas>
@@ -71,6 +79,13 @@
       </div>
     </div>
     <div id="hud">Lives: <span id="hudLives">3</span> &nbsp;&nbsp; Score: <span id="hudScore">0</span> &nbsp;&nbsp; Time: <span id="hudTime">0</span>s</div>
+    <div id="pauseOverlay">
+      <h2>⏸ PAUSED</h2>
+      <div>
+        <button class="resume" id="resumeBtn">Resume</button>
+        <button class="pauseSettings" id="pauseSettingsBtn">Settings</button>
+      </div>
+    </div>
   </div>
   <script>
     // --- Variables ---
@@ -87,6 +102,10 @@
     const hudScore = document.getElementById('hudScore');
     const hudTime = document.getElementById('hudTime');
     const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const pauseSettingsBtn = document.getElementById('pauseSettingsBtn');
 
     let cols = 8, rows = 6; // logical top-grid (based on mode)
     let spawnRows = 0; // how deep bricks can spawn
@@ -96,6 +115,7 @@
     let paddle = { w:80, h:12, x:0 };
     let score = 0, lives = 3, timePlayed = 0;
     let running = false, endlessMode = false;
+    let paused = false;
     let gameLoopId = null, timeIntervalId = null, spawnIntervalId = null;
     // save last settings so Retry uses same settings
     let lastSettings = { speedVal:3, mode:'12' };
@@ -268,7 +288,7 @@
 
     // main loop
     function loop(){
-      if(!running) return;
+      if(!running || paused) return;
       ball.x += ball.dx;
       ball.y += ball.dy;
       checkCollisions();
@@ -299,6 +319,7 @@
     function beginPlay(){
       // start game loop
       running = true;
+      paused = false;
       timePlayed = 0;
       score = 0;
       lives = 3;
@@ -307,13 +328,14 @@
       hudTime.textContent = timePlayed;
       resetBall();
       paddle.x = (canvas.width - paddle.w)/2;
+      pauseBtn.style.display = 'block';
       if(endlessMode){
         clearInterval(spawnIntervalId);
         spawnIntervalId = setInterval(spawnNewBrick,3000);
       }
       if(timeIntervalId) clearInterval(timeIntervalId);
       timeIntervalId = setInterval(()=>{
-        if(running) timePlayed++;
+        if(running && !paused) timePlayed++;
       },1000);
       requestAnimationFrame(loop);
     }
@@ -384,6 +406,8 @@
 
     function endRound(win){
       running = false;
+      paused = false;
+      pauseBtn.style.display = 'none';
       clearInterval(timeIntervalId);
       clearInterval(spawnIntervalId);
       endText.textContent = (win ? '🎉 You Win!' : '💀 Game Over');
@@ -407,6 +431,31 @@
 
     homeBtn2.addEventListener('click', ()=>location.href='index.html');
 
+    // Pause functionality
+    pauseBtn.addEventListener('click', ()=>{
+      if(running && !paused){
+        paused = true;
+        pauseOverlay.style.display = 'flex';
+      }
+    });
+
+    resumeBtn.addEventListener('click', ()=>{
+      paused = false;
+      pauseOverlay.style.display = 'none';
+      requestAnimationFrame(loop);
+    });
+
+    pauseSettingsBtn.addEventListener('click', ()=>{
+      running = false;
+      paused = false;
+      pauseBtn.style.display = 'none';
+      pauseOverlay.style.display = 'none';
+      settingsDiv.style.display = 'flex';
+      canvas.style.display = 'none';
+      clearInterval(timeIntervalId);
+      clearInterval(spawnIntervalId);
+    });
+
     // keys
     window._left = false;
     window._right = false;
@@ -414,6 +463,10 @@
       if(e.key === 'ArrowLeft') window._left = true;
       if(e.key === 'ArrowRight') window._right = true;
       if(e.key.toLowerCase() === 'f') toggleFullscreen();
+      if(e.key.toLowerCase() === 'p' && running && !paused){
+        paused = true;
+        pauseOverlay.style.display = 'flex';
+      }
       if(e.code === 'Space' && overlay.style.display === 'flex') {
         overlay.style.display='none';
         startGameWithSettings(true);
