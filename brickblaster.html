@@ -5,248 +5,249 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Brick Blaster</title>
   <style>
-    body { margin:0; display:flex; align-items:center; justify-content:center; height:100vh; background:#111; color:#fff; font-family:sans-serif; overflow:hidden; }
-    #wrap { text-align:center; position:relative; }
-    canvas { background:#000; border:2px solid #444; border-radius:8px; display:none; margin:auto; }
-    #info { margin-top:10px; font-size:18px; }
-    #overlay { position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); color:#fff; font-size:24px; flex-direction:column; visibility:hidden; }
-    #overlay button { margin:10px; padding:10px 20px; font-size:18px; cursor:pointer; border:none; border-radius:6px; background:#0ff; color:#000; font-weight:bold; }
-    #settings { position:absolute; top:0; left:0; right:0; bottom:0; background:#000; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-    select, button { padding:10px; margin:10px; font-size:16px; border-radius:6px; border:none; }
-    #homeBtn { position:absolute; top:10px; left:10px; background:#0ff; color:#000; padding:8px 14px; font-weight:bold; border-radius:6px; border:none; cursor:pointer; }
+    :root{--accent:#0077cc}
+    html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:#111;color:#fff}
+    #wrap{position:relative;max-width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+    #settings{display:flex;flex-direction:column;align-items:center;background:linear-gradient(180deg,#071428,#03142a);padding:24px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+    #settings h1{margin:0 0 8px 0;color:var(--accent)}
+    #settings .option{margin:8px 0;color:#dfeefb}
+    .start-btn{background:var(--accent);color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:700}
+    .home-btn{background:#213249;color:#e6eef8;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+
+    #gameCanvas{display:none;box-shadow:0 12px 40px rgba(0,0,0,0.6);border-radius:8px}
+    #countdown{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;color:yellow;pointer-events:none;display:none}
+    #overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);flex-direction:column}
+    #overlay .btnrow{display:flex;gap:12px;margin-top:12px}
+    #overlay button{padding:10px 16px;border-radius:8px;border:0;cursor:pointer}
+    #overlay .retry{background:#0ff;color:#000}
+    #overlay .settings{background:#ffd966;color:#000}
+    #overlay .home{background:#7ee; color:#000}
+
+    #homeTop{position:fixed;top:12px;left:12px;padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer;z-index:2000}
+    #hud{position:fixed;top:12px;right:12px;color:#dfeefb;font-weight:700}
   </style>
 </head>
 <body>
   <div id="wrap">
-    <button id="homeBtn" onclick="goHome()">Home</button>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="info">Lives: <span id="lives">3</span> | Score: <span id="score">0</span> | Time: <span id="time">0</span>s</div>
-    <div id="overlay">
-      <div id="message"></div>
-      <div>
-        <button id="retryBtn">Retry</button>
-        <button id="settingsBtn">Settings</button>
-        <button id="homePageBtn">Home</button>
+    <button id="homeTop" onclick="location.href='index.html'">🏠 Home</button>
+    <div id="settings">
+      <h1>🧱 Brick Blaster</h1>
+      <div class="option">
+        <label style="color:#cfeffd">Ball Speed:</label>
+        <select id="speedSelect">
+          <option value="6">1 (Slow)</option>
+          <option value="8">2 (Medium)</option>
+          <option value="10">3 (Fast)</option>
+        </select>
+      </div>
+      <div class="option">
+        <label style="color:#cfeffd">Bricks:</label>
+        <select id="brickSelect">
+          <option value="12">1 (12 Bricks — 4×3)</option>
+          <option value="24">2 (24 Bricks — 6×4)</option>
+          <option value="48">3 (48 Bricks — 8×6)</option>
+          <option value="endless">4 (Endless — starts 48)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="start-btn" id="startBtn">Start Game</button>
+        <button class="home-btn" onclick="location.href='index.html'">🏠 Home</button>
       </div>
     </div>
-    <div id="settings">
-      <h2>Brick Blaster Settings</h2>
-      <label>Difficulty (Ball Speed): </label>
-      <select id="speedSelect">
-        <option value="1">1 (Slow)</option>
-        <option value="2">2 (Medium)</option>
-        <option value="3">3 (Fast)</option>
-      </select>
-      <label>Bricks Mode:</label>
-      <select id="brickSelect">
-        <option value="12">12 Bricks (4x3)</option>
-        <option value="24">24 Bricks (6x4)</option>
-        <option value="48">48 Bricks (8x6)</option>
-        <option value="endless">Endless Mode</option>
-      </select>
-      <button id="startBtn">Start Game</button>
+    <canvas id="gameCanvas" width="800" height="600" aria-label="Brick Blaster canvas"></canvas>
+    <div id="countdown">3</div>
+    <div id="overlay">
+      <div id="endText" style="font-size:20px"></div>
+      <div class="btnrow">
+        <button class="retry" id="retryBtn">Retry</button>
+        <button class="settings" id="settingsBtn">Settings</button>
+        <button class="home" id="homeBtn2">Home</button>
+      </div>
     </div>
+    <div id="hud">Lives: <span id="hudLives">3</span> &nbsp;&nbsp; Score: <span id="hudScore">0</span> &nbsp;&nbsp; Time: <span id="hudTime">0</span>s</div>
   </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const overlay = document.getElementById('overlay');
-    const message = document.getElementById('message');
-    const settingsDiv = document.getElementById('settings');
+    const startBtn = document.getElementById('startBtn');
     const speedSelect = document.getElementById('speedSelect');
     const brickSelect = document.getElementById('brickSelect');
-    const homeBtn = document.getElementById('homeBtn');
+    const countdownEl = document.getElementById('countdown');
+    const overlay = document.getElementById('overlay');
+    const endText = document.getElementById('endText');
     const retryBtn = document.getElementById('retryBtn');
     const settingsBtn = document.getElementById('settingsBtn');
-    const homePageBtn = document.getElementById('homePageBtn');
-    const livesEl = document.getElementById('lives');
-    const scoreEl = document.getElementById('score');
-    const timeEl = document.getElementById('time');
+    const homeBtn2 = document.getElementById('homeBtn2');
+    const settingsDiv = document.getElementById('settings');
+    const hudLives = document.getElementById('hudLives');
+    const hudScore = document.getElementById('hudScore');
+    const hudTime = document.getElementById('hudTime');
 
-    let x, y, dx, dy, paddleX, rightPressed, leftPressed, lives, score, timer, intervalId;
-    let brickRowCount, brickColumnCount, brickWidth, brickHeight, brickPadding, brickOffsetTop;
-    let brickGrid, endlessMode = false, spawnInterval;
-    const paddleHeight = 10;
-    let paddleWidth = 75, ballRadius = 8;
+    let ball, paddle, bricks, lives, score, startTime, timerInterval, endlessInterval;
+    let speed = 6, brickMode = 12, endless = false;
 
-    function goHome(){ window.location.href='index.html'; }
-
-    function initBricks() {
-      brickGrid = [];
-      let totalBricks = brickRowCount * brickColumnCount;
-      for (let c = 0; c < brickColumnCount; c++) {
-        brickGrid[c] = [];
-        for (let r = 0; r < brickRowCount; r++) {
-          brickGrid[c][r] = { x:0, y:0, status:1 };
+    class Brick {
+      constructor(x,y,w,h){
+        this.x=x; this.y=y; this.w=w; this.h=h; this.alive=true;
+      }
+      draw(){
+        if(this.alive){
+          ctx.fillStyle='#'+Math.floor(Math.random()*16777215).toString(16);
+          ctx.fillRect(this.x,this.y,this.w-1,this.h-1);
         }
       }
     }
 
-    function setupBricksGrid(cols, rows) {
-      brickColumnCount = cols;
-      brickRowCount = rows;
-      brickPadding = 0;
-      brickWidth = canvas.width / cols;
-      brickHeight = 20;
-      brickOffsetTop = 0;
-      initBricks();
+    function initGame(){
+      settingsDiv.style.display='none';
+      canvas.style.display='block';
+      ball = {x:canvas.width/2,y:canvas.height-40,r:brickMode===48||endless?8:brickMode===24?10:12,speedX:0,speedY:0};
+      paddle = {w:brickMode===48||endless?80:brickMode===24?100:120,h:10,x:(canvas.width-100)/2,y:canvas.height-20};
+      lives = 3; score = 0; bricks=[];
+      hudLives.textContent=lives;
+      hudScore.textContent=score;
+      hudTime.textContent=0;
+      setupBricks();
+      startCountdown(3);
     }
 
-    function startGame() {
-      settingsDiv.style.display = 'none';
-      canvas.style.display = 'block';
-      overlay.style.visibility = 'hidden';
-
-      let speed = parseInt(speedSelect.value);
-      endlessMode = brickSelect.value === 'endless';
-      if (brickSelect.value === '12') setupBricksGrid(4,3);
-      else if (brickSelect.value === '24') setupBricksGrid(6,4);
-      else setupBricksGrid(8,6);
-
-      if (brickSelect.value === '12'){ paddleWidth=100; ballRadius=10; }
-      else if (brickSelect.value === '24'){ paddleWidth=85; ballRadius=9; }
-      else { paddleWidth=70; ballRadius=8; }
-
-      x = canvas.width / 2;
-      y = canvas.height - 30;
-      let angle = (Math.random()*Math.PI/3)+(Math.PI/6);
-      dx = speed * Math.cos(angle);
-      dy = -speed * Math.sin(angle);
-      paddleX = (canvas.width - paddleWidth) / 2;
-      rightPressed = leftPressed = false;
-      lives = 3; score = 0; timer = 0;
-      livesEl.textContent = lives;
-      scoreEl.textContent = score;
-      timeEl.textContent = timer;
-
-      clearInterval(intervalId);
-      intervalId = setInterval(()=>{timer++; timeEl.textContent=timer;},1000);
-
-      if(endlessMode){
-        clearInterval(spawnInterval);
-        spawnInterval = setInterval(spawnNewBrick,3000);
-      }
-
-      countdown(3, draw);
-    }
-
-    function countdown(n, cb){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle='#0ff';
-      ctx.font='60px Arial';
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      function tick(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        if(n>0){
-          ctx.fillText(n,canvas.width/2,canvas.height/2);
-          n--; setTimeout(tick,1000);
-        } else cb();
-      }
-      tick();
-    }
-
-    function drawBricks(){
-      for(let c=0;c<brickColumnCount;c++){
-        for(let r=0;r<brickRowCount;r++){
-          let b=brickGrid[c][r];
-          if(b.status==1){
-            let brickX = c*(brickWidth+brickPadding);
-            let brickY = brickOffsetTop + r*(brickHeight+brickPadding);
-            b.x = brickX; b.y = brickY;
-            ctx.beginPath();
-            ctx.rect(brickX, brickY, brickWidth, brickHeight);
-            ctx.fillStyle = '#f33';
-            ctx.fill();
-            ctx.closePath();
-          }
+    function setupBricks(){
+      let rows, cols;
+      if(endless||brickMode===48){rows=6;cols=8;}
+      else if(brickMode===24){rows=4;cols=6;}
+      else{rows=3;cols=4;}
+      let brickWidth = canvas.width/cols;
+      let brickHeight = 20;
+      bricks = [];
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          bricks.push(new Brick(c*brickWidth,r*brickHeight,brickWidth,brickHeight));
         }
       }
     }
 
-    function spawnNewBrick(){
-      if(!endlessMode) return;
-      let emptyCells = [];
-      for(let c=0;c<brickColumnCount;c++){
-        for(let r=0;r<Math.min(brickRowCount+6,Math.floor(canvas.height/brickHeight)-2);r++){
-          if(!brickGrid[c]) brickGrid[c]=[];
-          if(!brickGrid[c][r] || brickGrid[c][r].status!==1) emptyCells.push({c,r});
+    function startCountdown(n){
+      countdownEl.style.display='flex';
+      countdownEl.textContent=n;
+      let count = n;
+      let cdInterval = setInterval(()=>{
+        count--;
+        if(count>0){countdownEl.textContent=count;}
+        else{
+          clearInterval(cdInterval);
+          countdownEl.style.display='none';
+          startBall();
+          requestAnimationFrame(gameLoop);
+          startTimer();
         }
-      }
-      if(emptyCells.length>0){
-        let cell = emptyCells[Math.floor(Math.random()*emptyCells.length)];
-        if(!brickGrid[cell.c]) brickGrid[cell.c]=[];
-        brickGrid[cell.c][cell.r]={x:0,y:0,status:1};
-      }
+      },1000);
     }
 
-    function drawBall(){ ctx.beginPath(); ctx.arc(x,y,ballRadius,0,Math.PI*2); ctx.fillStyle='#0ff'; ctx.fill(); ctx.closePath(); }
-    function drawPaddle(){ ctx.beginPath(); ctx.rect(paddleX,canvas.height-paddleHeight,paddleWidth,paddleHeight); ctx.fillStyle='#0f0'; ctx.fill(); ctx.closePath(); }
-
-    function collisionDetection(){
-      for(let c=0;c<brickColumnCount;c++){
-        for(let r=0;r<brickRowCount;r++){
-          let b=brickGrid[c][r];
-          if(b && b.status==1){
-            if(x> b.x && x<b.x+brickWidth && y>b.y && y<b.y+brickHeight){
-              dy=-dy; b.status=0; score++; scoreEl.textContent=score;
-              if(!endlessMode && score==brickRowCount*brickColumnCount){ endGame('YOU WIN!'); }
-            }
-          }
-        }
-      }
+    function startBall(){
+      if(!ball) return;
+      let angle = Math.random()*Math.PI/3 + Math.PI/6;
+      ball.speedX = speed*Math.cos(angle);
+      ball.speedY = -speed*Math.sin(angle);
     }
 
     function draw(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      drawBricks(); drawBall(); drawPaddle(); collisionDetection();
+      if(paddle) ctx.fillStyle='lime', ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+      if(ball) {ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fill();}
+      if(bricks) bricks.forEach(b=>b.draw());
+    }
 
-      if(x+dx>canvas.width-ballRadius||x+dx<ballRadius) dx=-dx;
-      if(y+dy<ballRadius) dy=-dy; else if(y+dy>canvas.height-ballRadius){
-        if(x>paddleX&&x<paddleX+paddleWidth){ dy=-dy; }
-        else{
-          lives--; livesEl.textContent=lives;
-          if(!lives){ endGame('GAME OVER'); return; }
-          else{ x=canvas.width/2; y=canvas.height-30; dy=-Math.abs(dy); }
-        }
+    function update(){
+      if(!ball || !paddle) return;
+
+      ball.x += ball.speedX;
+      ball.y += ball.speedY;
+
+      if(ball.x<ball.r||ball.x>canvas.width-ball.r){ball.speedX*=-1}
+      if(ball.y<ball.r){ball.speedY*=-1}
+      if(ball.y>canvas.height){lives--; if(lives<=0){endGame('Game Over')}else{resetBall()};}
+
+      if(ball.y+paddle.h>=paddle.y&&ball.y+paddle.h<=paddle.y+paddle.h&&ball.x>=paddle.x&&ball.x<=paddle.x+paddle.w){
+        ball.speedY*=-1; ball.y=paddle.y-ball.r;
       }
 
-      if(rightPressed&&paddleX<canvas.width-paddleWidth) paddleX+=5;
-      else if(leftPressed&&paddleX>0) paddleX-=5;
+      bricks.forEach(b=>{
+        if(b.alive&&ball.x>b.x&&ball.x<b.x+b.w&&ball.y>b.y&&ball.y<b.y+b.h){
+          b.alive=false; score++; hudScore.textContent=score;
+          ball.speedY*=-1;
+        }
+      });
 
-      x+=dx; y+=dy; requestAnimationFrame(draw);
+      // Endless brick spawning
+      if(endless && Date.now() - (window.lastSpawn||0) > 3000){
+        spawnEndlessBrick();
+        window.lastSpawn = Date.now();
+      }
+    }
+
+    function spawnEndlessBrick(){
+      let brickWidth = canvas.width/8;
+      let brickHeight = 20;
+      let positions = [];
+      for(let r=0;r<6;r++){
+        for(let c=0;c<8;c++){
+          positions.push({r,c});
+        }
+      }
+      positions.sort(()=>Math.random()-0.5);
+      for(let pos of positions){
+        let exists = bricks.some(b=>b.alive && b.x===pos.c*brickWidth && b.y===pos.r*brickHeight);
+        if(!exists){
+          bricks.push(new Brick(pos.c*brickWidth,pos.r*brickHeight,brickWidth,brickHeight));
+          break;
+        }
+      }
+    }
+
+    function gameLoop(){
+      draw();
+      update();
+      if(lives>0 && bricks.some(b=>b.alive)) requestAnimationFrame(gameLoop);
+      else if(bricks.every(b=>!b.alive)){endGame('You Win')} 
+    }
+
+    function resetBall(){
+      if(!ball) return;
+      ball.x=canvas.width/2; ball.y=canvas.height-40;
+      startBall();
     }
 
     function endGame(msg){
-      clearInterval(intervalId);
-      if(endlessMode) clearInterval(spawnInterval);
-      overlay.style.visibility='visible';
-      message.textContent=`${msg} | Score: ${score} | Time: ${timer}s`;
+      clearInterval(timerInterval);
+      overlay.style.display='flex';
+      endText.textContent=msg+' | Time: '+hudTime.textContent+'s';
     }
 
-    document.addEventListener('keydown',e=>{
-      if(e.key==='Right'||e.key==='ArrowRight') rightPressed=true;
-      else if(e.key==='Left'||e.key==='ArrowLeft') leftPressed=true;
-      else if(e.key==='f'||e.key==='F') toggleFullscreen();
-      else if(e.key===' '&&overlay.style.visibility==='visible'){ startGame(); }
-    });
-    document.addEventListener('keyup',e=>{
-      if(e.key==='Right'||e.key==='ArrowRight') rightPressed=false;
-      else if(e.key==='Left'||e.key==='ArrowLeft') leftPressed=false;
-    });
-
-    retryBtn.onclick=()=>startGame();
-    settingsBtn.onclick=()=>{ overlay.style.visibility='hidden'; settingsDiv.style.display='flex'; canvas.style.display='none'; };
-    homePageBtn.onclick=()=>goHome();
-
-    document.getElementById('startBtn').onclick=startGame;
-
-    function toggleFullscreen(){
-      if(!document.fullscreenElement){
-        if(canvas.requestFullscreen) canvas.requestFullscreen();
-      } else { document.exitFullscreen(); }
+    function startTimer(){
+      startTime=Date.now();
+      timerInterval=setInterval(()=>{
+        hudTime.textContent=Math.floor((Date.now()-startTime)/1000);
+      },1000);
     }
+
+    startBtn.addEventListener('click',()=>{
+      speed=parseInt(speedSelect.value);
+      let bVal=brickSelect.value;
+      if(bVal==='endless'){endless=true;brickMode=48;}else{brickMode=parseInt(bVal);endless=false;}
+      initGame();
+    });
+
+    retryBtn.addEventListener('click',()=>{overlay.style.display='none';initGame();});
+    settingsBtn.addEventListener('click',()=>{overlay.style.display='none';settingsDiv.style.display='flex'});
+    homeBtn2.addEventListener('click',()=>{location.href='index.html'});
+
+    document.addEventListener('mousemove',e=>{
+      if(paddle) paddle.x=e.clientX-paddle.w/2;
+      if(paddle.x<0)paddle.x=0;
+      if(paddle.x+paddle.w>canvas.width)paddle.x=canvas.width-paddle.w
+    });
   </script>
 </body>
 </html>
