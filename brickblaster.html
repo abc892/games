@@ -892,7 +892,9 @@
 
     function loadPlayerData() {
       if (!database || !playerId) {
-        coinsDisplay.textContent = '0';
+        // Load from local storage if no database
+        playerCoins = parseInt(localStorage.getItem('brickBlasterCoins')) || 0;
+        coinsDisplay.textContent = playerCoins;
         coinsDisplay.style.display = 'block';
         shopBtn.style.display = 'block';
         return;
@@ -907,6 +909,13 @@
           coinsDisplay.textContent = playerCoins;
           coinsDisplay.style.display = 'block';
           shopBtn.style.display = 'block';
+          
+          // Update local storage with data from database
+          localStorage.setItem('brickBlasterCoins', playerCoins);
+          localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(ownedWallpapers));
+          if (selectedWallpaper) {
+            localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
+          }
         }
       });
     }
@@ -1284,6 +1293,7 @@
       });
     });
 
+    // --- CHANGED FUNCTIONS START ---
     window.updateDevField = function(field) {
       if (!devCurrentPlayerId || !database) return;
       
@@ -1293,6 +1303,15 @@
         [field]: value,
         lastUpdated: Date.now()
       }).then(() => {
+        // If updating current player, also update local storage
+        if (devCurrentPlayerId === playerId) {
+          if (field === 'coins') {
+            playerCoins = value;
+            localStorage.setItem('brickBlasterCoins', value);
+            coinsDisplay.textContent = value;
+          }
+          // Add other fields if needed for local storage
+        }
         alert(`${field} updated successfully!`);
       });
     };
@@ -1305,11 +1324,78 @@
           ownedWallpapers: wallpapers,
           lastUpdated: Date.now()
         }).then(() => {
+          // If updating current player, also update local storage
+          if (devCurrentPlayerId === playerId) {
+            ownedWallpapers = wallpapers;
+            localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(wallpapers));
+          }
           alert('All wallpapers given!');
           devCurrentPlayerData.ownedWallpapers = wallpapers;
         });
       }
     };
+
+    window.removeWallpaperAtIndex = function(index) {
+      if (!devCurrentPlayerId || !database) return;
+      
+      const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
+      
+      if (confirm('Delete this wallpaper from player\'s collection?')) {
+        playerWallpapers.splice(index, 1);
+        
+        database.ref('players/' + devCurrentPlayerId).update({
+          ownedWallpapers: playerWallpapers,
+          lastUpdated: Date.now()
+        }).then(() => {
+          // If updating current player, also update local storage
+          if (devCurrentPlayerId === playerId) {
+            ownedWallpapers = playerWallpapers;
+            localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(playerWallpapers));
+          }
+          alert('Wallpaper deleted!');
+          devCurrentPlayerData.ownedWallpapers = playerWallpapers;
+          showWallpaperManager();
+        });
+      }
+    };
+
+    window.deletePlayerAccount = function() {
+      if (!devCurrentPlayerId || !database) return;
+      
+      const playerNameToDelete = devPlayerName.textContent;
+      if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
+        database.ref('players/' + devCurrentPlayerId).remove().then(() => {
+          // Delete from local storage if it's the current player
+          if (devCurrentPlayerId === playerId) {
+            localStorage.removeItem('brickBlasterPlayerId');
+            localStorage.removeItem('brickBlasterPlayerName');
+            localStorage.removeItem('brickBlasterCoins');
+            localStorage.removeItem('brickBlasterOwnedWallpapers');
+            localStorage.removeItem('brickBlasterWallpaper');
+            
+            // Reset all player data
+            playerId = '';
+            playerName = '';
+            playerCoins = 0;
+            ownedWallpapers = [];
+            selectedWallpaper = null;
+            
+            // Hide UI elements and show name prompt
+            settingsDiv.style.display = 'none';
+            coinsDisplay.style.display = 'none';
+            shopBtn.style.display = 'none';
+            devBtn.style.display = 'none';
+            namePrompt.style.display = 'flex';
+          }
+          
+          alert('Account deleted successfully!');
+          devPlayerInfo.style.display = 'none';
+          devSearchInput.value = '';
+          devCurrentPlayerId = null;
+        });
+      }
+    };
+    // --- CHANGED FUNCTIONS END ---
 
     window.showWallpaperManager = function() {
       if (!devCurrentPlayerId || !database) return;
@@ -1339,39 +1425,6 @@
 
     window.hideWallpaperManager = function() {
       devWallpaperManager.style.display = 'none';
-    };
-
-    window.removeWallpaperAtIndex = function(index) {
-      if (!devCurrentPlayerId || !database) return;
-      
-      const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
-      
-      if (confirm('Delete this wallpaper from player\'s collection?')) {
-        playerWallpapers.splice(index, 1);
-        
-        database.ref('players/' + devCurrentPlayerId).update({
-          ownedWallpapers: playerWallpapers,
-          lastUpdated: Date.now()
-        }).then(() => {
-          alert('Wallpaper deleted!');
-          devCurrentPlayerData.ownedWallpapers = playerWallpapers;
-          showWallpaperManager();
-        });
-      }
-    };
-
-    window.deletePlayerAccount = function() {
-      if (!devCurrentPlayerId || !database) return;
-      
-      const playerNameToDelete = devPlayerName.textContent;
-      if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
-        database.ref('players/' + devCurrentPlayerId).remove().then(() => {
-          alert('Account deleted successfully!');
-          devPlayerInfo.style.display = 'none';
-          devSearchInput.value = '';
-          devCurrentPlayerId = null;
-        });
-      }
     };
 
     // Clean up duplicate names on load
