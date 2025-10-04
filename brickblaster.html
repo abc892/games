@@ -137,7 +137,7 @@
         cols = 8; rows = 6;
       }
       // spawn rows depth: allow deep spawning area so bricks won't immediately refill same holes
-      const maxSpawnRows = document.fullscreenElement ? 20 : 10;
+      const maxSpawnRows = document.fullscreenElement ? 30 : 15;
       spawnRows = maxSpawnRows;
       brickW = (canvas.width - (cols - 1) * brickPad) / cols; // exact fit horizontally with 1px gaps
     }
