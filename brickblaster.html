@@ -8,13 +8,11 @@
     :root{--accent:#0077cc}
     html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:#111;color:#fff}
     #wrap{position:relative;max-width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
-
     #settings{display:flex;flex-direction:column;align-items:center;background:linear-gradient(180deg,#071428,#03142a);padding:24px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
     #settings h1{margin:0 0 8px 0;color:var(--accent)}
     #settings .option{margin:8px 0;color:#dfeefb}
     .start-btn{background:var(--accent);color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:700}
     .home-btn{background:#213249;color:#e6eef8;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
-
     #gameCanvas{display:none;box-shadow:0 12px 40px rgba(0,0,0,0.6);border-radius:8px}
     #countdown{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;color:yellow;pointer-events:none;display:none}
     #overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);flex-direction:column}
@@ -23,8 +21,7 @@
     #overlay .retry{background:#0ff;color:#000}
     #overlay .settings{background:#ffd966;color:#000}
     #overlay .home{background:#7ee; color:#000}
-
-    #homeTop{position:fixed;top:12px;left:12px;padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer;z-index:2000}
+    #homeTop{position:fixed;top:12px;left:12px;padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
     #hud{position:fixed;top:12px;right:12px;color:#dfeefb;font-weight:700}
   </style>
 </head>
@@ -36,9 +33,9 @@
       <div class="option">
         <label style="color:#cfeffd">Ball Speed:</label>
         <select id="speedSelect">
-          <option value="6">1 (Slow)</option>
-          <option value="8">2 (Medium)</option>
-          <option value="10">3 (Fast)</option>
+          <option value="3">1 (Slow)</option>
+          <option value="5">2 (Medium)</option>
+          <option value="7">3 (Fast)</option>
         </select>
       </div>
       <div class="option">
@@ -59,7 +56,7 @@
     <div id="countdown">3</div>
     <div id="overlay">
       <div id="endText" style="font-size:20px"></div>
-      <div class="btnrow">
+      <div class="btnrow" style="margin-top:12px">
         <button class="retry" id="retryBtn">Retry</button>
         <button class="settings" id="settingsBtn">Settings</button>
         <button class="home" id="homeBtn2">Home</button>
@@ -71,183 +68,112 @@
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const startBtn = document.getElementById('startBtn');
-    const speedSelect = document.getElementById('speedSelect');
-    const brickSelect = document.getElementById('brickSelect');
+    const settingsDiv = document.getElementById('settings');
     const countdownEl = document.getElementById('countdown');
     const overlay = document.getElementById('overlay');
     const endText = document.getElementById('endText');
     const retryBtn = document.getElementById('retryBtn');
     const settingsBtn = document.getElementById('settingsBtn');
     const homeBtn2 = document.getElementById('homeBtn2');
-    const settingsDiv = document.getElementById('settings');
     const hudLives = document.getElementById('hudLives');
     const hudScore = document.getElementById('hudScore');
     const hudTime = document.getElementById('hudTime');
+    const startBtn = document.getElementById('startBtn');
 
-    let ball, paddle, bricks, lives, score, startTime, timerInterval, endlessInterval;
-    let speed = 6, brickMode = 12, endless = false;
+    let cols = 8, rows = 6;
+    let spawnRows = 0;
+    let brickW = 0, brickH = 20, brickPad = 1;
+    let grid = [];
 
-    class Brick {
-      constructor(x,y,w,h){
-        this.x=x; this.y=y; this.w=w; this.h=h; this.alive=true;
+    let ball = { x:0, y:0, r:10, dx:0, dy:0, speed:5 };
+    let paddle = { w:80, h:12, x:0 };
+
+    let score = 0, lives = 3, timePlayed = 0;
+    let running = false, endlessMode = false;
+    let gameLoopId = null, timeIntervalId = null, spawnIntervalId = null;
+    let lastSettings = { speedVal:3, mode:'12' };
+
+    function setCanvasSize(w,h){ canvas.width=w; canvas.height=h; canvas.style.width=w+'px'; canvas.style.height=h+'px'; }
+    function computeGridFromMode(mode){ if(mode==='12'){cols=4;rows=3;} else if(mode==='24'){cols=6;rows=4;} else {cols=8;rows=6;} const possible=Math.floor((canvas.height-100)/(brickH+brickPad)); spawnRows=Math.max(rows+6,Math.min(Math.max(rows,possible),60)); brickW=(canvas.width-(cols-1)*brickPad)/cols; }
+    function createGrid(){ grid=[]; for(let c=0;c<cols;c++){ grid[c]=[]; for(let r=0;r<spawnRows;r++) grid[c][r]=0; } }
+    function fillInitialBricks(mode){ if(mode==='endless'){ const startCols=8,startRows=6; for(let c=0;c<startCols;c++) for(let r=0;r<startRows;r++) grid[c][r]=1; } else { const total=parseInt(mode); let placed=0; for(let r=0;r<rows&&placed<total;r++){ for(let c=0;c<cols&&placed<total;c++){ grid[c][r]=1; placed++; } } } }
+    function spawnNewBrick(){ if(!endlessMode) return; let candidates=[]; for(let c=0;c<cols;c++){ for(let r=rows;r<spawnRows;r++){ if(grid[c][r]===0) candidates.push({c,r}); } } if(candidates.length===0){ for(let c=0;c<cols;c++){ for(let r=0;r<spawnRows;r++) if(grid[c][r]===0) candidates.push({c,r}); } } if(candidates.length===0) return; const pick=candidates[Math.floor(Math.random()*candidates.length)]; grid[pick.c][pick.r]=1; }
+    function generateVelocity(speed){ const deg=(Math.random()*40+25); const rad=deg*Math.PI/180; const dir=(Math.random()<0.5)?-1:1; const dx=Math.cos(rad)*speed; const dy=-Math.sin(rad)*speed; return {dx,dy}; }
+    function drawBricks(){ for(let c=0;c<cols;c++){ for(let r=0;r<spawnRows;r++){ if(grid[c][r]===1){ const x=c*(brickW+brickPad); const y=r*(brickH+brickPad); ctx.fillStyle='#f33'; ctx.fillRect(x,y,brickW,brickH); } } } }
+    function draw(){ ctx.clearRect(0,0,canvas.width,canvas.height); drawBricks(); ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fillStyle='#ffdd00'; ctx.fill(); ctx.closePath(); ctx.fillStyle='#00aaff'; ctx.fillRect(paddle.x,canvas.height-paddle.h-10,paddle.w,paddle.h); hudLives.textContent=lives; hudScore.textContent=score; hudTime.textContent=timePlayed; }
+
+    function checkCollisions(){
+      for(let c=0;c<cols;c++){
+        for(let r=0;r<spawnRows;r++){
+          if(grid[c][r]===1){
+            const bx=c*(brickW+brickPad);
+            const by=r*(brickH+brickPad);
+            // CHANGE: ball immediately smashes brick
+            if(ball.x+ball.dx>bx && ball.x+ball.dx<bx+brickW && ball.y+ball.dy>by && ball.y+ball.dy<by+brickH){
+              grid[c][r]=0; score++;
+              ball.dy=-ball.dy;
+              if(!endlessMode){
+                let totalBricks=0; for(let cc=0;cc<cols;cc++) for(let rr=0;rr<rows;rr++) if(grid[cc][rr]===1) totalBricks++;
+                if(totalBricks===0) endRound(true);
+              }
+              return;
+            }
+          }
+        }
       }
-      draw(){
-        if(this.alive){
-          ctx.fillStyle='#'+Math.floor(Math.random()*16777215).toString(16);
-          ctx.fillRect(this.x,this.y,this.w-1,this.h-1);
+      if(ball.x+ball.dx>canvas.width-ball.r || ball.x+ball.dx<ball.r) ball.dx=-ball.dx;
+      if(ball.y+ball.dy<ball.r) ball.dy=-ball.dy;
+      const paddleTop=canvas.height-paddle.h-10;
+      if(ball.y+ball.dy>paddleTop-ball.r){
+        if(ball.x>paddle.x && ball.x<paddle.x+paddle.w){
+          const hit=(ball.x-(paddle.x+paddle.w/2))/(paddle.w/2);
+          const angle=hit*(Math.PI/3);
+          ball.dx=ball.speed*Math.sin(angle);
+          ball.dy=-Math.abs(ball.speed*Math.cos(angle));
+        } else if(ball.y+ball.dy>canvas.height+ball.r){
+          lives--; if(lives<=0) endRound(false); else resetBall();
         }
       }
     }
 
-    function initGame(){
-      settingsDiv.style.display='none';
-      canvas.style.display='block';
-      ball = {x:canvas.width/2,y:canvas.height-40,r:brickMode===48||endless?8:brickMode===24?10:12,speedX:0,speedY:0};
-      paddle = {w:brickMode===48||endless?80:brickMode===24?100:120,h:10,x:(canvas.width-100)/2,y:canvas.height-20};
-      lives = 3; score = 0; bricks=[];
-      hudLives.textContent=lives;
-      hudScore.textContent=score;
-      hudTime.textContent=0;
-      setupBricks();
-      startCountdown(3);
+    function resetBall(){ ball.x=canvas.width/2; ball.y=canvas.height-60; const v=generateVelocity(ball.speed); ball.dx=v.dx; ball.dy=v.dy; }
+
+    function loop(){ if(!running) return; ball.x+=ball.dx; ball.y+=ball.dy; checkCollisions(); if(window._right) paddle.x=Math.min(canvas.width-paddle.w,paddle.x+7); if(window._left) paddle.x=Math.max(0,paddle.x-7); draw(); requestAnimationFrame(loop); }
+    function startCountdownThenStart(){ countdownEl.style.display='flex'; let n=3; countdownEl.textContent=n; const t=setInterval(()=>{ n--; if(n>0) countdownEl.textContent=n; else{ clearInterval(t); countdownEl.style.display='none'; beginPlay(); } },1000); }
+    function beginPlay(){ running=true; timePlayed=0; score=0; lives=3; hudLives.textContent=lives; hudScore.textContent=score; hudTime.textContent=timePlayed; resetBall(); paddle.x=(canvas.width-paddle.w)/2; if(endlessMode){ clearInterval(spawnIntervalId); spawnIntervalId=setInterval(spawnNewBrick,3000); } if(timeIntervalId) clearInterval(timeIntervalId); timeIntervalId=setInterval(()=>{ if(running) timePlayed++; },1000); requestAnimationFrame(loop); }
+
+    function startGameWithSettings(useLast=false){
+      let speedVal, modeVal;
+      if(useLast){ speedVal=lastSettings.speedVal; modeVal=lastSettings.mode; }
+      else{ speedVal=parseInt(document.getElementById('speedSelect').value); modeVal=document.getElementById('brickSelect').value; lastSettings={speedVal,mode:modeVal}; }
+      // CHANGE: increase speed globally
+      ball.speed=speedVal*1.2;
+      const v=generateVelocity(ball.speed); ball.dx=v.dx; ball.dy=v.dy;
+      paddle.w=(modeVal==='12')?100:(modeVal==='24')?85:70; paddle.h=12;
+      endlessMode=(modeVal==='endless');
+      const modeForGrid=endlessMode?'48':modeVal;
+      computeGridFromMode(modeForGrid);
+      createGrid(); fillInitialBricks(modeVal);
+      settingsDiv.style.display='none'; overlay.style.display='none'; canvas.style.display='block';
+      startCountdownThenStart();
     }
 
-    function setupBricks(){
-      let rows, cols;
-      if(endless||brickMode===48){rows=6;cols=8;}
-      else if(brickMode===24){rows=4;cols=6;}
-      else{rows=3;cols=4;}
-      let brickWidth = canvas.width/cols;
-      let brickHeight = 20;
-      bricks = [];
-      for(let r=0;r<rows;r++){
-        for(let c=0;c<cols;c++){
-          bricks.push(new Brick(c*brickWidth,r*brickHeight,brickWidth,brickHeight));
-        }
-      }
-    }
+    function endRound(win){ running=false; clearInterval(timeIntervalId); clearInterval(spawnIntervalId); endText.textContent=(win?'🎉 You Win!':'💀 Game Over'); overlay.style.display='flex'; overlay.style.zIndex=1000; endText.textContent+=` | Score: ${score} | Time: ${timePlayed}s`; }
 
-    function startCountdown(n){
-      countdownEl.style.display='flex';
-      countdownEl.textContent=n;
-      let count = n;
-      let cdInterval = setInterval(()=>{
-        count--;
-        if(count>0){countdownEl.textContent=count;}
-        else{
-          clearInterval(cdInterval);
-          countdownEl.style.display='none';
-          startBall();
-          requestAnimationFrame(gameLoop);
-          startTimer();
-        }
-      },1000);
-    }
+    startBtn.onclick=()=>startGameWithSettings(false);
+    retryBtn.onclick=()=>startGameWithSettings(true);
+    settingsBtn.onclick=()=>{ overlay.style.display='none'; settingsDiv.style.display='flex'; canvas.style.display='none'; };
+    homeBtn2.onclick=()=>location.href='index.html';
 
-    function startBall(){
-      if(!ball) return;
-      let angle = Math.random()*Math.PI/3 + Math.PI/6;
-      ball.speedX = speed*Math.cos(angle);
-      ball.speedY = -speed*Math.sin(angle);
-    }
+    window._left=false; window._right=false;
+    document.addEventListener('keydown', e=>{ if(e.key==='ArrowLeft') window._left=true; if(e.key==='ArrowRight') window._right=true; if(e.key.toLowerCase()==='f') toggleFullscreen(); if(e.code==='Space' && overlay.style.display==='flex'){ overlay.style.display='none'; startGameWithSettings(true); } });
+    document.addEventListener('keyup', e=>{ if(e.key==='ArrowLeft') window._left=false; if(e.key==='ArrowRight') window._right=false; });
 
-    function draw(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      if(paddle) ctx.fillStyle='lime', ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
-      if(ball) {ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fill();}
-      if(bricks) bricks.forEach(b=>b.draw());
-    }
+    function toggleFullscreen(){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); } else document.exitFullscreen().catch(()=>{}); }
+    document.addEventListener('fullscreenchange', ()=>{ if(document.fullscreenElement){ setCanvasSize(window.innerWidth,window.innerHeight); } else { setCanvasSize(800,600); } computeGridFromMode(lastSettings.mode==='endless'?'48':lastSettings.mode); createGrid(); fillInitialBricks(lastSettings.mode); paddle.x=Math.min(Math.max(0,paddle.x),canvas.width-paddle.w); ball.x=Math.min(Math.max(ball.r,ball.x),canvas.width-ball.r); resetBall(); draw(); });
 
-    function update(){
-      if(!ball || !paddle) return;
-
-      ball.x += ball.speedX;
-      ball.y += ball.speedY;
-
-      if(ball.x<ball.r||ball.x>canvas.width-ball.r){ball.speedX*=-1}
-      if(ball.y<ball.r){ball.speedY*=-1}
-      if(ball.y>canvas.height){lives--; if(lives<=0){endGame('Game Over')}else{resetBall()};}
-
-      if(ball.y+paddle.h>=paddle.y&&ball.y+paddle.h<=paddle.y+paddle.h&&ball.x>=paddle.x&&ball.x<=paddle.x+paddle.w){
-        ball.speedY*=-1; ball.y=paddle.y-ball.r;
-      }
-
-      bricks.forEach(b=>{
-        if(b.alive&&ball.x>b.x&&ball.x<b.x+b.w&&ball.y>b.y&&ball.y<b.y+b.h){
-          b.alive=false; score++; hudScore.textContent=score;
-          ball.speedY*=-1;
-        }
-      });
-
-      // Endless brick spawning
-      if(endless && Date.now() - (window.lastSpawn||0) > 3000){
-        spawnEndlessBrick();
-        window.lastSpawn = Date.now();
-      }
-    }
-
-    function spawnEndlessBrick(){
-      let brickWidth = canvas.width/8;
-      let brickHeight = 20;
-      let positions = [];
-      for(let r=0;r<6;r++){
-        for(let c=0;c<8;c++){
-          positions.push({r,c});
-        }
-      }
-      positions.sort(()=>Math.random()-0.5);
-      for(let pos of positions){
-        let exists = bricks.some(b=>b.alive && b.x===pos.c*brickWidth && b.y===pos.r*brickHeight);
-        if(!exists){
-          bricks.push(new Brick(pos.c*brickWidth,pos.r*brickHeight,brickWidth,brickHeight));
-          break;
-        }
-      }
-    }
-
-    function gameLoop(){
-      draw();
-      update();
-      if(lives>0 && bricks.some(b=>b.alive)) requestAnimationFrame(gameLoop);
-      else if(bricks.every(b=>!b.alive)){endGame('You Win')} 
-    }
-
-    function resetBall(){
-      if(!ball) return;
-      ball.x=canvas.width/2; ball.y=canvas.height-40;
-      startBall();
-    }
-
-    function endGame(msg){
-      clearInterval(timerInterval);
-      overlay.style.display='flex';
-      endText.textContent=msg+' | Time: '+hudTime.textContent+'s';
-    }
-
-    function startTimer(){
-      startTime=Date.now();
-      timerInterval=setInterval(()=>{
-        hudTime.textContent=Math.floor((Date.now()-startTime)/1000);
-      },1000);
-    }
-
-    startBtn.addEventListener('click',()=>{
-      speed=parseInt(speedSelect.value);
-      let bVal=brickSelect.value;
-      if(bVal==='endless'){endless=true;brickMode=48;}else{brickMode=parseInt(bVal);endless=false;}
-      initGame();
-    });
-
-    retryBtn.addEventListener('click',()=>{overlay.style.display='none';initGame();});
-    settingsBtn.addEventListener('click',()=>{overlay.style.display='none';settingsDiv.style.display='flex'});
-    homeBtn2.addEventListener('click',()=>{location.href='index.html'});
-
-    document.addEventListener('mousemove',e=>{
-      if(paddle) paddle.x=e.clientX-paddle.w/2;
-      if(paddle.x<0)paddle.x=0;
-      if(paddle.x+paddle.w>canvas.width)paddle.x=canvas.width-paddle.w
-    });
+    window.addEventListener('beforeunload', ()=>{ clearInterval(spawnIntervalId); clearInterval(timeIntervalId); });
+    setCanvasSize(800,600); computeGridFromMode('12'); createGrid(); fillInitialBricks('12'); draw();
   </script>
 </body>
 </html>
