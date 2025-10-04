@@ -38,12 +38,101 @@
     #pauseOverlay .pauseSettings{background:#ffd966;color:#000}
     /* small HUD */
     #hud{position:fixed;top:12px;right:12px;color:#dfeefb;font-weight:700}
+    /* Name prompt overlay */
+    #namePrompt{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:2000}
+    #namePrompt .prompt-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);text-align:center}
+    #namePrompt h2{color:var(--accent);margin-bottom:15px}
+    #namePrompt input{padding:10px;width:250px;border-radius:5px;border:2px solid var(--accent);background:#0a1929;color:#fff;font-size:16px;margin-bottom:15px}
+    #namePrompt button{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700}
+    /* Leaderboard button */
+    #leaderboardBtn{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#ffd700;color:#000;cursor:pointer;font-weight:700;z-index:100}
+    /* User Settings button */
+    #userSettingsBtn{position:fixed;bottom:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#00aaff;color:#fff;cursor:pointer;font-weight:700;z-index:100}
+    /* Leaderboard overlay */
+    #leaderboardOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
+    #leaderboardOverlay .lb-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);min-width:400px}
+    #leaderboardOverlay h2{color:#ffd700;margin-bottom:20px;text-align:center}
+    #leaderboardOverlay .lb-entry{display:flex;justify-content:space-between;padding:12px;margin:8px 0;background:#0a1929;border-radius:5px;color:#dfeefb}
+    #leaderboardOverlay .lb-entry.first{background:#ffd700;color:#000;font-weight:bold}
+    #leaderboardOverlay .lb-entry.second{background:#c0c0c0;color:#000;font-weight:bold}
+    #leaderboardOverlay .lb-entry.third{background:#cd7f32;color:#000;font-weight:bold}
+    #leaderboardOverlay .close-btn{background:#ff4444;color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
+    #leaderboardOverlay .back-btn{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:10px;display:block;margin-left:auto;margin-right:auto}
+    /* User Settings overlay */
+    #userSettingsOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
+    #userSettingsOverlay .us-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);min-width:450px}
+    #userSettingsOverlay h2{color:#00aaff;margin-bottom:20px;text-align:center}
+    #userSettingsOverlay .stat-item{display:flex;justify-content:space-between;padding:12px;margin:8px 0;background:#0a1929;border-radius:5px;color:#dfeefb;font-size:16px}
+    #userSettingsOverlay .stat-label{font-weight:bold;color:#7dd3fc}
+    #userSettingsOverlay .stat-value{color:#ffd700}
+    .change-name-section{margin-top:20px;padding-top:20px;border-top:2px solid #0a1929;text-align:center}
+    .change-name-section p{color:#dfeefb;margin-bottom:10px}
+    .change-name-section input{padding:8px;width:200px;border-radius:5px;border:2px solid var(--accent);background:#0a1929;color:#fff;margin-right:8px}
+    .change-name-section button{background:var(--accent);color:#fff;border:0;padding:8px 16px;border-radius:8px;cursor:pointer}
+    .change-name-section button:disabled{background:#555;cursor:not-allowed}
+    .change-name-section .name-timer{color:#ff6b6b;font-size:14px;margin-top:8px}
+    #userSettingsOverlay .back-btn{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
   </style>
 </head>
 <body>
   <div id="wrap">
     <button id="homeTop" onclick="location.href='index.html'">🏠 Home</button>
     <button id="pauseBtn">⏸ Pause</button>
+    <button id="leaderboardBtn">🏆 Leaderboard</button>
+    <button id="userSettingsBtn">👤 User Settings</button>
+    <!-- Name Prompt Overlay -->
+    <div id="namePrompt" style="display:none">
+      <div class="prompt-box">
+        <h2>Welcome to Brick Blaster!</h2>
+        <p style="color:#dfeefb;margin-bottom:20px">Please enter your name to continue</p>
+        <input type="text" id="nameInput" placeholder="Enter your name" maxlength="20" />
+        <br>
+        <button id="nameSubmit">Continue</button>
+      </div>
+    </div>
+    <!-- Leaderboard Overlay -->
+    <div id="leaderboardOverlay">
+      <div class="lb-box">
+        <h2>🏆 Leaderboard - Top 3 Players</h2>
+        <div id="leaderboardList">
+          <p style="color:#dfeefb;text-align:center">Loading...</p>
+        </div>
+        <button class="back-btn" id="backFromLeaderboard">Back to Settings</button>
+        <button class="close-btn" id="closeLeaderboard">Close</button>
+      </div>
+    </div>
+    <!-- User Settings Overlay -->
+    <div id="userSettingsOverlay">
+      <div class="us-box">
+        <h2>👤 User Settings</h2>
+        <div id="userStatsList">
+          <div class="stat-item">
+            <span class="stat-label">Player Name:</span>
+            <span class="stat-value" id="statPlayerName">-</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Highest Score:</span>
+            <span class="stat-value" id="statHighScore">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total Games Played:</span>
+            <span class="stat-value" id="statTotalGames">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Average Score:</span>
+            <span class="stat-value" id="statAvgScore">0</span>
+          </div>
+        </div>
+        <div class="change-name-section">
+          <p><strong>Change Your Name</strong></p>
+          <p style="font-size:13px;color:#aaa">You can change your name once every 10 days</p>
+          <input type="text" id="newNameInputUS" placeholder="New name" maxlength="20" />
+          <button id="changeNameBtnUS">Update Name</button>
+          <div class="name-timer" id="nameTimer"></div>
+        </div>
+        <button class="back-btn" id="backFromUserSettings">Back to Settings</button>
+      </div>
+    </div>
     <!-- Settings: RESTORED layout you liked -->
     <div id="settings">
       <h1>🧱 Brick Blaster</h1>
@@ -106,6 +195,28 @@
     const pauseOverlay = document.getElementById('pauseOverlay');
     const resumeBtn = document.getElementById('resumeBtn');
     const pauseSettingsBtn = document.getElementById('pauseSettingsBtn');
+    const namePrompt = document.getElementById('namePrompt');
+    const nameInput = document.getElementById('nameInput');
+    const nameSubmit = document.getElementById('nameSubmit');
+    const leaderboardBtn = document.getElementById('leaderboardBtn');
+    const leaderboardOverlay = document.getElementById('leaderboardOverlay');
+    const closeLeaderboard = document.getElementById('closeLeaderboard');
+    const backFromLeaderboard = document.getElementById('backFromLeaderboard');
+    const leaderboardList = document.getElementById('leaderboardList');
+    const userSettingsBtn = document.getElementById('userSettingsBtn');
+    const userSettingsOverlay = document.getElementById('userSettingsOverlay');
+    const backFromUserSettings = document.getElementById('backFromUserSettings');
+    const statPlayerName = document.getElementById('statPlayerName');
+    const statHighScore = document.getElementById('statHighScore');
+    const statTotalGames = document.getElementById('statTotalGames');
+    const statAvgScore = document.getElementById('statAvgScore');
+    const newNameInputUS = document.getElementById('newNameInputUS');
+    const changeNameBtnUS = document.getElementById('changeNameBtnUS');
+    const nameTimer = document.getElementById('nameTimer');
+
+    let playerName = '';
+    let playerId = '';
+    let database = null;
 
     let cols = 8, rows = 6; // logical top-grid (based on mode)
     let spawnRows = 0; // how deep bricks can spawn
@@ -371,39 +482,6 @@
       startCountdownThenStart();
     }
 
-    function computeGridFromMode(mode){
-      // helper mapping
-      if(mode === '12'){
-        cols = 4; rows = 3;
-      } else if(mode === '24'){
-        cols = 6; rows = 4;
-      } else {
-        cols = 8; rows = 6;
-      }
-      // spawn depth
-      const maxSpawnRows = document.fullscreenElement ? 20 : 10;
-      spawnRows = maxSpawnRows;
-      brickW = (canvas.width - (cols - 1) * brickPad) / cols;
-    }
-
-    function fillInitialBricks(modeVal){
-      // clear top area
-      for(let c=0;c<cols;c++) for(let r=0;r<spawnRows;r++) grid[c][r]=0;
-      if(modeVal === 'endless'){
-        // start with 48 in top 8x6 positions
-        for(let c=0;c<8;c++) for(let r=0;r<6;r++) if(c<cols && r<spawnRows) grid[c][r] = 1;
-      } else {
-        const total = parseInt(modeVal);
-        let placed = 0;
-        for(let r=0;r<rows && placed<total;r++){
-          for(let c=0;c<cols && placed<total;c++){
-            grid[c][r] = 1;
-            placed++;
-          }
-        }
-      }
-    }
-
     function endRound(win){
       running = false;
       paused = false;
@@ -415,6 +493,9 @@
       overlay.style.zIndex = 1000;
       // show stats
       endText.textContent += ` | Score: ${score} | Time: ${timePlayed}s`;
+      
+      // Update leaderboard and stats
+      updatePlayerStats(score);
     }
 
     // Retry: start countdown immediately with same settings
@@ -539,6 +620,245 @@
     fillInitialBricks('12');
     // draw initial settings preview (optional)
     draw();
+
+    // --- Name and Leaderboard System ---
+    function initializePlayer() {
+      // Check if player has a saved ID
+      playerId = localStorage.getItem('brickBlasterPlayerId');
+      playerName = localStorage.getItem('brickBlasterPlayerName');
+      
+      if (!playerId) {
+        // Generate new player ID
+        playerId = 'player_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+        localStorage.setItem('brickBlasterPlayerId', playerId);
+        // Show name prompt
+        namePrompt.style.display = 'flex';
+      } else if (!playerName) {
+        // Has ID but no name (shouldn't happen, but handle it)
+        namePrompt.style.display = 'flex';
+      } else {
+        // Player already registered, proceed
+        settingsDiv.style.display = 'flex';
+      }
+    }
+
+    nameSubmit.addEventListener('click', submitName);
+    nameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') submitName();
+    });
+
+    function submitName() {
+      const name = nameInput.value.trim();
+      if (name.length === 0) {
+        alert('Please enter a valid name');
+        return;
+      }
+      playerName = name;
+      localStorage.setItem('brickBlasterPlayerName', playerName);
+      
+      // Initialize player in Firebase
+      if (database) {
+        database.ref('players/' + playerId).set({
+          name: playerName,
+          highScore: 0,
+          totalGames: 0,
+          totalScore: 0,
+          lastNameChange: Date.now(),
+          lastUpdated: Date.now()
+        });
+      }
+      
+      namePrompt.style.display = 'none';
+      settingsDiv.style.display = 'flex';
+    }
+
+    function updatePlayerStats(newScore) {
+      if (!database || !playerId) return;
+      
+      const playerRef = database.ref('players/' + playerId);
+      
+      // Get current stats
+      playerRef.once('value').then((snapshot) => {
+        const data = snapshot.val() || {
+          name: playerName,
+          highScore: 0,
+          totalGames: 0,
+          totalScore: 0,
+          lastNameChange: Date.now(),
+          lastUpdated: Date.now()
+        };
+        
+        const newHighScore = Math.max(data.highScore, newScore);
+        const newTotalGames = data.totalGames + 1;
+        const newTotalScore = data.totalScore + newScore;
+        
+        // Update player stats
+        playerRef.update({
+          name: playerName,
+          highScore: newHighScore,
+          totalGames: newTotalGames,
+          totalScore: newTotalScore,
+          lastUpdated: Date.now()
+        });
+      });
+    }
+
+    // Leaderboard functionality
+    leaderboardBtn.addEventListener('click', showLeaderboard);
+    closeLeaderboard.addEventListener('click', () => {
+      leaderboardOverlay.style.display = 'none';
+    });
+    backFromLeaderboard.addEventListener('click', () => {
+      leaderboardOverlay.style.display = 'none';
+      settingsDiv.style.display = 'flex';
+    });
+
+    function showLeaderboard() {
+      if (!database) {
+        leaderboardList.innerHTML = '<p style="color:#dfeefb;text-align:center">Leaderboard not available</p>';
+        leaderboardOverlay.style.display = 'flex';
+        return;
+      }
+      
+      leaderboardOverlay.style.display = 'flex';
+      leaderboardList.innerHTML = '<p style="color:#dfeefb;text-align:center">Loading...</p>';
+      
+      database.ref('players').orderByChild('highScore').limitToLast(3).once('value').then((snapshot) => {
+        const players = [];
+        snapshot.forEach((child) => {
+          players.push(child.val());
+        });
+        
+        // Sort by high score descending
+        players.sort((a, b) => b.highScore - a.highScore);
+        
+        if (players.length === 0) {
+          leaderboardList.innerHTML = '<p style="color:#dfeefb;text-align:center">No players yet. Be the first!</p>';
+          return;
+        }
+        
+        let html = '';
+        players.forEach((player, index) => {
+          const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : 'third';
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+          html += `<div class="lb-entry ${rankClass}">
+            <span>${medal} ${player.name}</span>
+            <span>${player.highScore} pts</span>
+          </div>`;
+        });
+        
+        leaderboardList.innerHTML = html;
+      });
+    }
+
+    // User Settings functionality
+    userSettingsBtn.addEventListener('click', showUserSettings);
+    backFromUserSettings.addEventListener('click', () => {
+      userSettingsOverlay.style.display = 'none';
+      settingsDiv.style.display = 'flex';
+    });
+
+    function showUserSettings() {
+      if (!database || !playerId) {
+        userSettingsOverlay.style.display = 'flex';
+        statPlayerName.textContent = playerName || '-';
+        statHighScore.textContent = '0';
+        statTotalGames.textContent = '0';
+        statAvgScore.textContent = '0';
+        updateNameChangeButton(0);
+        return;
+      }
+      
+      userSettingsOverlay.style.display = 'flex';
+      
+      database.ref('players/' + playerId).once('value').then((snapshot) => {
+        const data = snapshot.val() || {
+          name: playerName,
+          highScore: 0,
+          totalGames: 0,
+          totalScore: 0,
+          lastNameChange: Date.now()
+        };
+        
+        statPlayerName.textContent = data.name;
+        statHighScore.textContent = data.highScore;
+        statTotalGames.textContent = data.totalGames;
+        const avgScore = data.totalGames > 0 ? Math.round(data.totalScore / data.totalGames) : 0;
+        statAvgScore.textContent = avgScore;
+        
+        updateNameChangeButton(data.lastNameChange || 0);
+      });
+    }
+
+    function updateNameChangeButton(lastNameChange) {
+      const now = Date.now();
+      const tenDays = 10 * 24 * 60 * 60 * 1000; // 10 days in milliseconds
+      const timeSinceChange = now - lastNameChange;
+      
+      if (timeSinceChange >= tenDays) {
+        changeNameBtnUS.disabled = false;
+        nameTimer.textContent = '';
+      } else {
+        changeNameBtnUS.disabled = true;
+        const timeRemaining = tenDays - timeSinceChange;
+        const daysRemaining = Math.ceil(timeRemaining / (24 * 60 * 60 * 1000));
+        nameTimer.textContent = `You can change your name in ${daysRemaining} day(s)`;
+      }
+    }
+
+    changeNameBtnUS.addEventListener('click', () => {
+      const newName = newNameInputUS.value.trim();
+      if (newName.length === 0) {
+        alert('Please enter a valid name');
+        return;
+      }
+      
+      if (!database || !playerId) {
+        playerName = newName;
+        localStorage.setItem('brickBlasterPlayerName', playerName);
+        alert('Name updated locally!');
+        newNameInputUS.value = '';
+        showUserSettings();
+        return;
+      }
+      
+      database.ref('players/' + playerId).once('value').then((snapshot) => {
+        const data = snapshot.val();
+        const now = Date.now();
+        const tenDays = 10 * 24 * 60 * 60 * 1000;
+        const timeSinceChange = now - (data.lastNameChange || 0);
+        
+        if (timeSinceChange < tenDays) {
+          const daysRemaining = Math.ceil((tenDays - timeSinceChange) / (24 * 60 * 60 * 1000));
+          alert(`You can change your name in ${daysRemaining} day(s)`);
+          return;
+        }
+        
+        playerName = newName;
+        localStorage.setItem('brickBlasterPlayerName', playerName);
+        
+        database.ref('players/' + playerId).update({
+          name: playerName,
+          lastNameChange: now,
+          lastUpdated: now
+        }).then(() => {
+          alert('Name updated successfully!');
+          newNameInputUS.value = '';
+          showUserSettings();
+        });
+      });
+    });
+
+    // Initialize player system when page loads
+    window.addEventListener('load', () => {
+      // Wait a bit for Firebase to initialize
+      setTimeout(() => {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+          database = firebase.database();
+        }
+        initializePlayer();
+      }, 500);
+    });
   </script>
   <!-- ADD THIS BEFORE THE CLOSING </body> TAG IN EACH GAME PAGE -->
 <!-- (brickblaster.html, chess.html, tag.html, tictactoe.html, snake.html) -->
