@@ -44,14 +44,48 @@
     #namePrompt h2{color:var(--accent);margin-bottom:15px}
     #namePrompt input{padding:10px;width:250px;border-radius:5px;border:2px solid var(--accent);background:#0a1929;color:#fff;font-size:16px;margin-bottom:15px}
     #namePrompt button{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700}
+    /* Coins display */
+    #coinsDisplay{position:fixed;top:12px;right:140px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#ffd700,#ffed4e);color:#000;font-weight:bold;font-size:16px;z-index:100;box-shadow:0 4px 12px rgba(255,215,0,0.4);display:none}
+    #coinsDisplay::before{content:'🪙 '}
     /* Leaderboard button */
     #leaderboardBtn{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#ffd700;color:#000;cursor:pointer;font-weight:700;z-index:100}
+    /* Shop button */
+    #shopBtn{position:fixed;top:60px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#9333ea;color:#fff;cursor:pointer;font-weight:700;z-index:100;display:none}
     /* User Settings button */
     #userSettingsBtn{position:fixed;bottom:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#00aaff;color:#fff;cursor:pointer;font-weight:700;z-index:100}
+    /* Developer button */
+    #devBtn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:6px;border:0;background:#2a2a2a;color:#777;cursor:pointer;font-size:12px;z-index:100;opacity:0.4;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+    #devBtn:hover{opacity:0.8;background:#3a3a3a}
+    /* Developer overlays */
+    #devPasswordOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.95);z-index:2500}
+    #devPasswordOverlay .dev-box{background:linear-gradient(180deg,#1a1a1a,#0a0a0a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(255,0,0,0.3);border:2px solid #ff0000;min-width:400px;text-align:center}
+    #devPasswordOverlay h2{color:#ff0000;margin-bottom:20px}
+    #devPasswordOverlay input{padding:10px;width:250px;border-radius:5px;border:2px solid #ff0000;background:#1a1a1a;color:#fff;font-size:16px;margin-bottom:15px}
+    #devPasswordOverlay button{background:#ff0000;color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700;margin:5px}
+    #devPasswordOverlay .back-btn{background:#333}
+    #devPanelOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.95);z-index:2500;overflow-y:auto}
+    #devPanelOverlay .dev-panel{background:linear-gradient(180deg,#1a1a1a,#0a0a0a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(255,0,0,0.3);border:2px solid #ff0000;min-width:600px;max-height:90vh;overflow-y:auto;margin:20px}
+    #devPanelOverlay h2{color:#ff0000;margin-bottom:20px;text-align:center}
+    #devPanelOverlay .search-section{margin-bottom:30px;padding:20px;background:#111;border-radius:8px}
+    #devPanelOverlay .search-section input{padding:10px;width:calc(100% - 120px);border-radius:5px;border:2px solid #ff0000;background:#1a1a1a;color:#fff;margin-right:10px}
+    #devPanelOverlay .search-section button{background:#ff0000;color:#fff;border:0;padding:10px 20px;border-radius:8px;cursor:pointer}
+    #devPanelOverlay .player-info{background:#111;padding:20px;border-radius:8px;margin-bottom:20px}
+    #devPanelOverlay .player-info h3{color:#ff6666;margin-bottom:15px}
+    #devPanelOverlay .edit-field{display:flex;justify-content:space-between;align-items:center;margin:10px 0;padding:10px;background:#1a1a1a;border-radius:5px}
+    #devPanelOverlay .edit-field label{color:#ff9999;font-weight:bold;flex:1}
+    #devPanelOverlay .edit-field input{padding:8px;width:150px;border-radius:5px;border:1px solid #ff0000;background:#0a0a0a;color:#fff}
+    #devPanelOverlay .edit-field button{background:#ff0000;color:#fff;border:0;padding:8px 16px;border-radius:5px;cursor:pointer;margin-left:10px}
+    #devPanelOverlay .action-buttons{display:flex;gap:10px;margin-top:20px;justify-content:center;flex-wrap:wrap}
+    #devPanelOverlay .action-buttons button{background:#ff0000;color:#fff;border:0;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:bold}
+    #devPanelOverlay .action-buttons button.danger{background:#990000}
+    #devPanelOverlay .back-btn{background:#333;color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
     /* Leaderboard overlay */
     #leaderboardOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
     #leaderboardOverlay .lb-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);min-width:400px}
     #leaderboardOverlay h2{color:#ffd700;margin-bottom:20px;text-align:center}
+    #leaderboardOverlay .lb-tabs{display:flex;gap:10px;margin-bottom:20px;justify-content:center}
+    #leaderboardOverlay .lb-tabs button{padding:10px 20px;border:0;border-radius:8px;cursor:pointer;background:#0a1929;color:#dfeefb;font-weight:bold}
+    #leaderboardOverlay .lb-tabs button.active{background:var(--accent);color:#fff}
     #leaderboardOverlay .lb-entry{display:flex;justify-content:space-between;padding:12px;margin:8px 0;background:#0a1929;border-radius:5px;color:#dfeefb}
     #leaderboardOverlay .lb-entry.first{background:#ffd700;color:#000;font-weight:bold}
     #leaderboardOverlay .lb-entry.second{background:#c0c0c0;color:#000;font-weight:bold}
@@ -71,14 +105,97 @@
     .change-name-section button:disabled{background:#555;cursor:not-allowed}
     .change-name-section .name-timer{color:#ff6b6b;font-size:14px;margin-top:8px}
     #userSettingsOverlay .back-btn{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
+    /* Shop overlay */
+    #shopOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
+    #shopOverlay .shop-box{background:linear-gradient(180deg,#1e1b4b,#312e81);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(147,51,234,0.6);min-width:500px;max-height:80vh;overflow-y:auto}
+    #shopOverlay h2{color:#c084fc;margin-bottom:20px;text-align:center}
+    #shopOverlay .coins-info{text-align:center;font-size:20px;color:#ffd700;margin-bottom:20px;font-weight:bold}
+    #shopOverlay .spin-section{text-align:center;padding:20px;background:rgba(0,0,0,0.3);border-radius:10px;margin-bottom:20px}
+    #shopOverlay .spin-btn{background:linear-gradient(135deg,#9333ea,#c084fc);color:#fff;border:0;padding:15px 30px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:16px;box-shadow:0 4px 12px rgba(147,51,234,0.4)}
+    #shopOverlay .spin-btn:disabled{background:#555;cursor:not-allowed}
+    #shopOverlay .spin-result{margin-top:15px;font-size:16px;color:#c084fc;min-height:24px}
+    #shopOverlay h3{color:#a78bfa;margin:20px 0 10px 0}
+    #shopOverlay .wallpaper-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+    #shopOverlay .wallpaper-item{height:80px;border-radius:8px;cursor:pointer;border:3px solid transparent;position:relative;transition:all 0.3s}
+    #shopOverlay .wallpaper-item:hover{transform:scale(1.05);border-color:#c084fc}
+    #shopOverlay .wallpaper-item.selected{border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,0.5)}
+    #shopOverlay .wallpaper-item.rare{box-shadow:0 0 15px rgba(147,51,234,0.8)}
+    #shopOverlay .back-btn{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
   </style>
 </head>
 <body>
   <div id="wrap">
     <button id="homeTop" onclick="location.href='index.html'">🏠 Home</button>
     <button id="pauseBtn">⏸ Pause</button>
+    <div id="coinsDisplay">0</div>
     <button id="leaderboardBtn">🏆 Leaderboard</button>
+    <button id="shopBtn">🛍️ Shop</button>
     <button id="userSettingsBtn">👤 User Settings</button>
+    <button id="devBtn">⚙️</button>
+    <!-- Developer Password Overlay -->
+    <div id="devPasswordOverlay">
+      <div class="dev-box">
+        <h2>🔒 Developer Access</h2>
+        <p style="color:#ff6666;margin-bottom:20px">Enter Developer Password</p>
+        <input type="password" id="devPasswordInput" placeholder="Password" />
+        <br>
+        <button id="devPasswordSubmit">Enter</button>
+        <button class="back-btn" id="devPasswordBack">Back</button>
+      </div>
+    </div>
+    <!-- Developer Panel Overlay -->
+    <div id="devPanelOverlay">
+      <div class="dev-panel">
+        <h2>🛠️ Developer Panel</h2>
+        <div class="search-section">
+          <h3 style="color:#ff6666;margin-bottom:15px">Search Player</h3>
+          <input type="text" id="devSearchInput" placeholder="Enter player name" />
+          <button id="devSearchBtn">Search</button>
+        </div>
+        <div id="devPlayerInfo" style="display:none">
+          <div class="player-info">
+            <h3>Player: <span id="devPlayerName">-</span></h3>
+            <div class="edit-field">
+              <label>Highest Score:</label>
+              <input type="number" id="devHighScore" value="0" />
+              <button onclick="updateDevField('highScore')">Update</button>
+            </div>
+            <div class="edit-field">
+              <label>All-Time Score:</label>
+              <input type="number" id="devAllTimeScore" value="0" />
+              <button onclick="updateDevField('allTimeScore')">Update</button>
+            </div>
+            <div class="edit-field">
+              <label>Total Games:</label>
+              <input type="number" id="devTotalGames" value="0" />
+              <button onclick="updateDevField('totalGames')">Update</button>
+            </div>
+            <div class="edit-field">
+              <label>Total Score:</label>
+              <input type="number" id="devTotalScore" value="0" />
+              <button onclick="updateDevField('totalScore')">Update</button>
+            </div>
+            <div class="edit-field">
+              <label>Coins:</label>
+              <input type="number" id="devCoins" value="0" />
+              <button onclick="updateDevField('coins')">Update</button>
+            </div>
+            <div class="action-buttons">
+              <button onclick="giveAllWallpapers()">Give All Wallpapers</button>
+              <button onclick="showWallpaperManager()">Manage Wallpapers</button>
+              <button class="danger" onclick="deletePlayerAccount()">Delete Account</button>
+            </div>
+          </div>
+          <div id="devWallpaperManager" style="display:none;background:#111;padding:20px;border-radius:8px;margin-top:20px">
+            <h3 style="color:#ff6666;margin-bottom:15px">Player's Wallpapers</h3>
+            <div id="devWallpaperList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-bottom:15px">
+            </div>
+            <button onclick="hideWallpaperManager()" style="background:#555;color:#fff;border:0;padding:8px 16px;border-radius:5px;cursor:pointer">Close</button>
+          </div>
+        </div>
+        <button class="back-btn" id="devPanelBack">Back to Settings</button>
+      </div>
+    </div>
     <!-- Name Prompt Overlay -->
     <div id="namePrompt" style="display:none">
       <div class="prompt-box">
@@ -93,6 +210,10 @@
     <div id="leaderboardOverlay">
       <div class="lb-box">
         <h2>🏆 Leaderboard - Top 3 Players</h2>
+        <div class="lb-tabs">
+          <button id="tabHighScore" class="active">Highest Score (One Match)</button>
+          <button id="tabAllTime">All-Time Score</button>
+        </div>
         <div id="leaderboardList">
           <p style="color:#dfeefb;text-align:center">Loading...</p>
         </div>
@@ -113,12 +234,20 @@
             <span class="stat-value" id="statHighScore">0</span>
           </div>
           <div class="stat-item">
+            <span class="stat-label">All-Time Score:</span>
+            <span class="stat-value" id="statAllTimeScore">0</span>
+          </div>
+          <div class="stat-item">
             <span class="stat-label">Total Games Played:</span>
             <span class="stat-value" id="statTotalGames">0</span>
           </div>
           <div class="stat-item">
             <span class="stat-label">Average Score:</span>
             <span class="stat-value" id="statAvgScore">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Coins:</span>
+            <span class="stat-value" id="statCoins">0</span>
           </div>
         </div>
         <div class="change-name-section">
@@ -129,6 +258,23 @@
           <div class="name-timer" id="nameTimer"></div>
         </div>
         <button class="back-btn" id="backFromUserSettings">Back to Settings</button>
+      </div>
+    </div>
+    <!-- Shop Overlay -->
+    <div id="shopOverlay">
+      <div class="shop-box">
+        <h2>🛍️ Wallpaper Shop</h2>
+        <div class="coins-info">🪙 Your Coins: <span id="shopCoins">0</span></div>
+        <div class="spin-section">
+          <p style="color:#c084fc;margin-bottom:15px">Get a random wallpaper for 500 coins!</p>
+          <button class="spin-btn" id="spinBtn">🎰 Spin (500 coins)</button>
+          <div class="spin-result" id="spinResult"></div>
+        </div>
+        <h3>Your Wallpapers</h3>
+        <div class="wallpaper-grid" id="wallpaperGrid">
+          <p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>
+        </div>
+        <button class="back-btn" id="backFromShop">Back to Settings</button>
       </div>
     </div>
     <!-- Settings: RESTORED layout you liked -->
@@ -200,34 +346,96 @@
     const leaderboardOverlay = document.getElementById('leaderboardOverlay');
     const backFromLeaderboard = document.getElementById('backFromLeaderboard');
     const leaderboardList = document.getElementById('leaderboardList');
+    const tabHighScore = document.getElementById('tabHighScore');
+    const tabAllTime = document.getElementById('tabAllTime');
     const userSettingsBtn = document.getElementById('userSettingsBtn');
     const userSettingsOverlay = document.getElementById('userSettingsOverlay');
     const backFromUserSettings = document.getElementById('backFromUserSettings');
     const statPlayerName = document.getElementById('statPlayerName');
     const statHighScore = document.getElementById('statHighScore');
+    const statAllTimeScore = document.getElementById('statAllTimeScore');
     const statTotalGames = document.getElementById('statTotalGames');
     const statAvgScore = document.getElementById('statAvgScore');
+    const statCoins = document.getElementById('statCoins');
     const newNameInputUS = document.getElementById('newNameInputUS');
     const changeNameBtnUS = document.getElementById('changeNameBtnUS');
     const nameTimer = document.getElementById('nameTimer');
     const hudEl = document.getElementById('hud');
+    const coinsDisplay = document.getElementById('coinsDisplay');
+    const shopBtn = document.getElementById('shopBtn');
+    const shopOverlay = document.getElementById('shopOverlay');
+    const backFromShop = document.getElementById('backFromShop');
+    const shopCoins = document.getElementById('shopCoins');
+    const spinBtn = document.getElementById('spinBtn');
+    const spinResult = document.getElementById('spinResult');
+    const wallpaperGrid = document.getElementById('wallpaperGrid');
+    const devBtn = document.getElementById('devBtn');
+    const devPasswordOverlay = document.getElementById('devPasswordOverlay');
+    const devPasswordInput = document.getElementById('devPasswordInput');
+    const devPasswordSubmit = document.getElementById('devPasswordSubmit');
+    const devPasswordBack = document.getElementById('devPasswordBack');
+    const devPanelOverlay = document.getElementById('devPanelOverlay');
+    const devSearchInput = document.getElementById('devSearchInput');
+    const devSearchBtn = document.getElementById('devSearchBtn');
+    const devPlayerInfo = document.getElementById('devPlayerInfo');
+    const devPlayerName = document.getElementById('devPlayerName');
+    const devHighScore = document.getElementById('devHighScore');
+    const devAllTimeScore = document.getElementById('devAllTimeScore');
+    const devTotalGames = document.getElementById('devTotalGames');
+    const devTotalScore = document.getElementById('devTotalScore');
+    const devCoins = document.getElementById('devCoins');
+    const devPanelBack = document.getElementById('devPanelBack');
+    const devWallpaperManager = document.getElementById('devWallpaperManager');
+    const devWallpaperList = document.getElementById('devWallpaperList');
 
     let playerName = '';
     let playerId = '';
     let database = null;
+    let playerCoins = 0;
+    let selectedWallpaper = null;
+    let ownedWallpapers = [];
+    let currentLeaderboardTab = 'highScore';
+    let devCurrentPlayerId = null;
+    let devCurrentPlayerData = null;
+    const DEV_PASSWORD = 'qwaszx20';
 
-    let cols = 8, rows = 6; // logical top-grid (based on mode)
-    let spawnRows = 0; // how deep bricks can spawn
-    let brickW = 0, brickH = 20, brickPad = 1; // 1px spacing between bricks (as requested)
-    let grid = []; // grid[c][r] status
+    let cols = 8, rows = 6;
+    let spawnRows = 0;
+    let brickW = 0, brickH = 20, brickPad = 1;
+    let grid = [];
     let ball = { x:0, y:0, r:10, dx:0, dy:0, speed:5 };
     let paddle = { w:80, h:12, x:0 };
     let score = 0, lives = 3, timePlayed = 0;
     let running = false, endlessMode = false;
     let paused = false;
     let gameLoopId = null, timeIntervalId = null, spawnIntervalId = null;
-    // save last settings so Retry uses same settings
     let lastSettings = { speedVal:3, mode:'12' };
+
+    // 20 Wallpapers (17 normal + 3 rare)
+    const wallpapers = [
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+      'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+      'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+      'linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)',
+      'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
+      'linear-gradient(135deg, #f77062 0%, #fe5196 100%)',
+      'linear-gradient(135deg, #21d4fd 0%, #b721ff 100%)',
+      'linear-gradient(135deg, #08aeea 0%, #2af598 100%)',
+      'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)',
+      'linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)',
+      'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)',
+      // 3 RARE wallpapers (10% chance each)
+      'linear-gradient(135deg, #f6d365 0%, #fda085 100%)', // Golden Sunset
+      'linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%)', // Purple Dream
+      'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'  // Fire Rose
+    ];
+    const rareIndices = [17, 18, 19]; // Last 3 are rare
 
     // --- Helpers ---
     function setCanvasSize(w,h){
@@ -245,23 +453,21 @@
       } else {
         cols = 8; rows = 6;
       }
-      // spawn rows depth: allow deep spawning area so bricks won't immediately refill same holes
       const maxSpawnRows = document.fullscreenElement ? 30 : 15;
       spawnRows = maxSpawnRows;
-      brickW = (canvas.width - (cols - 1) * brickPad) / cols; // exact fit horizontally with 1px gaps
+      brickW = (canvas.width - (cols - 1) * brickPad) / cols;
     }
 
     function createGrid(){
       grid = [];
       for(let c=0;c<cols;c++){
         grid[c] = [];
-        for(let r=0;r<spawnRows;r++) grid[c][r] = 0; // 0 empty, 1 brick
+        for(let r=0;r<spawnRows;r++) grid[c][r] = 0;
       }
     }
 
     function fillInitialBricks(mode){
       if(mode === 'endless'){
-        // start with 48 in top-left positions (8x6)
         const startCols = 8, startRows = 6;
         for(let c=0;c<startCols;c++) for(let r=0;r<startRows;r++) grid[c][r] = 1;
       } else {
@@ -278,14 +484,12 @@
 
     function spawnNewBrick(){
       if(!endlessMode) return;
-      // prefer deeper rows (r >= rows) to avoid immediate refill
       let candidates = [];
       for(let c=0;c<cols;c++){
         for(let r=rows;r<spawnRows;r++){
           if(grid[c][r] === 0) candidates.push({c,r});
         }
       }
-      // if no deep candidates, allow any empty cell
       if(candidates.length === 0){
         for(let c=0;c<cols;c++){
           for(let r=0;r<spawnRows;r++) if(grid[c][r] === 0) candidates.push({c,r});
@@ -296,12 +500,10 @@
       grid[pick.c][pick.r] = 1;
     }
 
-    // generate ball velocity with a tilt that avoids nearly-vertical
     function generateVelocity(speed){
-      // choose angle between 25deg and 65deg from horizontal (for upward launch)
       const deg = (Math.random() * 40 + 25);
       const rad = deg * Math.PI / 180;
-      const dir = (Math.random() < 0.5) ? -1 : 1; // left or right
+      const dir = (Math.random() < 0.5) ? -1 : 1;
       const dx = Math.cos(rad) * speed * dir;
       const dy = -Math.sin(rad) * speed;
       return {dx,dy};
@@ -315,7 +517,6 @@
             const x = c * (brickW + brickPad);
             const y = r * (brickH + brickPad);
             ctx.fillStyle = '#f33';
-            // leave 1px spacing visually (brickPad handles gap)
             ctx.fillRect(x, y, brickW, brickH);
           }
         }
@@ -323,7 +524,14 @@
     }
 
     function draw(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // Apply wallpaper background if selected
+      if(selectedWallpaper){
+        ctx.fillStyle = selectedWallpaper;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+      }
+      
       drawBricks();
       // ball
       ctx.beginPath();
@@ -341,22 +549,18 @@
     }
 
     function checkCollisions(){
-      // bricks - check collision at ball edge
       for(let c=0;c<cols;c++){
         for(let r=0;r<spawnRows;r++){
           if(grid[c][r] === 1){
             const bx = c * (brickW + brickPad);
             const by = r * (brickH + brickPad);
-            // Check if ball edge touches brick
             if(ball.x + ball.r > bx && ball.x - ball.r < bx + brickW && 
                ball.y + ball.r > by && ball.y - ball.r < by + brickH){
               grid[c][r] = 0;
               score++;
-              // reflect vertical direction and nudge horizontal
               ball.dy = -ball.dy;
               ball.dx += (Math.random() - 0.5) * 0.2;
               if(!endlessMode){
-                // win check only on fixed mode
                 let totalBricks = 0;
                 for(let cc=0;cc<cols;cc++) for(let rr=0;rr<rows;rr++) if(grid[cc][rr]===1) totalBricks++;
                 if(totalBricks === 0) endRound(true);
@@ -366,17 +570,14 @@
           }
         }
       }
-      // walls
       if(ball.x + ball.dx > canvas.width - ball.r || ball.x + ball.dx < ball.r) ball.dx = -ball.dx;
       if(ball.y + ball.dy < ball.r) ball.dy = -ball.dy;
-      // paddle/bottom - check collision at ball edge
       const paddleTop = canvas.height - paddle.h - 10;
       if(ball.y + ball.r >= paddleTop && ball.y - ball.r < paddleTop + paddle.h){
         if(ball.x >= paddle.x && ball.x <= paddle.x + paddle.w){
-          // reflect with angle based on hit position
-          const hit = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2); // -1..1
+          const hit = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
           const speed = ball.speed;
-          const angle = hit * (Math.PI/3); // tilt up to 60deg
+          const angle = hit * (Math.PI/3);
           ball.dx = speed * Math.sin(angle);
           ball.dy = -Math.abs(speed * Math.cos(angle));
         }
@@ -395,22 +596,18 @@
       ball.dy = v.dy;
     }
 
-    // main loop
     function loop(){
       if(!running || paused) return;
       ball.x += ball.dx;
       ball.y += ball.dy;
       checkCollisions();
-      // paddle move (global keys)
       if(window._right) paddle.x = Math.min(canvas.width - paddle.w, paddle.x + 7);
       if(window._left) paddle.x = Math.max(0, paddle.x - 7);
       draw();
       requestAnimationFrame(loop);
     }
 
-    // --- Start / End / UI ---
     function startCountdownThenStart(){
-      // show 3..1 countdown then start
       countdownEl.style.display = 'flex';
       let n = 3;
       countdownEl.textContent = n;
@@ -426,7 +623,6 @@
     }
 
     function beginPlay(){
-      // start game loop
       running = true;
       paused = false;
       timePlayed = 0;
@@ -438,13 +634,12 @@
       resetBall();
       paddle.x = (canvas.width - paddle.w)/2;
       pauseBtn.style.display = 'block';
-      
-      // Hide buttons during gameplay
       leaderboardBtn.style.display = 'none';
       userSettingsBtn.style.display = 'none';
-      // Show HUD during gameplay
+      shopBtn.style.display = 'none';
+      coinsDisplay.style.display = 'none';
+      devBtn.style.display = 'none';
       hudEl.style.display = 'block';
-      
       if(endlessMode){
         clearInterval(spawnIntervalId);
         spawnIntervalId = setInterval(spawnNewBrick,3000);
@@ -457,7 +652,6 @@
     }
 
     function startGameWithSettings(useLast=false){
-      // read settings or reuse last
       let speedVal, modeVal;
       if(useLast){
         speedVal = lastSettings.speedVal;
@@ -467,7 +661,6 @@
         modeVal = document.getElementById('brickSelect').value;
         lastSettings = { speedVal, mode: modeVal };
       }
-      // configure ball & grid
       ball.speed = speedVal;
       const v = generateVelocity(ball.speed);
       ball.r = (modeVal==='12')?10:(modeVal==='24')?9:8;
@@ -480,7 +673,6 @@
       computeGridFromMode(modeForGrid);
       createGrid();
       fillInitialBricks(modeVal);
-      // hide settings, show canvas & HUD
       settingsDiv.style.display = 'none';
       overlay.style.display = 'none';
       canvas.style.display = 'block';
@@ -496,20 +688,16 @@
       endText.textContent = (win ? '🎉 You Win!' : '💀 Game Over');
       overlay.style.display = 'flex';
       overlay.style.zIndex = 1000;
-      // show stats
       endText.textContent += ` | Score: ${score} | Time: ${timePlayed}s`;
-      
-      // Show buttons when game ends
       leaderboardBtn.style.display = 'block';
       userSettingsBtn.style.display = 'block';
-      // Hide HUD when game ends
+      shopBtn.style.display = 'block';
+      coinsDisplay.style.display = 'block';
+      devBtn.style.display = 'block';
       hudEl.style.display = 'none';
-      
-      // Update leaderboard and stats
       updatePlayerStats(score);
     }
 
-    // Retry: start countdown immediately with same settings
     retryBtn.addEventListener('click', ()=>{
       overlay.style.display='none';
       startGameWithSettings(true);
@@ -519,16 +707,16 @@
       overlay.style.display='none';
       settingsDiv.style.display='flex';
       canvas.style.display='none';
-      // Show buttons in settings
       leaderboardBtn.style.display = 'block';
       userSettingsBtn.style.display = 'block';
-      // Hide HUD in settings
+      shopBtn.style.display = 'block';
+      coinsDisplay.style.display = 'block';
+      devBtn.style.display = 'block';
       hudEl.style.display = 'none';
     });
 
     homeBtn2.addEventListener('click', ()=>location.href='index.html');
 
-    // Pause functionality
     pauseBtn.addEventListener('click', ()=>{
       if(running && !paused){
         paused = true;
@@ -551,14 +739,14 @@
       canvas.style.display = 'none';
       clearInterval(timeIntervalId);
       clearInterval(spawnIntervalId);
-      // Show buttons when returning to settings
       leaderboardBtn.style.display = 'block';
       userSettingsBtn.style.display = 'block';
-      // Hide HUD when returning to settings
+      shopBtn.style.display = 'block';
+      coinsDisplay.style.display = 'block';
+      devBtn.style.display = 'block';
       hudEl.style.display = 'none';
     });
 
-    // keys
     window._left = false;
     window._right = false;
     document.addEventListener('keydown', (e)=>{
@@ -586,7 +774,6 @@
       if(e.key === 'ArrowRight') window._right = false;
     });
 
-    // fullscreen toggle (robust) and handle resize
     function toggleFullscreen(){
       if(!document.fullscreenElement){
         document.documentElement.requestFullscreen().catch(()=>{});
@@ -595,71 +782,57 @@
 
     document.addEventListener('fullscreenchange', ()=>{
       if(document.fullscreenElement){
-        // expand canvas to viewport
         setCanvasSize(window.innerWidth, window.innerHeight);
       } else {
-        // revert to 800x600
         setCanvasSize(800,600);
       }
-      // Only recompute grid layout if game is not running
       if(!running) {
-        // recompute grid & positions without changing current settings
         computeGridFromMode(lastSettings.mode === 'endless' ? '48' : lastSettings.mode);
         createGrid();
         fillInitialBricks(lastSettings.mode);
-        // reposition ball/paddle
         paddle.x = Math.min(Math.max(0, paddle.x), canvas.width - paddle.w);
         ball.x = Math.min(Math.max(ball.r, ball.x), canvas.width - ball.r);
         resetBall();
         draw();
       } else {
-        // Game is running - just adjust positions and brick size
         const oldBrickW = brickW;
         computeGridFromMode(lastSettings.mode === 'endless' ? '48' : lastSettings.mode);
-        // Scale existing grid positions
         paddle.x = Math.min(Math.max(0, paddle.x), canvas.width - paddle.w);
         ball.x = Math.min(Math.max(ball.r, ball.x), canvas.width - ball.r);
         ball.y = Math.min(Math.max(ball.r, ball.y), canvas.height - ball.r);
       }
     });
 
-    // start button
     startBtn.addEventListener('click', ()=>{
       startGameWithSettings(false);
     });
 
-    // spawn interval cleared on page leave
     window.addEventListener('beforeunload', ()=>{
       clearInterval(spawnIntervalId);
       clearInterval(timeIntervalId);
     });
 
-    // initial canvas size
     setCanvasSize(800,600);
     computeGridFromMode('12');
     createGrid();
     fillInitialBricks('12');
-    // draw initial settings preview (optional)
     draw();
 
-    // --- Name and Leaderboard System ---
+    // --- Name and Player System ---
     function initializePlayer() {
-      // Check if player has a saved ID
       playerId = localStorage.getItem('brickBlasterPlayerId');
       playerName = localStorage.getItem('brickBlasterPlayerName');
       
       if (!playerId) {
-        // Generate new player ID
         playerId = 'player_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
         localStorage.setItem('brickBlasterPlayerId', playerId);
-        // Show name prompt
         namePrompt.style.display = 'flex';
       } else if (!playerName) {
-        // Has ID but no name (shouldn't happen, but handle it)
         namePrompt.style.display = 'flex';
       } else {
-        // Player already registered, proceed
         settingsDiv.style.display = 'flex';
+        loadPlayerData();
+        devBtn.style.display = 'block';
       }
     }
 
@@ -674,61 +847,128 @@
         alert('Please enter a valid name');
         return;
       }
-      playerName = name;
-      localStorage.setItem('brickBlasterPlayerName', playerName);
       
-      // Initialize player in Firebase
+      // Check if name already exists
       if (database) {
-        database.ref('players/' + playerId).set({
-          name: playerName,
-          highScore: 0,
-          totalGames: 0,
-          totalScore: 0,
-          lastNameChange: Date.now(),
-          lastUpdated: Date.now()
+        database.ref('players').orderByChild('name').equalTo(name).once('value').then((snapshot) => {
+          if (snapshot.exists()) {
+            alert('This name is already taken. Please choose another name.');
+            nameInput.value = '';
+            return;
+          }
+          
+          // Name is unique, proceed
+          playerName = name;
+          localStorage.setItem('brickBlasterPlayerName', playerName);
+          
+          database.ref('players/' + playerId).set({
+            name: playerName,
+            highScore: 0,
+            allTimeScore: 0,
+            totalGames: 0,
+            totalScore: 0,
+            coins: 0,
+            ownedWallpapers: [],
+            selectedWallpaper: null,
+            lastNameChange: Date.now(),
+            lastUpdated: Date.now()
+          });
+          
+          namePrompt.style.display = 'none';
+          settingsDiv.style.display = 'flex';
+          loadPlayerData();
+          devBtn.style.display = 'block';
         });
+      } else {
+        // No database, proceed locally
+        playerName = name;
+        localStorage.setItem('brickBlasterPlayerName', playerName);
+        namePrompt.style.display = 'none';
+        settingsDiv.style.display = 'flex';
+        loadPlayerData();
+        devBtn.style.display = 'block';
+      }
+    }
+
+    function loadPlayerData() {
+      if (!database || !playerId) {
+        coinsDisplay.textContent = '0';
+        coinsDisplay.style.display = 'block';
+        shopBtn.style.display = 'block';
+        return;
       }
       
-      namePrompt.style.display = 'none';
-      settingsDiv.style.display = 'flex';
+      database.ref('players/' + playerId).once('value').then((snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          playerCoins = data.coins || 0;
+          ownedWallpapers = data.ownedWallpapers || [];
+          selectedWallpaper = data.selectedWallpaper || null;
+          coinsDisplay.textContent = playerCoins;
+          coinsDisplay.style.display = 'block';
+          shopBtn.style.display = 'block';
+        }
+      });
     }
 
     function updatePlayerStats(newScore) {
       if (!database || !playerId) return;
       
+      const coinsEarned = newScore;
+      playerCoins += coinsEarned;
+      
       const playerRef = database.ref('players/' + playerId);
       
-      // Get current stats
       playerRef.once('value').then((snapshot) => {
         const data = snapshot.val() || {
           name: playerName,
           highScore: 0,
+          allTimeScore: 0,
           totalGames: 0,
           totalScore: 0,
+          coins: 0,
           lastNameChange: Date.now(),
           lastUpdated: Date.now()
         };
         
         const newHighScore = Math.max(data.highScore, newScore);
+        const newAllTimeScore = (data.allTimeScore || 0) + newScore;
         const newTotalGames = data.totalGames + 1;
         const newTotalScore = data.totalScore + newScore;
         
-        // Update player stats
         playerRef.update({
           name: playerName,
           highScore: newHighScore,
+          allTimeScore: newAllTimeScore,
           totalGames: newTotalGames,
           totalScore: newTotalScore,
+          coins: playerCoins,
           lastUpdated: Date.now()
         });
+        
+        coinsDisplay.textContent = playerCoins;
       });
     }
 
-    // Leaderboard functionality
+    // --- Leaderboard ---
     leaderboardBtn.addEventListener('click', showLeaderboard);
     backFromLeaderboard.addEventListener('click', () => {
       leaderboardOverlay.style.display = 'none';
       settingsDiv.style.display = 'flex';
+    });
+
+    tabHighScore.addEventListener('click', () => {
+      currentLeaderboardTab = 'highScore';
+      tabHighScore.classList.add('active');
+      tabAllTime.classList.remove('active');
+      loadLeaderboardData();
+    });
+
+    tabAllTime.addEventListener('click', () => {
+      currentLeaderboardTab = 'allTimeScore';
+      tabAllTime.classList.add('active');
+      tabHighScore.classList.remove('active');
+      loadLeaderboardData();
     });
 
     function showLeaderboard() {
@@ -739,16 +979,22 @@
       }
       
       leaderboardOverlay.style.display = 'flex';
+      currentLeaderboardTab = 'highScore';
+      tabHighScore.classList.add('active');
+      tabAllTime.classList.remove('active');
+      loadLeaderboardData();
+    }
+
+    function loadLeaderboardData() {
       leaderboardList.innerHTML = '<p style="color:#dfeefb;text-align:center">Loading...</p>';
       
-      database.ref('players').orderByChild('highScore').limitToLast(3).once('value').then((snapshot) => {
+      database.ref('players').orderByChild(currentLeaderboardTab).limitToLast(3).once('value').then((snapshot) => {
         const players = [];
         snapshot.forEach((child) => {
           players.push(child.val());
         });
         
-        // Sort by high score descending
-        players.sort((a, b) => b.highScore - a.highScore);
+        players.sort((a, b) => b[currentLeaderboardTab] - a[currentLeaderboardTab]);
         
         if (players.length === 0) {
           leaderboardList.innerHTML = '<p style="color:#dfeefb;text-align:center">No players yet. Be the first!</p>';
@@ -759,9 +1005,10 @@
         players.forEach((player, index) => {
           const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : 'third';
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+          const scoreLabel = currentLeaderboardTab === 'highScore' ? 'pts' : 'total pts';
           html += `<div class="lb-entry ${rankClass}">
             <span>${medal} ${player.name}</span>
-            <span>${player.highScore} pts</span>
+            <span>${player[currentLeaderboardTab]} ${scoreLabel}</span>
           </div>`;
         });
         
@@ -769,7 +1016,7 @@
       });
     }
 
-    // User Settings functionality
+    // --- User Settings ---
     userSettingsBtn.addEventListener('click', showUserSettings);
     backFromUserSettings.addEventListener('click', () => {
       userSettingsOverlay.style.display = 'none';
@@ -781,8 +1028,10 @@
         userSettingsOverlay.style.display = 'flex';
         statPlayerName.textContent = playerName || '-';
         statHighScore.textContent = '0';
+        statAllTimeScore.textContent = '0';
         statTotalGames.textContent = '0';
         statAvgScore.textContent = '0';
+        statCoins.textContent = '0';
         updateNameChangeButton(0);
         return;
       }
@@ -793,16 +1042,20 @@
         const data = snapshot.val() || {
           name: playerName,
           highScore: 0,
+          allTimeScore: 0,
           totalGames: 0,
           totalScore: 0,
+          coins: 0,
           lastNameChange: Date.now()
         };
         
         statPlayerName.textContent = data.name;
         statHighScore.textContent = data.highScore;
+        statAllTimeScore.textContent = data.allTimeScore || 0;
         statTotalGames.textContent = data.totalGames;
         const avgScore = data.totalGames > 0 ? Math.round(data.totalScore / data.totalGames) : 0;
         statAvgScore.textContent = avgScore;
+        statCoins.textContent = data.coins || 0;
         
         updateNameChangeButton(data.lastNameChange || 0);
       });
@@ -810,7 +1063,7 @@
 
     function updateNameChangeButton(lastNameChange) {
       const now = Date.now();
-      const tenDays = 10 * 24 * 60 * 60 * 1000; // 10 days in milliseconds
+      const tenDays = 10 * 24 * 60 * 60 * 1000;
       const timeSinceChange = now - lastNameChange;
       
       if (timeSinceChange >= tenDays) {
@@ -867,95 +1120,364 @@
       });
     });
 
-    // Initialize player system when page loads
+    // --- Shop System ---
+    shopBtn.addEventListener('click', showShop);
+    backFromShop.addEventListener('click', () => {
+      shopOverlay.style.display = 'none';
+      settingsDiv.style.display = 'flex';
+    });
+
+    function showShop() {
+      shopOverlay.style.display = 'flex';
+      shopCoins.textContent = playerCoins;
+      spinResult.textContent = '';
+      renderWallpaperGrid();
+      updateSpinButton();
+    }
+
+    function updateSpinButton() {
+      if (playerCoins >= 500) {
+        spinBtn.disabled = false;
+      } else {
+        spinBtn.disabled = true;
+      }
+    }
+
+    spinBtn.addEventListener('click', () => {
+      if (playerCoins < 500) {
+        spinResult.textContent = '❌ Not enough coins!';
+        return;
+      }
+      
+      playerCoins -= 500;
+      coinsDisplay.textContent = playerCoins;
+      shopCoins.textContent = playerCoins;
+      
+      // Spin logic: 10% chance for rare wallpapers
+      let selectedIndex;
+      const rand = Math.random();
+      if (rand < 0.1) {
+        // 10% chance: pick from rare wallpapers
+        selectedIndex = rareIndices[Math.floor(Math.random() * rareIndices.length)];
+      } else {
+        // 90% chance: pick from all wallpapers
+        selectedIndex = Math.floor(Math.random() * wallpapers.length);
+      }
+      
+      const wonWallpaper = wallpapers[selectedIndex];
+      
+      if (!ownedWallpapers.includes(wonWallpaper)) {
+        ownedWallpapers.push(wonWallpaper);
+      }
+      
+      const isRare = rareIndices.includes(selectedIndex);
+      spinResult.textContent = isRare ? '✨ RARE WALLPAPER UNLOCKED! ✨' : '🎉 New Wallpaper Unlocked!';
+      spinResult.style.color = isRare ? '#ffd700' : '#c084fc';
+      
+      if (database && playerId) {
+        database.ref('players/' + playerId).update({
+          coins: playerCoins,
+          ownedWallpapers: ownedWallpapers
+        });
+      }
+      
+      renderWallpaperGrid();
+      updateSpinButton();
+    });
+
+    function renderWallpaperGrid() {
+      if (ownedWallpapers.length === 0) {
+        wallpaperGrid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>';
+        return;
+      }
+      
+      let html = '';
+      ownedWallpapers.forEach((wp, index) => {
+        const isSelected = wp === selectedWallpaper;
+        const isRare = rareIndices.includes(wallpapers.indexOf(wp));
+        const rareClass = isRare ? 'rare' : '';
+        const selectedClass = isSelected ? 'selected' : '';
+        html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp}" data-index="${index}"></div>`;
+      });
+      
+      wallpaperGrid.innerHTML = html;
+      
+      document.querySelectorAll('.wallpaper-item').forEach((item, idx) => {
+        item.addEventListener('click', () => {
+          selectedWallpaper = ownedWallpapers[idx];
+          if (database && playerId) {
+            database.ref('players/' + playerId).update({
+              selectedWallpaper: selectedWallpaper
+            });
+          }
+          renderWallpaperGrid();
+        });
+      });
+    }
+
+    // --- Developer Panel ---
+    devBtn.addEventListener('click', () => {
+      devPasswordOverlay.style.display = 'flex';
+      devPasswordInput.value = '';
+    });
+
+    devPasswordBack.addEventListener('click', () => {
+      devPasswordOverlay.style.display = 'none';
+    });
+
+    devPasswordSubmit.addEventListener('click', () => {
+      if (devPasswordInput.value === DEV_PASSWORD) {
+        devPasswordOverlay.style.display = 'none';
+        devPanelOverlay.style.display = 'flex';
+        devPlayerInfo.style.display = 'none';
+        devSearchInput.value = '';
+      } else {
+        alert('Incorrect password!');
+        devPasswordInput.value = '';
+      }
+    });
+
+    devPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        devPasswordSubmit.click();
+      }
+    });
+
+    devPanelBack.addEventListener('click', () => {
+      devPanelOverlay.style.display = 'none';
+      settingsDiv.style.display = 'flex';
+    });
+
+    devSearchBtn.addEventListener('click', () => {
+      const searchName = devSearchInput.value.trim();
+      if (searchName.length === 0) {
+        alert('Please enter a player name');
+        return;
+      }
+
+      if (!database) {
+        alert('Database not available');
+        return;
+      }
+
+      database.ref('players').orderByChild('name').equalTo(searchName).once('value').then((snapshot) => {
+        if (snapshot.exists()) {
+          snapshot.forEach((child) => {
+            devCurrentPlayerId = child.key;
+            const data = child.val();
+            devCurrentPlayerData = data;
+            
+            devPlayerName.textContent = data.name;
+            devHighScore.value = data.highScore || 0;
+            devAllTimeScore.value = data.allTimeScore || 0;
+            devTotalGames.value = data.totalGames || 0;
+            devTotalScore.value = data.totalScore || 0;
+            devCoins.value = data.coins || 0;
+            
+            devPlayerInfo.style.display = 'block';
+            devWallpaperManager.style.display = 'none';
+          });
+        } else {
+          alert('Player not found!');
+          devPlayerInfo.style.display = 'none';
+        }
+      });
+    });
+
+    window.updateDevField = function(field) {
+      if (!devCurrentPlayerId || !database) return;
+      
+      const value = parseInt(document.getElementById('dev' + field.charAt(0).toUpperCase() + field.slice(1)).value);
+      
+      database.ref('players/' + devCurrentPlayerId).update({
+        [field]: value,
+        lastUpdated: Date.now()
+      }).then(() => {
+        alert(`${field} updated successfully!`);
+      });
+    };
+
+    window.giveAllWallpapers = function() {
+      if (!devCurrentPlayerId || !database) return;
+      
+      if (confirm('Give all wallpapers to this player?')) {
+        database.ref('players/' + devCurrentPlayerId).update({
+          ownedWallpapers: wallpapers,
+          lastUpdated: Date.now()
+        }).then(() => {
+          alert('All wallpapers given!');
+          devCurrentPlayerData.ownedWallpapers = wallpapers;
+        });
+      }
+    };
+
+    window.showWallpaperManager = function() {
+      if (!devCurrentPlayerId || !database) return;
+      
+      const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
+      
+      if (playerWallpapers.length === 0) {
+        alert('This player has no wallpapers!');
+        return;
+      }
+      
+      let html = '';
+      playerWallpapers.forEach((wp, index) => {
+        const wpIndex = wallpapers.indexOf(wp);
+        const isRare = rareIndices.includes(wpIndex);
+        const rareLabel = isRare ? '<div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">RARE</div>' : '';
+        html += `<div style="position:relative">
+          <div style="height:70px;border-radius:5px;background:${wp};border:2px solid #ff0000"></div>
+          ${rareLabel}
+          <button onclick="removeWallpaperAtIndex(${index})" style="width:100%;margin-top:5px;background:#990000;color:#fff;border:0;padding:5px;border-radius:5px;cursor:pointer;font-size:11px">Delete</button>
+        </div>`;
+      });
+      
+      devWallpaperList.innerHTML = html;
+      devWallpaperManager.style.display = 'block';
+    };
+
+    window.hideWallpaperManager = function() {
+      devWallpaperManager.style.display = 'none';
+    };
+
+    window.removeWallpaperAtIndex = function(index) {
+      if (!devCurrentPlayerId || !database) return;
+      
+      const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
+      
+      if (confirm('Delete this wallpaper from player\'s collection?')) {
+        playerWallpapers.splice(index, 1);
+        
+        database.ref('players/' + devCurrentPlayerId).update({
+          ownedWallpapers: playerWallpapers,
+          lastUpdated: Date.now()
+        }).then(() => {
+          alert('Wallpaper deleted!');
+          devCurrentPlayerData.ownedWallpapers = playerWallpapers;
+          showWallpaperManager();
+        });
+      }
+    };
+
+    window.deletePlayerAccount = function() {
+      if (!devCurrentPlayerId || !database) return;
+      
+      const playerNameToDelete = devPlayerName.textContent;
+      if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
+        database.ref('players/' + devCurrentPlayerId).remove().then(() => {
+          alert('Account deleted successfully!');
+          devPlayerInfo.style.display = 'none';
+          devSearchInput.value = '';
+          devCurrentPlayerId = null;
+        });
+      }
+    };
+
+    // Clean up duplicate names on load
     window.addEventListener('load', () => {
-      // Wait a bit for Firebase to initialize
       setTimeout(() => {
         if (typeof firebase !== 'undefined' && firebase.database) {
           database = firebase.database();
+          
+          // Remove duplicate names
+          database.ref('players').once('value').then((snapshot) => {
+            const nameMap = {};
+            const duplicates = [];
+            
+            snapshot.forEach((child) => {
+              const data = child.val();
+              const name = data.name;
+              
+              if (nameMap[name]) {
+                // Duplicate found, keep the older one
+                if (data.lastUpdated < nameMap[name].lastUpdated) {
+                  duplicates.push(nameMap[name].id);
+                  nameMap[name] = { id: child.key, lastUpdated: data.lastUpdated };
+                } else {
+                  duplicates.push(child.key);
+                }
+              } else {
+                nameMap[name] = { id: child.key, lastUpdated: data.lastUpdated };
+              }
+            });
+            
+            // Delete duplicates
+            duplicates.forEach(id => {
+              database.ref('players/' + id).remove();
+            });
+          });
         }
         initializePlayer();
       }, 500);
     });
   </script>
-  <!-- ADD THIS BEFORE THE CLOSING </body> TAG IN EACH GAME PAGE -->
-<!-- (brickblaster.html, chess.html, tag.html, tictactoe.html, snake.html) -->
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-<!-- Import Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-
-<script>
-  // Wait for Firebase to load
-  window.addEventListener('load', function() {
-    // Check if Firebase is available
-    if (typeof firebase === 'undefined') {
-      console.error('Firebase failed to load');
-      return;
-    }
-
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
-      authDomain: "games-c3e27.firebaseapp.com",
-      databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "games-c3e27",
-      storageBucket: "games-c3e27.firebasestorage.app",
-      messagingSenderId: "193027632069",
-      appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    const userId = generateUserId();
-    let userRef = null;
-    let isConnected = true;
-
-    function generateUserId() {
-      let userId = localStorage.getItem('gameHubUserId');
-      if (!userId) {
-        userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
-        localStorage.setItem('gameHubUserId', userId);
+  <script>
+    window.addEventListener('load', function() {
+      if (typeof firebase === 'undefined') {
+        console.error('Firebase failed to load');
+        return;
       }
-      return userId;
-    }
 
-    function setupUserPresence() {
-      userRef = database.ref('onlineUsers/' + userId);
-      
-      // Set user as online with current page info
-      userRef.set({ 
-        id: userId, 
-        connected: true, 
-        lastSeen: Date.now(), 
-        page: window.location.pathname,
-        userAgent: navigator.userAgent.substring(0, 50) 
-      });
-      
-      // Remove user when they disconnect
-      userRef.onDisconnect().remove();
+      const firebaseConfig = {
+        apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
+        authDomain: "games-c3e27.firebaseapp.com",
+        databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "games-c3e27",
+        storageBucket: "games-c3e27.firebasestorage.app",
+        messagingSenderId: "193027632069",
+        appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
+      };
 
-      // Send heartbeat every 10 seconds
-      const heartbeat = setInterval(() => {
-        if (isConnected && userRef) {
-          userRef.update({ lastSeen: Date.now(), page: window.location.pathname });
-        } else {
-          clearInterval(heartbeat);
+      firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+
+      const userId = generateUserId();
+      let userRef = null;
+      let isConnected = true;
+
+      function generateUserId() {
+        let userId = localStorage.getItem('gameHubUserId');
+        if (!userId) {
+          userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+          localStorage.setItem('gameHubUserId', userId);
         }
-      }, 10000);
+        return userId;
+      }
 
-      // Clean up on page unload
-      window.addEventListener('beforeunload', () => {
-        isConnected = false;
-        if (userRef) userRef.remove();
-      });
-    }
+      function setupUserPresence() {
+        userRef = database.ref('onlineUsers/' + userId);
+        
+        userRef.set({ 
+          id: userId, 
+          connected: true, 
+          lastSeen: Date.now(), 
+          page: window.location.pathname,
+          userAgent: navigator.userAgent.substring(0, 50) 
+        });
+        
+        userRef.onDisconnect().remove();
 
-    // Initialize tracking
-    setupUserPresence();
-  });
-</script>
+        const heartbeat = setInterval(() => {
+          if (isConnected && userRef) {
+            userRef.update({ lastSeen: Date.now(), page: window.location.pathname });
+          } else {
+            clearInterval(heartbeat);
+          }
+        }, 10000);
+
+        window.addEventListener('beforeunload', () => {
+          isConnected = false;
+          if (userRef) userRef.remove();
+        });
+      }
+
+      setupUserPresence();
+    });
+  </script>
 </body>
 </html>
