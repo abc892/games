@@ -561,5 +561,85 @@
         // Initialize the game
         initializeBoard();
     </script>
+    <!-- ADD THIS BEFORE THE CLOSING </body> TAG IN EACH GAME PAGE -->
+<!-- (brickblaster.html, chess.html, tag.html, tictactoe.html, snake.html) -->
+
+<!-- Import Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<script>
+  // Wait for Firebase to load
+  window.addEventListener('load', function() {
+    // Check if Firebase is available
+    if (typeof firebase === 'undefined') {
+      console.error('Firebase failed to load');
+      return;
+    }
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
+      authDomain: "games-c3e27.firebaseapp.com",
+      databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "games-c3e27",
+      storageBucket: "games-c3e27.firebasestorage.app",
+      messagingSenderId: "193027632069",
+      appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const userId = generateUserId();
+    let userRef = null;
+    let isConnected = true;
+
+    function generateUserId() {
+      let userId = localStorage.getItem('gameHubUserId');
+      if (!userId) {
+        userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+        localStorage.setItem('gameHubUserId', userId);
+      }
+      return userId;
+    }
+
+    function setupUserPresence() {
+      userRef = database.ref('onlineUsers/' + userId);
+      
+      // Set user as online with current page info
+      userRef.set({ 
+        id: userId, 
+        connected: true, 
+        lastSeen: Date.now(), 
+        page: window.location.pathname,
+        userAgent: navigator.userAgent.substring(0, 50) 
+      });
+      
+      // Remove user when they disconnect
+      userRef.onDisconnect().remove();
+
+      // Send heartbeat every 10 seconds
+      const heartbeat = setInterval(() => {
+        if (isConnected && userRef) {
+          userRef.update({ lastSeen: Date.now(), page: window.location.pathname });
+        } else {
+          clearInterval(heartbeat);
+        }
+      }, 10000);
+
+      // Clean up on page unload
+      window.addEventListener('beforeunload', () => {
+        isConnected = false;
+        if (userRef) userRef.remove();
+      });
+    }
+
+    // Initialize tracking
+    setupUserPresence();
+  });
+</script>
 </body>
 </html>
+
