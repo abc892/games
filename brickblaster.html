@@ -37,7 +37,7 @@
     #pauseOverlay .resume{background:#0f0;color:#000}
     #pauseOverlay .pauseSettings{background:#ffd966;color:#000}
     /* small HUD */
-    #hud{position:fixed;top:12px;right:12px;color:#dfeefb;font-weight:700}
+    #hud{position:fixed;top:12px;right:12px;color:#dfeefb;font-weight:700;display:none}
     /* Name prompt overlay */
     #namePrompt{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:2000}
     #namePrompt .prompt-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);text-align:center}
@@ -45,11 +45,9 @@
     #namePrompt input{padding:10px;width:250px;border-radius:5px;border:2px solid var(--accent);background:#0a1929;color:#fff;font-size:16px;margin-bottom:15px}
     #namePrompt button{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700}
     /* Leaderboard button */
-    #leaderboardBtn{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#ffd700;color:#000;cursor:pointer;font-weight:700;z-index:100;display:block}
-    #leaderboardBtn.hidden{display:none}
+    #leaderboardBtn{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#ffd700;color:#000;cursor:pointer;font-weight:700;z-index:100}
     /* User Settings button */
-    #userSettingsBtn{position:fixed;bottom:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#00aaff;color:#fff;cursor:pointer;font-weight:700;z-index:100;display:block}
-    #userSettingsBtn.hidden{display:none}
+    #userSettingsBtn{position:fixed;bottom:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#00aaff;color:#fff;cursor:pointer;font-weight:700;z-index:100}
     /* Leaderboard overlay */
     #leaderboardOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
     #leaderboardOverlay .lb-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);min-width:400px}
@@ -58,8 +56,7 @@
     #leaderboardOverlay .lb-entry.first{background:#ffd700;color:#000;font-weight:bold}
     #leaderboardOverlay .lb-entry.second{background:#c0c0c0;color:#000;font-weight:bold}
     #leaderboardOverlay .lb-entry.third{background:#cd7f32;color:#000;font-weight:bold}
-    #leaderboardOverlay .close-btn{background:#ff4444;color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
-    #leaderboardOverlay .back-btn{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:10px;display:block;margin-left:auto;margin-right:auto}
+    #leaderboardOverlay .back-btn{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
     /* User Settings overlay */
     #userSettingsOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
     #userSettingsOverlay .us-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);min-width:450px}
@@ -100,7 +97,6 @@
           <p style="color:#dfeefb;text-align:center">Loading...</p>
         </div>
         <button class="back-btn" id="backFromLeaderboard">Back to Settings</button>
-        <button class="close-btn" id="closeLeaderboard">Close</button>
       </div>
     </div>
     <!-- User Settings Overlay -->
@@ -202,7 +198,6 @@
     const nameSubmit = document.getElementById('nameSubmit');
     const leaderboardBtn = document.getElementById('leaderboardBtn');
     const leaderboardOverlay = document.getElementById('leaderboardOverlay');
-    const closeLeaderboard = document.getElementById('closeLeaderboard');
     const backFromLeaderboard = document.getElementById('backFromLeaderboard');
     const leaderboardList = document.getElementById('leaderboardList');
     const userSettingsBtn = document.getElementById('userSettingsBtn');
@@ -215,6 +210,7 @@
     const newNameInputUS = document.getElementById('newNameInputUS');
     const changeNameBtnUS = document.getElementById('changeNameBtnUS');
     const nameTimer = document.getElementById('nameTimer');
+    const hudEl = document.getElementById('hud');
 
     let playerName = '';
     let playerId = '';
@@ -442,6 +438,13 @@
       resetBall();
       paddle.x = (canvas.width - paddle.w)/2;
       pauseBtn.style.display = 'block';
+      
+      // Hide buttons during gameplay
+      leaderboardBtn.style.display = 'none';
+      userSettingsBtn.style.display = 'none';
+      // Show HUD during gameplay
+      hudEl.style.display = 'block';
+      
       if(endlessMode){
         clearInterval(spawnIntervalId);
         spawnIntervalId = setInterval(spawnNewBrick,3000);
@@ -496,6 +499,12 @@
       // show stats
       endText.textContent += ` | Score: ${score} | Time: ${timePlayed}s`;
       
+      // Show buttons when game ends
+      leaderboardBtn.style.display = 'block';
+      userSettingsBtn.style.display = 'block';
+      // Hide HUD when game ends
+      hudEl.style.display = 'none';
+      
       // Update leaderboard and stats
       updatePlayerStats(score);
     }
@@ -510,6 +519,11 @@
       overlay.style.display='none';
       settingsDiv.style.display='flex';
       canvas.style.display='none';
+      // Show buttons in settings
+      leaderboardBtn.style.display = 'block';
+      userSettingsBtn.style.display = 'block';
+      // Hide HUD in settings
+      hudEl.style.display = 'none';
     });
 
     homeBtn2.addEventListener('click', ()=>location.href='index.html');
@@ -537,6 +551,11 @@
       canvas.style.display = 'none';
       clearInterval(timeIntervalId);
       clearInterval(spawnIntervalId);
+      // Show buttons when returning to settings
+      leaderboardBtn.style.display = 'block';
+      userSettingsBtn.style.display = 'block';
+      // Hide HUD when returning to settings
+      hudEl.style.display = 'none';
     });
 
     // keys
@@ -707,9 +726,6 @@
 
     // Leaderboard functionality
     leaderboardBtn.addEventListener('click', showLeaderboard);
-    closeLeaderboard.addEventListener('click', () => {
-      leaderboardOverlay.style.display = 'none';
-    });
     backFromLeaderboard.addEventListener('click', () => {
       leaderboardOverlay.style.display = 'none';
       settingsDiv.style.display = 'flex';
