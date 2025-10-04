@@ -463,9 +463,15 @@
       if(e.key === 'ArrowLeft') window._left = true;
       if(e.key === 'ArrowRight') window._right = true;
       if(e.key.toLowerCase() === 'f') toggleFullscreen();
-      if(e.key.toLowerCase() === 'p' && running && !paused){
-        paused = true;
-        pauseOverlay.style.display = 'flex';
+      if(e.key.toLowerCase() === 'p' && running){
+        if(!paused){
+          paused = true;
+          pauseOverlay.style.display = 'flex';
+        } else {
+          paused = false;
+          pauseOverlay.style.display = 'none';
+          requestAnimationFrame(loop);
+        }
       }
       if(e.code === 'Space' && overlay.style.display === 'flex') {
         overlay.style.display='none';
