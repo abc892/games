@@ -1,376 +1,252 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Brick Blaster</title>
   <style>
-    :root{ --accent:#ff9800; --bg:#111; }
-    html,body{height:100%;margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);color:#fff}
-    #homeBtn{position:fixed;top:10px;left:10px;z-index:999;padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
-    #gameCanvas{display:none;margin:0 auto;border:2px solid rgba(255,255,255,0.06);background:#000;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
-    /* overlays */
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.75);z-index:900}
-    #settings .row{margin:8px 0}
-    select,button{font-size:16px}
-    #countNum{font-size:120px;margin:0}
-    #endScreen{display:none}
-    /* small helpers */
-    p.hint{opacity:0.8}
+    body { margin:0; display:flex; align-items:center; justify-content:center; height:100vh; background:#111; color:#fff; font-family:sans-serif; overflow:hidden; }
+    #wrap { text-align:center; position:relative; }
+    canvas { background:#000; border:2px solid #444; border-radius:8px; display:none; margin:auto; }
+    #info { margin-top:10px; font-size:18px; }
+    #overlay { position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); color:#fff; font-size:24px; flex-direction:column; visibility:hidden; }
+    #overlay button { margin:10px; padding:10px 20px; font-size:18px; cursor:pointer; border:none; border-radius:6px; background:#0ff; color:#000; font-weight:bold; }
+    #settings { position:absolute; top:0; left:0; right:0; bottom:0; background:#000; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    select, button { padding:10px; margin:10px; font-size:16px; border-radius:6px; border:none; }
+    #homeBtn { position:absolute; top:10px; left:10px; background:#0ff; color:#000; padding:8px 14px; font-weight:bold; border-radius:6px; border:none; cursor:pointer; }
   </style>
 </head>
 <body>
-  <button id="homeBtn" onclick="location.href='index.html'">🏠 Home</button>
-  <canvas id="gameCanvas" width="800" height="600" aria-label="Brick Blaster game"></canvas>
-
-  <!-- Settings overlay (canvas hidden while visible) -->
-  <div id="settings" class="overlay">
-    <h1>🧱 Brick Blaster</h1>
-    <div class="row">
-      <label>Ball Speed:&nbsp;</label>
+  <div id="wrap">
+    <button id="homeBtn" onclick="goHome()">Home</button>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info">Lives: <span id="lives">3</span> | Score: <span id="score">0</span> | Time: <span id="time">0</span>s</div>
+    <div id="overlay">
+      <div id="message"></div>
+      <div>
+        <button id="retryBtn">Retry</button>
+        <button id="settingsBtn">Settings</button>
+        <button id="homePageBtn">Home</button>
+      </div>
+    </div>
+    <div id="settings">
+      <h2>Brick Blaster Settings</h2>
+      <label>Difficulty (Ball Speed): </label>
       <select id="speedSelect">
-        <option value="3">1 (Slow)</option>
-        <option value="5">2 (Medium)</option>
-        <option value="7">3 (Fast)</option>
+        <option value="1">1 (Slow)</option>
+        <option value="2">2 (Medium)</option>
+        <option value="3">3 (Fast)</option>
       </select>
-    </div>
-
-    <div class="row">
-      <label>Mode:&nbsp;</label>
-      <select id="modeSelect">
-        <option value="12">1 (12 bricks — 4×3)</option>
-        <option value="24">2 (24 bricks — 6×4)</option>
-        <option value="48">3 (48 bricks — 8×6)</option>
-        <option value="endless">4 (Endless)</option>
+      <label>Bricks Mode:</label>
+      <select id="brickSelect">
+        <option value="12">12 Bricks (4x3)</option>
+        <option value="24">24 Bricks (6x4)</option>
+        <option value="48">48 Bricks (8x6)</option>
+        <option value="endless">Endless Mode</option>
       </select>
-    </div>
-
-    <div class="row">
       <button id="startBtn">Start Game</button>
     </div>
-    <p class="hint">Press <b>F</b> anytime to toggle fullscreen. During end-screen press <b>Space</b> to replay.</p>
   </div>
 
-  <!-- Countdown overlay -->
-  <div id="countdown" class="overlay" style="display:none">
-    <div id="countNum">3</div>
-  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const message = document.getElementById('message');
+    const settingsDiv = document.getElementById('settings');
+    const speedSelect = document.getElementById('speedSelect');
+    const brickSelect = document.getElementById('brickSelect');
+    const homeBtn = document.getElementById('homeBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const homePageBtn = document.getElementById('homePageBtn');
+    const livesEl = document.getElementById('lives');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('time');
 
-  <!-- End screen overlay -->
-  <div id="endScreen" class="overlay">
-    <h2 id="endMsg">You Win!</h2>
-    <p id="finalStats">Score: 0 | Time Played: 0s</p>
-    <div style="margin-top:8px">
-      <button id="replayBtn">Replay</button>
-      <button id="homeBtn2" style="margin-left:8px" onclick="location.href='index.html'">🏠 Home</button>
-    </div>
-    <p class="hint">Or press <b>Space</b> to replay</p>
-  </div>
+    let x, y, dx, dy, paddleX, rightPressed, leftPressed, lives, score, timer, intervalId;
+    let brickRowCount, brickColumnCount, brickWidth, brickHeight, brickPadding, brickOffsetTop;
+    let brickGrid, endlessMode = false, spawnInterval;
+    const paddleHeight = 10;
+    let paddleWidth = 75, ballRadius = 8;
 
-<script>
-/* Brick Blaster — improved placement + endless spawn + fullscreen + safe angled ball */
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const settings = document.getElementById('settings');
-const countdown = document.getElementById('countdown');
-const countNum = document.getElementById('countNum');
-const endScreen = document.getElementById('endScreen');
-const endMsg = document.getElementById('endMsg');
-const finalStats = document.getElementById('finalStats');
-const startBtn = document.getElementById('startBtn');
-const replayBtn = document.getElementById('replayBtn');
+    function goHome(){ window.location.href='index.html'; }
 
-let gameInterval = null, timerInterval = null, spawnInterval = null;
-let brickCols = 0, brickRows = 0, brickW = 0, brickH = 0, brickPad = 2;
-let bricks = []; // bricks[c][r] = {status}
-let ball = {x:0,y:0,dx:0,dy:0,r:10, speed:5};
-let paddle = {w:120,h:12,x:0};
-let score = 0, lives = 3, timePlayed = 0;
-let running = false, mode = '12', endlessMode = false;
-
-// --- Helpers ---
-function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
-// compute grid sizes based on selected mode and canvas size — ensures bricks sit flush to top/left/right
-function computeGrid(){
-  if(mode === '12'){ brickCols = 4; brickRows = 3; }
-  else if(mode === '24'){ brickCols = 6; brickRows = 4; }
-  else { /* 48 or endless uses 8x6 */ brickCols = 8; brickRows = 6; }
-
-  // bricks fill horizontally exactly: brickW * cols + pad*(cols-1) = canvas.width
-  brickW = (canvas.width - (brickCols - 1) * brickPad) / brickCols;
-
-  // vertical area used for bricks (take up to 45% of canvas height but must fit rows)
-  const topArea = Math.max(canvas.height * 0.25, brickRows * 12 + (brickRows-1) * brickPad);
-  brickH = (topArea - (brickRows - 1) * brickPad) / brickRows;
-}
-
-function createEmptyGrid(){
-  bricks = [];
-  for(let c=0;c<brickCols;c++){
-    bricks[c] = [];
-    for(let r=0;r<brickRows;r++) bricks[c][r] = { status: 0 };
-  }
-}
-
-function fillInitialBricks(){
-  // If endless mode, start with FULL grid of 48 (8x6). For non-endless, fill exactly requested number evenly from top-left.
-  if(endlessMode){
-    for(let c=0;c<brickCols;c++) for(let r=0;r<brickRows;r++) bricks[c][r].status = 1;
-    return;
-  }
-  // For fixed modes: place N bricks starting from top-left row-wise
-  const total = parseInt(mode);
-  let placed = 0;
-  for(let r=0;r<brickRows && placed<total;r++){
-    for(let c=0;c<brickCols && placed<total;c++){
-      bricks[c][r].status = 1;
-      placed++;
-    }
-  }
-}
-
-// spawn a brick into a random empty cell (used in endless mode). ensures valid grid cell chosen
-function spawnBrickInEmptyCell(){
-  const emptyCells = [];
-  for(let c=0;c<brickCols;c++) for(let r=0;r<brickRows;r++) if(bricks[c][r].status === 0) emptyCells.push({c,r});
-  if(emptyCells.length === 0) return; // nothing to spawn
-  const idx = Math.floor(Math.random() * emptyCells.length);
-  const cell = emptyCells[idx];
-  bricks[cell.c][cell.r].status = 1;
-}
-
-// ball velocity generator — prevents nearly-vertical shots
-function generateBallVelocity(speed){
-  // choose horizontal fraction between -0.75..-0.25 and 0.25..0.75 (avoid -0.25..0.25 where nearly vertical)
-  let frac;
-  if(Math.random() < 0.5) frac = (Math.random() * 0.5 + 0.25) * (Math.random()<0.5 ? -1 : 1); else frac = (Math.random() * 0.5 + 0.25) * (Math.random()<0.5 ? -1 : 1);
-  const dx = frac * speed;
-  const dy = -Math.sqrt(Math.max(0.01, speed*speed - dx*dx));
-  return {dx, dy};
-}
-
-// reset ball to center with a tilted upward velocity
-function resetBall(){
-  ball.x = canvas.width/2;
-  ball.y = canvas.height - 60;
-  const v = generateBallVelocity(ball.speed);
-  ball.dx = v.dx; ball.dy = v.dy;
-}
-
-// recalc sizes and reposition elements
-function setupLayout(){
-  computeGrid();
-  createEmptyGrid();
-  fillInitialBricks();
-  paddle.w = Math.max(64, Math.min(160, canvas.width * 0.15));
-  paddle.x = (canvas.width - paddle.w) / 2;
-  resetBall();
-}
-
-// --- Drawing ---
-function drawBricks(){
-  for(let c=0;c<brickCols;c++){
-    for(let r=0;r<brickRows;r++){
-      if(bricks[c][r].status === 1){
-        const x = c * (brickW + brickPad);
-        const y = r * (brickH + brickPad);
-        ctx.fillStyle = '#ff5722';
-        ctx.fillRect(x + 0.5, y + 0.5, brickW - 1, brickH - 1);
-      }
-    }
-  }
-}
-
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawBricks();
-  // ball
-  ctx.beginPath(); ctx.fillStyle='#00f'; ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill(); ctx.closePath();
-  // paddle
-  ctx.fillStyle='#0095DD'; ctx.fillRect(paddle.x, canvas.height - paddle.h - 10, paddle.w, paddle.h);
-  // HUD
-  ctx.fillStyle='#fff'; ctx.font='16px Inter, Arial'; ctx.fillText('Score: '+score, 8, 20); ctx.fillText('Lives: '+lives, canvas.width - 110, 20); ctx.fillText('Time: '+timePlayed+'s', canvas.width/2 - 40, 20);
-}
-
-// collision detection with grid cells (checks cell boundaries precisely)
-function handleCollisions(){
-  // ball vs bricks (grid aligned) — compute which cell the ball is overlapping
-  for(let c=0;c<brickCols;c++){
-    for(let r=0;r<brickRows;r++){
-      const b = bricks[c][r];
-      if(b.status !== 1) continue;
-      const bx = c*(brickW + brickPad);
-      const by = r*(brickH + brickPad);
-      if(ball.x > bx && ball.x < bx + brickW && ball.y > by && ball.y < by + brickH){
-        // simple reflect vertical direction
-        b.status = 0; score++;
-        // reflect dy but also nudge dx slightly so ball doesn't get stuck
-        ball.dy = -ball.dy;
-        ball.dx += (Math.random()-0.5) * 0.2;
-        // if endless and all cleared, we won't win — bricks can be respawned by interval
-        if(!endlessMode){
-          if(checkWin()) endGame(true);
+    function initBricks() {
+      brickGrid = [];
+      let totalBricks = brickRowCount * brickColumnCount;
+      for (let c = 0; c < brickColumnCount; c++) {
+        brickGrid[c] = [];
+        for (let r = 0; r < brickRowCount; r++) {
+          brickGrid[c][r] = { x:0, y:0, status:1 };
         }
-        return; // one collision per frame
       }
     }
-  }
 
-  // ball vs walls
-  if(ball.x + ball.dx > canvas.width - ball.r || ball.x + ball.dx < ball.r){ ball.dx = -ball.dx; }
-  if(ball.y + ball.dy < ball.r){ ball.dy = -ball.dy; }
-
-  // ball vs paddle/bottom
-  const paddleTop = canvas.height - paddle.h - 10;
-  if(ball.y + ball.dy > paddleTop - ball.r){
-    if(ball.x > paddle.x && ball.x < paddle.x + paddle.w){
-      // reflect with angle depending on where it hit the paddle
-      const hitPos = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2); // -1..1
-      const speed = ball.speed;
-      const angle = hitPos * (Math.PI/3); // tilt up to 60deg based on hit
-      ball.dx = speed * Math.sin(angle);
-      ball.dy = -Math.abs(speed * Math.cos(angle));
-    } else if(ball.y + ball.dy > canvas.height + ball.r){
-      // missed
-      lives--;
-      if(lives <= 0){ endGame(false); return; }
-      resetBall();
+    function setupBricksGrid(cols, rows) {
+      brickColumnCount = cols;
+      brickRowCount = rows;
+      brickPadding = 0;
+      brickWidth = canvas.width / cols;
+      brickHeight = 20;
+      brickOffsetTop = 0;
+      initBricks();
     }
-  }
-}
 
-function checkWin(){
-  for(let c=0;c<brickCols;c++) for(let r=0;r<brickRows;r++) if(bricks[c][r].status === 1) return false;
-  return true;
-}
+    function startGame() {
+      settingsDiv.style.display = 'none';
+      canvas.style.display = 'block';
+      overlay.style.visibility = 'hidden';
 
-// spawn logic for endless: every 3s, spawn into an empty cell (grid-safe)
-function startSpawnInterval(){
-  if(spawnInterval) clearInterval(spawnInterval);
-  if(!endlessMode) return;
-  spawnInterval = setInterval(()=>{
-    spawnBrickInEmptyCell();
-  }, 3000);
-}
+      let speed = parseInt(speedSelect.value);
+      endlessMode = brickSelect.value === 'endless';
+      if (brickSelect.value === '12') setupBricksGrid(4,3);
+      else if (brickSelect.value === '24') setupBricksGrid(6,4);
+      else setupBricksGrid(8,6);
 
-function stopSpawnInterval(){ if(spawnInterval){ clearInterval(spawnInterval); spawnInterval=null; } }
+      if (brickSelect.value === '12'){ paddleWidth=100; ballRadius=10; }
+      else if (brickSelect.value === '24'){ paddleWidth=85; ballRadius=9; }
+      else { paddleWidth=70; ballRadius=8; }
 
-// game loop
-function gameStep(){
-  // move ball
-  ball.x += ball.dx; ball.y += ball.dy;
-  // collisions
-  handleCollisions();
-  // move paddle
-  if(window.rightPressedGlobal && paddle.x + paddle.w < canvas.width) paddle.x += 7;
-  if(window.leftPressedGlobal && paddle.x > 0) paddle.x -= 7;
-  draw();
-}
+      x = canvas.width / 2;
+      y = canvas.height - 30;
+      let angle = (Math.random()*Math.PI/3)+(Math.PI/6);
+      dx = speed * Math.cos(angle);
+      dy = -speed * Math.sin(angle);
+      paddleX = (canvas.width - paddleWidth) / 2;
+      rightPressed = leftPressed = false;
+      lives = 3; score = 0; timer = 0;
+      livesEl.textContent = lives;
+      scoreEl.textContent = score;
+      timeEl.textContent = timer;
 
-function startGame(){
-  // initialize
-  score = 0; lives = 3; timePlayed = 0;
-  running = true;
-  setupLayout();
-  startSpawnInterval();
-  // start loop
-  if(gameInterval) clearInterval(gameInterval);
-  gameInterval = setInterval(gameStep, 16);
-  if(timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(()=>{ if(running) timePlayed++; },1000);
-}
+      clearInterval(intervalId);
+      intervalId = setInterval(()=>{timer++; timeEl.textContent=timer;},1000);
 
-function endGame(win){
-  running = false;
-  clearInterval(gameInterval); clearInterval(timerInterval); stopSpawnInterval();
-  endMsg.textContent = win ? '🎉 You Win!' : '💀 Game Over';
-  finalStats.textContent = 'Score: '+score+' | Time Played: '+timePlayed+'s';
-  endScreen.style.display = 'flex';
-}
+      if(endlessMode){
+        clearInterval(spawnInterval);
+        spawnInterval = setInterval(spawnNewBrick,3000);
+      }
 
-function restartGame(){
-  endScreen.style.display = 'none';
-  startCountdown();
-}
+      countdown(3, draw);
+    }
 
-// countdown and start
-function startCountdown(){
-  // hide settings and show countdown
-  settings.style.display = 'none';
-  endScreen.style.display = 'none';
-  canvas.style.display = 'block';
-  countNum.textContent = '3';
-  countdown.style.display = 'flex';
-  let c = 3;
-  const cd = setInterval(()=>{
-    c--; if(c>0) countNum.textContent = c;
-    else{ clearInterval(cd); countdown.style.display = 'none'; startGame(); }
-  }, 1000);
-}
+    function countdown(n, cb){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#0ff';
+      ctx.font='60px Arial';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      function tick(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        if(n>0){
+          ctx.fillText(n,canvas.width/2,canvas.height/2);
+          n--; setTimeout(tick,1000);
+        } else cb();
+      }
+      tick();
+    }
 
-// UI wiring
-startBtn.addEventListener('click', ()=>{
-  mode = document.getElementById('modeSelect').value;
-  endlessMode = (mode === 'endless');
-  // for endless, use 48-slot grid (8x6)
-  if(endlessMode) mode = '48';
-  // hide canvas until countdown
-  canvas.style.display = 'none';
-  startCountdown();
-});
-replayBtn.addEventListener('click', restartGame);
+    function drawBricks(){
+      for(let c=0;c<brickColumnCount;c++){
+        for(let r=0;r<brickRowCount;r++){
+          let b=brickGrid[c][r];
+          if(b.status==1){
+            let brickX = c*(brickWidth+brickPadding);
+            let brickY = brickOffsetTop + r*(brickHeight+brickPadding);
+            b.x = brickX; b.y = brickY;
+            ctx.beginPath();
+            ctx.rect(brickX, brickY, brickWidth, brickHeight);
+            ctx.fillStyle = '#f33';
+            ctx.fill();
+            ctx.closePath();
+          }
+        }
+      }
+    }
 
-// fullscreen toggle and global key handling
-window.leftPressedGlobal = false; window.rightPressedGlobal = false;
-window.addEventListener('keydown', (e)=>{
-  if(e.key === 'ArrowLeft') window.leftPressedGlobal = true;
-  if(e.key === 'ArrowRight') window.rightPressedGlobal = true;
-  if(e.key === 'f' || e.key === 'F'){
-    if(!document.fullscreenElement) canvas.requestFullscreen().catch(()=>{});
-    else document.exitFullscreen().catch(()=>{});
-  }
-  if(e.code === 'Space' && endScreen.style.display === 'flex') restartGame();
-});
-window.addEventListener('keyup', (e)=>{
-  if(e.key === 'ArrowLeft') window.leftPressedGlobal = false;
-  if(e.key === 'ArrowRight') window.rightPressedGlobal = false;
-});
+    function spawnNewBrick(){
+      if(!endlessMode) return;
+      let emptyCells = [];
+      for(let c=0;c<brickColumnCount;c++){
+        for(let r=0;r<Math.min(brickRowCount+6,Math.floor(canvas.height/brickHeight)-2);r++){
+          if(!brickGrid[c]) brickGrid[c]=[];
+          if(!brickGrid[c][r] || brickGrid[c][r].status!==1) emptyCells.push({c,r});
+        }
+      }
+      if(emptyCells.length>0){
+        let cell = emptyCells[Math.floor(Math.random()*emptyCells.length)];
+        if(!brickGrid[cell.c]) brickGrid[cell.c]=[];
+        brickGrid[cell.c][cell.r]={x:0,y:0,status:1};
+      }
+    }
 
-// adapt canvas size on resize while keeping 800x600 toggle possible
-function setCanvasSizeTo(width,height){ canvas.width = width; canvas.height = height; canvas.style.width = width + 'px'; canvas.style.height = height + 'px'; }
-// start with 800x600 by default sizing
-setCanvasSizeTo(800,600);
+    function drawBall(){ ctx.beginPath(); ctx.arc(x,y,ballRadius,0,Math.PI*2); ctx.fillStyle='#0ff'; ctx.fill(); ctx.closePath(); }
+    function drawPaddle(){ ctx.beginPath(); ctx.rect(paddleX,canvas.height-paddleHeight,paddleWidth,paddleHeight); ctx.fillStyle='#0f0'; ctx.fill(); ctx.closePath(); }
 
-// When user toggles fullscreen, recompute layout to fill innerWidth/innerHeight
-document.addEventListener('fullscreenchange', ()=>{
-  if(document.fullscreenElement){
-    setCanvasSizeTo(window.innerWidth, window.innerHeight);
-  } else {
-    setCanvasSizeTo(800,600);
-  }
-  // If game active, recompute layout and keep states
-  if(running || settings.style.display === 'none'){
-    computeGrid(); // recompute based on new size
-    paddle.x = clamp(paddle.x, 0, canvas.width - paddle.w);
-    resetBall();
-  }
-});
+    function collisionDetection(){
+      for(let c=0;c<brickColumnCount;c++){
+        for(let r=0;r<brickRowCount;r++){
+          let b=brickGrid[c][r];
+          if(b && b.status==1){
+            if(x> b.x && x<b.x+brickWidth && y>b.y && y<b.y+brickHeight){
+              dy=-dy; b.status=0; score++; scoreEl.textContent=score;
+              if(!endlessMode && score==brickRowCount*brickColumnCount){ endGame('YOU WIN!'); }
+            }
+          }
+        }
+      }
+    }
 
-// ensure bricks are recomputed when window resizes (if not fullscreen it will keep 800x600)
-window.addEventListener('resize', ()=>{
-  if(!document.fullscreenElement){ setCanvasSizeTo(800,600); }
-  if(running){ computeGrid(); }
-});
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawBricks(); drawBall(); drawPaddle(); collisionDetection();
 
-// initial setup
-(function(){
-  // canvas hidden on settings page as requested
-  canvas.style.display = 'none';
-  settings.style.display = 'flex';
-  endScreen.style.display = 'none';
-  countdown.style.display = 'none';
-})();
-</script>
+      if(x+dx>canvas.width-ballRadius||x+dx<ballRadius) dx=-dx;
+      if(y+dy<ballRadius) dy=-dy; else if(y+dy>canvas.height-ballRadius){
+        if(x>paddleX&&x<paddleX+paddleWidth){ dy=-dy; }
+        else{
+          lives--; livesEl.textContent=lives;
+          if(!lives){ endGame('GAME OVER'); return; }
+          else{ x=canvas.width/2; y=canvas.height-30; dy=-Math.abs(dy); }
+        }
+      }
+
+      if(rightPressed&&paddleX<canvas.width-paddleWidth) paddleX+=5;
+      else if(leftPressed&&paddleX>0) paddleX-=5;
+
+      x+=dx; y+=dy; requestAnimationFrame(draw);
+    }
+
+    function endGame(msg){
+      clearInterval(intervalId);
+      if(endlessMode) clearInterval(spawnInterval);
+      overlay.style.visibility='visible';
+      message.textContent=`${msg} | Score: ${score} | Time: ${timer}s`;
+    }
+
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Right'||e.key==='ArrowRight') rightPressed=true;
+      else if(e.key==='Left'||e.key==='ArrowLeft') leftPressed=true;
+      else if(e.key==='f'||e.key==='F') toggleFullscreen();
+      else if(e.key===' '&&overlay.style.visibility==='visible'){ startGame(); }
+    });
+    document.addEventListener('keyup',e=>{
+      if(e.key==='Right'||e.key==='ArrowRight') rightPressed=false;
+      else if(e.key==='Left'||e.key==='ArrowLeft') leftPressed=false;
+    });
+
+    retryBtn.onclick=()=>startGame();
+    settingsBtn.onclick=()=>{ overlay.style.visibility='hidden'; settingsDiv.style.display='flex'; canvas.style.display='none'; };
+    homePageBtn.onclick=()=>goHome();
+
+    document.getElementById('startBtn').onclick=startGame;
+
+    function toggleFullscreen(){
+      if(!document.fullscreenElement){
+        if(canvas.requestFullscreen) canvas.requestFullscreen();
+      } else { document.exitFullscreen(); }
+    }
+  </script>
 </body>
 </html>
