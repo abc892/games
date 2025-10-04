@@ -117,8 +117,8 @@
         cols = 8; rows = 6;
       }
       // spawn rows depth: allow deep spawning area so bricks won't immediately refill same holes
-      const possible = Math.floor((canvas.height - 100) / (brickH + brickPad));
-      spawnRows = Math.max(rows + 6, Math.min( Math.max(rows, possible), 60));
+      const maxSpawnRows = document.fullscreenElement ? 20 : 10;
+      spawnRows = maxSpawnRows;
       brickW = (canvas.width - (cols - 1) * brickPad) / cols; // exact fit horizontally with 1px gaps
     }
 
@@ -359,8 +359,8 @@
         cols = 8; rows = 6;
       }
       // spawn depth
-      const possible = Math.floor((canvas.height - 120) / (brickH + brickPad));
-      spawnRows = Math.max(rows + 6, Math.min(possible, 60));
+      const maxSpawnRows = document.fullscreenElement ? 20 : 10;
+      spawnRows = maxSpawnRows;
       brickW = (canvas.width - (cols - 1) * brickPad) / cols;
     }
 
