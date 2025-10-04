@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Game Hub</title>
 
-  <!-- Import Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -105,6 +101,7 @@
       z-index: 1000;
       display: flex;
       align-items: center;
+      transition: transform 0.2s;
     }
     .online-indicator {
       width: 8px;
@@ -136,7 +133,8 @@
       • Timer added in Brick Blaster<br>
       <br>
       <strong>New Feature:</strong><br>
-      • Real-time online user counter (Instant Updates!)
+      • Real-time online user counter (Instant Updates!)<br>
+      • Now tracks users across ALL pages!
     </div>
   </div>
 
@@ -200,68 +198,98 @@
     Players online: <span id="onlineCount" class="loading">...</span>
   </div>
 
+  <!-- Import Firebase BEFORE using it -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
   <script>
-    // === YOUR EXACT FIREBASE CONFIG ===
-    const firebaseConfig = {
-      apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
-      authDomain: "games-c3e27.firebaseapp.com",
-      databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "games-c3e27",
-      storageBucket: "games-c3e27.firebasestorage.app",
-      messagingSenderId: "193027632069",
-      appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    const userId = generateUserId();
-    let userRef = null;
-    let isConnected = true;
-
-    function generateUserId() {
-      let userId = localStorage.getItem('gameHubUserId');
-      if (!userId) {
-        userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
-        localStorage.setItem('gameHubUserId', userId);
+    // Wait for Firebase to load completely
+    window.addEventListener('load', function() {
+      // Check if Firebase is available
+      if (typeof firebase === 'undefined') {
+        console.error('Firebase failed to load');
+        document.getElementById('onlineCount').textContent = 'Error';
+        return;
       }
-      return userId;
-    }
 
-    function setupUserPresence() {
-      userRef = database.ref('onlineUsers/' + userId);
-      userRef.set({ id: userId, connected: true, lastSeen: Date.now(), userAgent: navigator.userAgent.substring(0, 50) });
-      userRef.onDisconnect().remove();
+      // === FIREBASE CONFIG ===
+      const firebaseConfig = {
+        apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
+        authDomain: "games-c3e27.firebaseapp.com",
+        databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "games-c3e27",
+        storageBucket: "games-c3e27.firebasestorage.app",
+        messagingSenderId: "193027632069",
+        appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
+      };
 
-      const heartbeat = setInterval(() => {
-        if (isConnected && userRef) {
-          userRef.update({ lastSeen: Date.now() });
-        } else {
-          clearInterval(heartbeat);
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+
+      const userId = generateUserId();
+      let userRef = null;
+      let isConnected = true;
+
+      function generateUserId() {
+        let userId = localStorage.getItem('gameHubUserId');
+        if (!userId) {
+          userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+          localStorage.setItem('gameHubUserId', userId);
         }
-      }, 10000);
+        return userId;
+      }
 
-      window.addEventListener('beforeunload', () => {
-        isConnected = false;
-        if (userRef) userRef.remove();
-      });
-    }
+      function setupUserPresence() {
+        userRef = database.ref('onlineUsers/' + userId);
+        
+        // Set user as online with page info
+        userRef.set({ 
+          id: userId, 
+          connected: true, 
+          lastSeen: Date.now(), 
+          page: window.location.pathname,
+          userAgent: navigator.userAgent.substring(0, 50) 
+        });
+        
+        userRef.onDisconnect().remove();
 
-    function initOnlineTracking() {
-      setupUserPresence();
-      database.ref('onlineUsers').on('value', (snapshot) => {
-        const onlineUsers = snapshot.val();
-        let userCount = 0;
-        if (onlineUsers) userCount = Object.keys(onlineUsers).length;
-        document.getElementById('onlineCount').textContent = userCount;
-        document.getElementById('onlineCount').className = '';
-        const counter = document.getElementById('onlineCount');
-        counter.style.transform = 'scale(1.2)';
-        setTimeout(() => { counter.style.transform = 'scale(1)'; }, 200);
-      });
-    }
-    window.addEventListener('DOMContentLoaded', initOnlineTracking);
+        const heartbeat = setInterval(() => {
+          if (isConnected && userRef) {
+            userRef.update({ lastSeen: Date.now(), page: window.location.pathname });
+          } else {
+            clearInterval(heartbeat);
+          }
+        }, 10000);
+
+        window.addEventListener('beforeunload', () => {
+          isConnected = false;
+          if (userRef) userRef.remove();
+        });
+      }
+
+      function initOnlineTracking() {
+        setupUserPresence();
+        
+        // Listen for changes in online users
+        database.ref('onlineUsers').on('value', (snapshot) => {
+          const onlineUsers = snapshot.val();
+          let userCount = 0;
+          if (onlineUsers) userCount = Object.keys(onlineUsers).length;
+          
+          document.getElementById('onlineCount').textContent = userCount;
+          document.getElementById('onlineCount').className = '';
+          
+          // Add animation effect
+          const counter = document.getElementById('onlineCount');
+          counter.style.transform = 'scale(1.2)';
+          setTimeout(() => { counter.style.transform = 'scale(1)'; }, 200);
+        });
+      }
+      
+      // Start tracking
+      initOnlineTracking();
+    });
 
     function downloadGame(filename, gameName) {
       if (confirm(`Are you sure you want to download ${gameName}?\n\nThis will download the HTML file to your computer.`)) {
