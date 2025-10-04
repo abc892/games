@@ -45,9 +45,11 @@
     #namePrompt input{padding:10px;width:250px;border-radius:5px;border:2px solid var(--accent);background:#0a1929;color:#fff;font-size:16px;margin-bottom:15px}
     #namePrompt button{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700}
     /* Leaderboard button */
-    #leaderboardBtn{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#ffd700;color:#000;cursor:pointer;font-weight:700;z-index:100}
+    #leaderboardBtn{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#ffd700;color:#000;cursor:pointer;font-weight:700;z-index:100;display:block}
+    #leaderboardBtn.hidden{display:none}
     /* User Settings button */
-    #userSettingsBtn{position:fixed;bottom:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#00aaff;color:#fff;cursor:pointer;font-weight:700;z-index:100}
+    #userSettingsBtn{position:fixed;bottom:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#00aaff;color:#fff;cursor:pointer;font-weight:700;z-index:100;display:block}
+    #userSettingsBtn.hidden{display:none}
     /* Leaderboard overlay */
     #leaderboardOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
     #leaderboardOverlay .lb-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);min-width:400px}
