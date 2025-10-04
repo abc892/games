@@ -440,15 +440,26 @@
         // revert to 800x600
         setCanvasSize(800,600);
       }
-      // recompute grid & positions without changing current settings
-      computeGridFromMode(lastSettings.mode === 'endless' ? '48' : lastSettings.mode);
-      createGrid();
-      fillInitialBricks(lastSettings.mode);
-      // reposition ball/paddle
-      paddle.x = Math.min(Math.max(0, paddle.x), canvas.width - paddle.w);
-      ball.x = Math.min(Math.max(ball.r, ball.x), canvas.width - ball.r);
-      resetBall();
-      draw();
+      // Only recompute grid layout if game is not running
+      if(!running) {
+        // recompute grid & positions without changing current settings
+        computeGridFromMode(lastSettings.mode === 'endless' ? '48' : lastSettings.mode);
+        createGrid();
+        fillInitialBricks(lastSettings.mode);
+        // reposition ball/paddle
+        paddle.x = Math.min(Math.max(0, paddle.x), canvas.width - paddle.w);
+        ball.x = Math.min(Math.max(ball.r, ball.x), canvas.width - ball.r);
+        resetBall();
+        draw();
+      } else {
+        // Game is running - just adjust positions and brick size
+        const oldBrickW = brickW;
+        computeGridFromMode(lastSettings.mode === 'endless' ? '48' : lastSettings.mode);
+        // Scale existing grid positions
+        paddle.x = Math.min(Math.max(0, paddle.x), canvas.width - paddle.w);
+        ball.x = Math.min(Math.max(ball.r, ball.x), canvas.width - ball.r);
+        ball.y = Math.min(Math.max(ball.r, ball.y), canvas.height - ball.r);
+      }
     });
 
     // start button
