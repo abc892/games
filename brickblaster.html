@@ -525,15 +525,12 @@
     }
 
     function draw(){
-  // Clear the canvas first
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  // Apply wallpaper background if selected
+  // Apply wallpaper background if selected, otherwise default background
   if(selectedWallpaper){
-    ctx.fillStyle = selectedWallpaper;
+    const gradient = parseGradient(selectedWallpaper);
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   } else {
-    // Default background
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
@@ -547,14 +544,58 @@
   ctx.fill();
   ctx.closePath();
   
-  // paddle
-  ctx.fillStyle = '#0000ff';
+  // paddle - bright green to be visible on all wallpapers
+  ctx.fillStyle = '#00ff00';
   ctx.fillRect(paddle.x, canvas.height - paddle.h - 10, paddle.w, paddle.h);
   
   // HUD
   hudLives.textContent = lives;
   hudScore.textContent = score;
   hudTime.textContent = timePlayed;
+}
+    function parseGradient(cssGradient) {
+  // Extract gradient type and content
+  const isRadial = cssGradient.includes('radial-gradient');
+  const match = cssGradient.match(/\((.*)\)/);
+  if (!match) return '#111';
+  
+  const content = match[1];
+  const parts = content.split(',').map(s => s.trim());
+  
+  let gradient;
+  if (isRadial) {
+    // Radial gradient
+    gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)/2);
+    parts.forEach(part => {
+      if (part.includes('#') || part.includes('rgb')) {
+        const colorMatch = part.match(/(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\))/);
+        const percentMatch = part.match(/(\d+)%/);
+        if (colorMatch && percentMatch) {
+          gradient.addColorStop(parseInt(percentMatch[1]) / 100, colorMatch[1]);
+        } else if (colorMatch) {
+          gradient.addColorStop(0, colorMatch[1]);
+        }
+      }
+    });
+  } else {
+    // Linear gradient - default to 135deg diagonal
+    const x0 = 0, y0 = canvas.height, x1 = canvas.width, y1 = 0;
+    gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+    
+    parts.forEach(part => {
+      if (part.includes('#') || part.includes('rgb')) {
+        const colorMatch = part.match(/(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\))/);
+        const percentMatch = part.match(/(\d+)%/);
+        if (colorMatch && percentMatch) {
+          gradient.addColorStop(parseInt(percentMatch[1]) / 100, colorMatch[1]);
+        } else if (colorMatch) {
+          gradient.addColorStop(0, colorMatch[1]);
+        }
+      }
+    });
+  }
+  
+  return gradient;
 }
 
     function checkCollisions(){
