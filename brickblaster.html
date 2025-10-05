@@ -637,6 +637,15 @@
         else resetBall();
       }
     }
+    function refreshGameDisplay() {
+  if (running) {
+    // If game is running, redraw the canvas
+    draw();
+  } else {
+    // If in settings menu, redraw the preview
+    draw();
+  }
+}
 
     function resetBall(){
       ball.x = canvas.width / 2;
@@ -1489,65 +1498,49 @@
     };
 
     window.removeWallpaperAtIndex = function(index) {
-      if (!devCurrentPlayerId || !database) return;
-      
-      const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
-      
-      if (confirm('Delete this wallpaper from player\'s collection?')) {
-        playerWallpapers.splice(index, 1);
-        
-        database.ref('players/' + devCurrentPlayerId).update({
-          ownedWallpapers: playerWallpapers,
-          lastUpdated: Date.now()
-        }).then(() => {
-          // If updating current player, also update local storage
-          if (devCurrentPlayerId === playerId) {
-            ownedWallpapers = playerWallpapers;
-            localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(playerWallpapers));
-          }
-          alert('Wallpaper deleted!');
-          devCurrentPlayerData.ownedWallpapers = playerWallpapers;
-          showWallpaperManager();
-        });
+  if (!devCurrentPlayerId || !database) return;
+  
+  const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
+  const wallpaperToDelete = playerWallpapers[index];
+  
+  if (confirm('Delete this wallpaper from player\'s collection?')) {
+    playerWallpapers.splice(index, 1);
+    
+    // Check if the deleted wallpaper was the selected one
+    let newSelectedWallpaper = selectedWallpaper;
+    if (devCurrentPlayerId === playerId && selectedWallpaper === wallpaperToDelete) {
+      // If there are remaining wallpapers, randomly select one
+      if (playerWallpapers.length > 0) {
+        const randomIndex = Math.floor(Math.random() * playerWallpapers.length);
+        newSelectedWallpaper = playerWallpapers[randomIndex];
+        selectedWallpaper = newSelectedWallpaper;
+        localStorage.setItem('brickBlasterWallpaper', newSelectedWallpaper);
+      } else {
+        // No wallpapers left, set to null (default background)
+        newSelectedWallpaper = null;
+        selectedWallpaper = null;
+        localStorage.removeItem('brickBlasterWallpaper');
       }
-    };
-
-    window.deletePlayerAccount = function() {
-      if (!devCurrentPlayerId || !database) return;
-      
-      const playerNameToDelete = devPlayerName.textContent;
-      if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
-        database.ref('players/' + devCurrentPlayerId).remove().then(() => {
-          // Delete from local storage if it's the current player
-          if (devCurrentPlayerId === playerId) {
-            localStorage.removeItem('brickBlasterPlayerId');
-            localStorage.removeItem('brickBlasterPlayerName');
-            localStorage.removeItem('brickBlasterCoins');
-            localStorage.removeItem('brickBlasterOwnedWallpapers');
-            localStorage.removeItem('brickBlasterWallpaper');
-            
-            // Reset all player data
-            playerId = '';
-            playerName = '';
-            playerCoins = 0;
-            ownedWallpapers = [];
-            selectedWallpaper = null;
-            
-            // Hide UI elements and show name prompt
-            settingsDiv.style.display = 'none';
-            coinsDisplay.style.display = 'none';
-            shopBtn.style.display = 'none';
-            devBtn.style.display = 'none';
-            namePrompt.style.display = 'flex';
-          }
-          
-          alert('Account deleted successfully!');
-          devPlayerInfo.style.display = 'none';
-          devSearchInput.value = '';
-          devCurrentPlayerId = null;
-        });
+      refreshGameDisplay(); // Refresh the display to show new wallpaper
+    }
+    
+    database.ref('players/' + devCurrentPlayerId).update({
+      ownedWallpapers: playerWallpapers,
+      selectedWallpaper: newSelectedWallpaper,
+      lastUpdated: Date.now()
+    }).then(() => {
+      // If updating current player, also update local storage
+      if (devCurrentPlayerId === playerId) {
+        ownedWallpapers = playerWallpapers;
+        localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(playerWallpapers));
       }
-    };
+      alert('Wallpaper deleted!');
+      devCurrentPlayerData.ownedWallpapers = playerWallpapers;
+      devCurrentPlayerData.selectedWallpaper = newSelectedWallpaper;
+      showWallpaperManager();
+    });
+  }
+};
     // --- IMPLEMENTED CHANGES END ---
 
     window.showWallpaperManager = function() {
