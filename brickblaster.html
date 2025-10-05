@@ -47,6 +47,9 @@
     /* Coins display */
     #coinsDisplay{position:fixed;top:12px;right:140px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#ffd700,#ffed4e);color:#000;font-weight:bold;font-size:16px;z-index:100;box-shadow:0 4px 12px rgba(255,215,0,0.4);display:none}
     #coinsDisplay::before{content:'🪙 '}
+    /* Diamonds display */
+    #diamondsDisplay{position:fixed;top:12px;right:280px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#00d4ff,#0066ff);color:#fff;font-weight:bold;font-size:16px;z-index:100;box-shadow:0 4px 12px rgba(0,150,255,0.4);display:none}
+    #diamondsDisplay::before{content:'💎 '}
     /* Leaderboard button */
     #leaderboardBtn{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#ffd700;color:#000;cursor:pointer;font-weight:700;z-index:100}
     /* Shop button */
@@ -128,6 +131,8 @@
     <button id="homeTop" onclick="location.href='index.html'">🏠 Home</button>
     <button id="pauseBtn">⏸ Pause</button>
     <div id="coinsDisplay">0</div>
+    <!-- Diamonds display -->
+    <div id="diamondsDisplay">0</div>
     <button id="leaderboardBtn">🏆 Leaderboard</button>
     <button id="shopBtn">🛍️ Shop</button>
     <button id="userSettingsBtn">👤 User Settings</button>
@@ -151,6 +156,7 @@
           <h3 style="color:#ff6666;margin-bottom:15px">Search Player</h3>
           <input type="text" id="devSearchInput" placeholder="Enter player name" />
           <button id="devSearchBtn">Search</button>
+          <button id="devViewAllBtn" style="margin-left:10px">View All Users</button>
         </div>
         <div id="devPlayerInfo" style="display:none">
           <div class="player-info">
@@ -363,6 +369,7 @@
     const nameTimer = document.getElementById('nameTimer');
     const hudEl = document.getElementById('hud');
     const coinsDisplay = document.getElementById('coinsDisplay');
+    const diamondsDisplay = document.getElementById('diamondsDisplay');
     const shopBtn = document.getElementById('shopBtn');
     const shopOverlay = document.getElementById('shopOverlay');
     const backFromShop = document.getElementById('backFromShop');
@@ -412,7 +419,7 @@
     let gameLoopId = null, timeIntervalId = null, spawnIntervalId = null;
     let lastSettings = { speedVal:3, mode:'12' };
 
-    // 20 Wallpapers (17 normal + 3 rare)
+    // 24 Wallpapers (17 normal + 3 rare + 4 new)
     const wallpapers = [
       'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -432,11 +439,40 @@
       'linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)',
       'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)',
       // 3 RARE wallpapers (10% chance each)
-      'linear-gradient(135deg, #ffd700 0%, #ff8c00 20%, #ff1493 40%, #9400d3 60%, #4b0082 80%, #000033 100%)', // Rainbow Gold - 6 colors
-'radial-gradient(circle at 30% 30%, #00ffff, #0080ff 30%, #8000ff 60%, #2d0a4e)', // Cosmic Purple Dream
-'linear-gradient(45deg, #ff0000 0%, #ff7f00 12.5%, #ffff00 25%, #00ff00 37.5%, #0000ff 50%, #4b0082 62.5%, #9400d3 75%, #ff0844 87.5%, #ff0000 100%)'  // Full Rainbow Spectrum
+      'linear-gradient(135deg, #ffd700 0%, #ff8c00 20%, #ff1493 40%, #9400d3 60%, #4b0082 80%, #000033 100%)', // Rainbow Gold
+      'radial-gradient(circle at 30% 30%, #00ffff, #0080ff 30%, #8000ff 60%, #2d0a4e)', // Cosmic Purple Dream
+      'linear-gradient(45deg, #ff0000 0%, #ff7f00 12.5%, #ffff00 25%, #00ff00 37.5%, #0000ff 50%, #4b0082 62.5%, #9400d3 75%, #ff0844 87.5%, #ff0000 100%)',  // Full Rainbow Spectrum
+      // Add these 4 new ones:
+      'linear-gradient(135deg, #ffd89b 0%, #ff8b4d 50%, #19547b 100%)', // Summer (index 20)
+      'linear-gradient(135deg, #e6f2ff 0%, #a8d5ff 30%, #4da0ff 60%, #0066cc 100%)', // Winter (index 21)
+      'linear-gradient(135deg, #2d1b00 0%, #ff3300 30%, #ff6600 50%, #000000 100%)', // Halloween (index 22)
+      'repeating-linear-gradient(0deg, #001a00 0px, #001a00 2px, #00ff00 2px, #00ff00 4px)' // Matrix (index 23)
     ];
     const rareIndices = [17, 18, 19]; // Last 3 are rare
+    const eventWallpaperIndices = [20, 21, 22];
+    const matrixWallpaperIndex = 23;
+
+    // Sound effects
+    const paddleSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIBAAAABAAQAZGF0YQAAAAA=');
+    const brickSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIBAAAABAAQAZGF0YQAAAAA=');
+    paddleSound.volume = 0.3;
+    brickSound.volume = 0.3;
+
+    // Event system
+    function checkCurrentEvent() {
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      
+      if ((month === 6 && day >= 15) || (month === 7 && day <= 15)) return 'summer';
+      if ((month === 12 && day >= 10) || (month === 1 && day <= 10)) return 'winter';
+      if (month === 10) return 'halloween';
+      return null;
+    }
+
+    let currentEvent = checkCurrentEvent();
+    let playerDiamonds = 0;
+    const MAX_DIAMONDS = 10000;
 
     // --- Helpers ---
     function setCanvasSize(w,h){
@@ -608,6 +644,7 @@
                ball.y + ball.r > by && ball.y - ball.r < by + brickH){
               grid[c][r] = 0;
               score++;
+              brickSound.play().catch(()=>{}); // ADD THIS LINE
               ball.dy = -ball.dy;
               ball.dx += (Math.random() - 0.5) * 0.2;
               if(!endlessMode){
@@ -625,6 +662,7 @@
       const paddleTop = canvas.height - paddle.h - 10;
       if(ball.y + ball.r >= paddleTop && ball.y - ball.r < paddleTop + paddle.h){
         if(ball.x >= paddle.x && ball.x <= paddle.x + paddle.w){
+          paddleSound.play().catch(()=>{}); // ADD THIS LINE
           const hit = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
           const speed = ball.speed;
           const angle = hit * (Math.PI/3);
@@ -697,6 +735,7 @@
       userSettingsBtn.style.display = 'none';
       shopBtn.style.display = 'none';
       coinsDisplay.style.display = 'none';
+      diamondsDisplay.style.display = 'none';
       devBtn.style.display = 'none';
       hudEl.style.display = 'block';
       if(endlessMode){
@@ -752,6 +791,7 @@
       userSettingsBtn.style.display = 'block';
       shopBtn.style.display = 'block';
       coinsDisplay.style.display = 'block';
+      if (currentEvent) diamondsDisplay.style.display = 'block';
       devBtn.style.display = 'block';
       hudEl.style.display = 'none';
       updatePlayerStats(score);
@@ -770,6 +810,7 @@
       userSettingsBtn.style.display = 'block';
       shopBtn.style.display = 'block';
       coinsDisplay.style.display = 'block';
+      if (currentEvent) diamondsDisplay.style.display = 'block';
       devBtn.style.display = 'block';
       hudEl.style.display = 'none';
     });
@@ -802,6 +843,7 @@
       userSettingsBtn.style.display = 'block';
       shopBtn.style.display = 'block';
       coinsDisplay.style.display = 'block';
+      if (currentEvent) diamondsDisplay.style.display = 'block';
       devBtn.style.display = 'block';
       hudEl.style.display = 'none';
     });
@@ -927,6 +969,7 @@
             totalGames: 0,
             totalScore: 0,
             coins: 0,
+            diamonds: 0,
             ownedWallpapers: [],
             selectedWallpaper: null,
             lastNameChange: Date.now(),
@@ -953,9 +996,14 @@
       if (!database || !playerId) {
         // Load from local storage if no database
         playerCoins = parseInt(localStorage.getItem('brickBlasterCoins')) || 0;
+        playerDiamonds = parseInt(localStorage.getItem('brickBlasterDiamonds')) || 0;
         coinsDisplay.textContent = playerCoins;
         coinsDisplay.style.display = 'block';
         shopBtn.style.display = 'block';
+        if (currentEvent) {
+          diamondsDisplay.textContent = playerDiamonds;
+          diamondsDisplay.style.display = 'block';
+        }
         return;
       }
       
@@ -963,14 +1011,20 @@
         const data = snapshot.val();
         if (data) {
           playerCoins = data.coins || 0;
+          playerDiamonds = data.diamonds || 0;
           ownedWallpapers = data.ownedWallpapers || [];
           selectedWallpaper = data.selectedWallpaper || null;
           coinsDisplay.textContent = playerCoins;
           coinsDisplay.style.display = 'block';
           shopBtn.style.display = 'block';
+          if (currentEvent) {
+            diamondsDisplay.textContent = playerDiamonds;
+            diamondsDisplay.style.display = 'block';
+          }
           
           // Update local storage with data from database
           localStorage.setItem('brickBlasterCoins', playerCoins);
+          localStorage.setItem('brickBlasterDiamonds', playerDiamonds);
           localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(ownedWallpapers));
           if (selectedWallpaper) {
             localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
@@ -982,39 +1036,39 @@
     function updatePlayerStats(newScore) {
       if (!database || !playerId) return;
       
-      const coinsEarned = newScore;
+      let diamondsEarned = 0, coinsEarned = 0;
+      
+      if (currentEvent) {
+        if (playerDiamonds < MAX_DIAMONDS) {
+          diamondsEarned = Math.min(newScore, MAX_DIAMONDS - playerDiamonds);
+          coinsEarned = newScore - diamondsEarned;
+        } else {
+          coinsEarned = newScore;
+        }
+        playerDiamonds += diamondsEarned;
+      } else {
+        coinsEarned = newScore;
+      }
+      
       playerCoins += coinsEarned;
       
       const playerRef = database.ref('players/' + playerId);
-      
       playerRef.once('value').then((snapshot) => {
-        const data = snapshot.val() || {
-          name: playerName,
-          highScore: 0,
-          allTimeScore: 0,
-          totalGames: 0,
-          totalScore: 0,
-          coins: 0,
-          lastNameChange: Date.now(),
-          lastUpdated: Date.now()
-        };
-        
-        const newHighScore = Math.max(data.highScore, newScore);
-        const newAllTimeScore = (data.allTimeScore || 0) + newScore;
-        const newTotalGames = data.totalGames + 1;
-        const newTotalScore = data.totalScore + newScore;
+        const data = snapshot.val() || {};
         
         playerRef.update({
           name: playerName,
-          highScore: newHighScore,
-          allTimeScore: newAllTimeScore,
-          totalGames: newTotalGames,
-          totalScore: newTotalScore,
+          highScore: Math.max(data.highScore || 0, newScore),
+          allTimeScore: (data.allTimeScore || 0) + newScore,
+          totalGames: (data.totalGames || 0) + 1,
+          totalScore: (data.totalScore || 0) + newScore,
           coins: playerCoins,
+          diamonds: playerDiamonds,
           lastUpdated: Date.now()
         });
         
         coinsDisplay.textContent = playerCoins;
+        if (currentEvent) diamondsDisplay.textContent = playerDiamonds;
       });
     }
 
@@ -1114,6 +1168,7 @@
           totalGames: 0,
           totalScore: 0,
           coins: 0,
+          diamonds: 0,
           lastNameChange: Date.now()
         };
         
@@ -1253,12 +1308,29 @@
     });
 
     function renderWallpaperGrid() {
+      let html = '';
+
+      // Add Event Wallpaper Shop Section
+      if (currentEvent && playerDiamonds >= MAX_DIAMONDS) {
+        const eventWpIndex = currentEvent === 'summer' ? 20 : currentEvent === 'winter' ? 21 : 22;
+        const eventWp = wallpapers[eventWpIndex];
+        
+        html += `<div class="spin-section">
+          <h3 style="color:#ffd700">🎉 ${currentEvent.toUpperCase()} EVENT WALLPAPER 🎉</h3>
+          <p>Purchase for 10,000 Diamonds!</p>
+          <div style="height:100px;background:${eventWp};border-radius:10px;margin:10px 0"></div>
+          <button onclick="buyEventWallpaper()" style="background:#ffd700;color:#000;padding:15px 30px;border:0;border-radius:8px;cursor:pointer;font-weight:bold">Buy (10,000 💎)</button>
+        </div>`;
+      }
+
+      html += '<h3>Your Wallpapers</h3>';
+
       if (ownedWallpapers.length === 0) {
-        wallpaperGrid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>';
+        html += '<p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>';
+        wallpaperGrid.innerHTML = html;
         return;
       }
       
-      let html = '';
       ownedWallpapers.forEach((wp, index) => {
         const isSelected = wp === selectedWallpaper;
         const isRare = rareIndices.includes(wallpapers.indexOf(wp));
@@ -1281,6 +1353,25 @@
         });
       });
     }
+
+    window.buyEventWallpaper = function() {
+      if (playerDiamonds < MAX_DIAMONDS) return;
+      
+      const eventWpIndex = currentEvent === 'summer' ? 20 : currentEvent === 'winter' ? 21 : 22;
+      const eventWp = wallpapers[eventWpIndex];
+      
+      playerDiamonds = 0;
+      ownedWallpapers.push(eventWp);
+      
+      database.ref('players/' + playerId).update({
+        diamonds: 0,
+        ownedWallpapers: ownedWallpapers
+      });
+      
+      diamondsDisplay.textContent = 0;
+      alert('Event wallpaper purchased!');
+      showShop();
+    };
 
     // --- Developer Panel ---
     devBtn.addEventListener('click', () => {
@@ -1351,7 +1442,29 @@
       });
     });
 
-    // --- IMPLEMENTED CHANGES START ---
+    document.getElementById('devViewAllBtn').addEventListener('click', () => {
+      if (!database) return;
+      database.ref('players').once('value').then((snapshot) => {
+        let users = [];
+        snapshot.forEach(child => users.push({id: child.key, ...child.val()}));
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;z-index:3000';
+        modal.innerHTML = `<div style="background:#1a1a1a;padding:30px;border-radius:10px;border:2px solid #ff0000;max-width:600px;max-height:80vh;overflow-y:auto">
+          <h2 style="color:#ff0000">All Users</h2>
+          ${users.map(u => `<div style="padding:10px;margin:5px 0;background:#222;border-radius:5px;cursor:pointer;color:#fff" onclick="selectUser('${u.id}','${u.name}')">${u.name}</div>`).join('')}
+          <button onclick="this.parentElement.parentElement.remove()" style="margin-top:20px;background:#555;color:#fff;padding:10px 20px;border:0;border-radius:5px;cursor:pointer">Close</button>
+        </div>`;
+        document.body.appendChild(modal);
+      });
+    });
+
+    window.selectUser = function(id, name) {
+      devSearchInput.value = name;
+      document.querySelector('[onclick*="selectUser"]').closest('div').parentElement.remove();
+      devSearchBtn.click();
+    };
+
     window.updateDevField = function(field) {
       if (!devCurrentPlayerId || !database) return;
       
@@ -1541,7 +1654,46 @@
     });
   }
 };
-    // --- IMPLEMENTED CHANGES END ---
+
+    window.deletePlayerAccount = function() {
+      if (!devCurrentPlayerId || !database) return;
+      
+      const playerNameToDelete = devPlayerName.textContent;
+      if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
+        database.ref('players/' + devCurrentPlayerId).remove().then(() => {
+          // Delete from local storage if it's the current player
+          if (devCurrentPlayerId === playerId) {
+            localStorage.removeItem('brickBlasterPlayerId');
+            localStorage.removeItem('brickBlasterPlayerName');
+            localStorage.removeItem('brickBlasterCoins');
+            localStorage.removeItem('brickBlasterDiamonds');
+            localStorage.removeItem('brickBlasterOwnedWallpapers');
+            localStorage.removeItem('brickBlasterWallpaper');
+            
+            // Reset all player data
+            playerId = '';
+            playerName = '';
+            playerCoins = 0;
+            playerDiamonds = 0;
+            ownedWallpapers = [];
+            selectedWallpaper = null;
+            
+            // Hide UI elements and show name prompt
+            settingsDiv.style.display = 'none';
+            coinsDisplay.style.display = 'none';
+            diamondsDisplay.style.display = 'none';
+            shopBtn.style.display = 'none';
+            devBtn.style.display = 'none';
+            namePrompt.style.display = 'flex';
+          }
+          
+          alert('Account deleted successfully!');
+          devPlayerInfo.style.display = 'none';
+          devSearchInput.value = '';
+          devCurrentPlayerId = null;
+        });
+      }
+    };
 
     window.showWallpaperManager = function() {
       if (!devCurrentPlayerId || !database) return;
