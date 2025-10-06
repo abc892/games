@@ -48,11 +48,11 @@
     #coinsDisplay{position:fixed;top:12px;right:140px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#ffd700,#ffed4e);color:#000;font-weight:bold;font-size:16px;z-index:100;box-shadow:0 4px 12px rgba(255,215,0,0.4)}
     #coinsDisplay::before{content:'🪙 '}
     /* Diamonds display */
-    #diamondsDisplay{position:fixed;top:12px;right:250px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#b9f2ff,#00bfff);color:#000;font-weight:bold;font-size:16px;z-index:100;box-shadow:0 4px 12px rgba(0,191,255,0.4);display:none}
+    #diamondsDisplay{position:fixed;top:12px;right:220px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#b9f2ff,#00bfff);color:#000;font-weight:bold;font-size:16px;z-index:100;box-shadow:0 4px 12px rgba(0,191,255,0.4);display:none}
     #diamondsDisplay::before{content:'💎 '}
-    /* Event Display */
-    #eventDisplay{position:fixed;top:60px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:8px;font-weight:bold;font-size:18px;z-index:100;text-align:center;display:none}
-    #eventTimer{position:fixed;top:100px;left:50%;transform:translateX(-50%);padding:6px 15px;border-radius:6px;background:rgba(0,0,0,0.7);color:#fff;font-weight:bold;font-size:14px;z-index:100;text-align:center;display:none}
+    /* Event banner */
+    #eventBanner{position:fixed;top:60px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-weight:bold;font-size:18px;z-index:100;text-align:center;display:none}
+    #eventTimer{position:fixed;top:100px;left:50%;transform:translateX(-50%);padding:8px 16px;border-radius:6px;background:rgba(0,0,0,0.7);color:#fff;font-weight:bold;font-size:14px;z-index:100;text-align:center;display:none}
     /* Leaderboard button */
     #leaderboardBtn{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:8px;border:0;background:#ffd700;color:#000;cursor:pointer;font-weight:700;z-index:100}
     /* Shop button */
@@ -85,11 +85,11 @@
     #devPanelOverlay .action-buttons button{background:#ff0000;color:#fff;border:0;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:bold}
     #devPanelOverlay .action-buttons button.danger{background:#990000}
     #devPanelOverlay .back-btn{background:#333;color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
-    /* User List in Dev Panel */
+    /* User list in dev panel */
     #devUserList{background:#111;padding:20px;border-radius:8px;margin-top:20px;max-height:300px;overflow-y:auto;display:none}
     #devUserList h3{color:#ff6666;margin-bottom:15px}
     .dev-user-item{padding:10px;margin:5px 0;background:#1a1a1a;border-radius:5px;cursor:pointer;color:#ff9999}
-    .dev-user-item:hover{background:#222;color:#fff}
+    .dev-user-item:hover{background:#2a2a2a}
     /* Leaderboard overlay */
     #leaderboardOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
     #leaderboardOverlay .lb-box{background:linear-gradient(180deg,#071428,#03142a);padding:30px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);min-width:400px}
@@ -115,27 +115,6 @@
     .change-name-section button{background:var(--accent);color:#fff;border:0;padding:8px 16px;border-radius:8px;cursor:pointer}
     .change-name-section button:disabled{background:#555;cursor:not-allowed}
     .change-name-section .name-timer{color:#ff6b6b;font-size:14px;margin-top:8px}
-    .delete-account-section {
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 2px solid #ff6b6b;
-      text-align: center;
-    }
-    
-    #deleteAccountBtn {
-      background: #ff6b6b;
-      color: #fff;
-      border: 0;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-    
-    #deleteAccountBtn:hover {
-      background: #ff5252;
-    }
     #userSettingsOverlay .back-btn{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
     /* Shop overlay */
     #shopOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:1500}
@@ -152,12 +131,11 @@
     #shopOverlay .wallpaper-item:hover{transform:scale(1.05);border-color:#c084fc}
     #shopOverlay .wallpaper-item.selected{border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,0.5)}
     #shopOverlay .wallpaper-item.rare{box-shadow:0 0 15px rgba(147,51,234,0.8)}
-    #shopOverlay .event-section{margin-top:30px;padding-top:20px;border-top:2px solid #a78bfa}
-    #shopOverlay .event-section h3{color:#ffd700}
-    #shopOverlay .event-wallpaper-item{height:100px;border-radius:8px;cursor:pointer;border:3px solid transparent;position:relative;transition:all 0.3s;margin-bottom:15px}
+    #shopOverlay .event-wallpaper-section{margin-top:30px;padding-top:20px;border-top:2px solid #c084fc}
+    #shopOverlay .event-wallpaper-item{height:80px;border-radius:8px;cursor:pointer;border:3px solid transparent;position:relative;transition:all 0.3s;margin-bottom:10px}
     #shopOverlay .event-wallpaper-item:hover{transform:scale(1.05);border-color:#ffd700}
     #shopOverlay .event-wallpaper-item.selected{border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,0.5)}
-    #shopOverlay .event-wallpaper-item .price{position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.7);color:#ffd700;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:bold}
+    #shopOverlay .event-wallpaper-item .price-tag{position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.7);color:#ffd700;padding:2px 6px;border-radius:4px;font-size:12px;font-weight:bold}
     #shopOverlay .back-btn{background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;margin-top:20px;display:block;margin-left:auto;margin-right:auto}
   </style>
 </head>
@@ -167,7 +145,7 @@
     <button id="pauseBtn">⏸ Pause</button>
     <div id="coinsDisplay">0</div>
     <div id="diamondsDisplay">0</div>
-    <div id="eventDisplay"></div>
+    <div id="eventBanner"></div>
     <div id="eventTimer"></div>
     <button id="leaderboardBtn">🏆 Leaderboard</button>
     <button id="shopBtn">🛍️ Shop</button>
@@ -192,7 +170,7 @@
           <h3 style="color:#ff6666;margin-bottom:15px">Search Player</h3>
           <input type="text" id="devSearchInput" placeholder="Enter player name" />
           <button id="devSearchBtn">Search</button>
-          <button id="devShowAllUsers" style="background:#444;margin-left:10px">Show All Users</button>
+          <button id="devShowAllUsersBtn" style="background:#ff6666;margin-left:10px">Show All Users</button>
         </div>
         <div id="devUserList">
           <h3>All Registered Users</h3>
@@ -314,12 +292,6 @@
           <button id="changeNameBtnUS">Update Name</button>
           <div class="name-timer" id="nameTimer"></div>
         </div>
-        <div class="delete-account-section">
-          <p style="color:#ff6b6b;margin-bottom:15px"><strong>Danger Zone</strong></p>
-          <p style="font-size:13px;color:#aaa;margin-bottom:15px">Permanently delete your account and all data</p>
-          <button id="deleteAccountBtn">🗑️ Delete My Account</button>
-          <p style="font-size:12px;color:#ff9999;margin-top:8px">This action cannot be undone!</p>
-        </div>
         <button class="back-btn" id="backFromUserSettings">Back to Settings</button>
       </div>
     </div>
@@ -327,7 +299,7 @@
     <div id="shopOverlay">
       <div class="shop-box">
         <h2>🛍️ Wallpaper Shop</h2>
-        <div class="coins-info">🪙 Your Coins: <span id="shopCoins">0</span> <span id="shopDiamondsInfo" style="display:none"> | 💎 Your Diamonds: <span id="shopDiamonds">0</span></span></div>
+        <div class="coins-info">🪙 Your Coins: <span id="shopCoins">0</span> <span id="shopDiamondsInfo" style="display:none">💎 Your Diamonds: <span id="shopDiamonds">0</span></span></div>
         <div class="spin-section">
           <p style="color:#c084fc;margin-bottom:15px">Get a random wallpaper for 500 coins!</p>
           <button class="spin-btn" id="spinBtn">🎰 Spin (500 coins)</button>
@@ -337,11 +309,13 @@
         <div class="wallpaper-grid" id="wallpaperGrid">
           <p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>
         </div>
-        <div class="event-section" id="eventShopSection" style="display:none">
-          <h3>Event Wallpapers</h3>
-          <div id="eventWallpaperGrid">
-            <p style="color:#aaa;text-align:center">No event wallpapers available</p>
+        <div id="eventWallpaperSection" class="event-wallpaper-section" style="display:none">
+          <h3 style="color:#ffd700">Event Wallpaper</h3>
+          <div id="eventWallpaperItem" class="event-wallpaper-item">
+            <div class="price-tag">💎 10000</div>
           </div>
+          <button id="buyEventWallpaperBtn" style="background:linear-gradient(135deg,#00bfff,#0080ff);color:#fff;border:0;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:bold;margin-top:10px">Purchase Event Wallpaper</button>
+          <div id="eventWallpaperResult" style="margin-top:10px;color:#ffd700"></div>
         </div>
         <button class="back-btn" id="backFromShop">Back to Settings</button>
       </div>
@@ -430,12 +404,11 @@
     const statDiamonds = document.getElementById('statDiamonds');
     const newNameInputUS = document.getElementById('newNameInputUS');
     const changeNameBtnUS = document.getElementById('changeNameBtnUS');
-    const deleteAccountBtn = document.getElementById('deleteAccountBtn');
     const nameTimer = document.getElementById('nameTimer');
     const hudEl = document.getElementById('hud');
     const coinsDisplay = document.getElementById('coinsDisplay');
     const diamondsDisplay = document.getElementById('diamondsDisplay');
-    const eventDisplay = document.getElementById('eventDisplay');
+    const eventBanner = document.getElementById('eventBanner');
     const eventTimer = document.getElementById('eventTimer');
     const shopBtn = document.getElementById('shopBtn');
     const shopOverlay = document.getElementById('shopOverlay');
@@ -446,8 +419,10 @@
     const spinBtn = document.getElementById('spinBtn');
     const spinResult = document.getElementById('spinResult');
     const wallpaperGrid = document.getElementById('wallpaperGrid');
-    const eventShopSection = document.getElementById('eventShopSection');
-    const eventWallpaperGrid = document.getElementById('eventWallpaperGrid');
+    const eventWallpaperSection = document.getElementById('eventWallpaperSection');
+    const eventWallpaperItem = document.getElementById('eventWallpaperItem');
+    const buyEventWallpaperBtn = document.getElementById('buyEventWallpaperBtn');
+    const eventWallpaperResult = document.getElementById('eventWallpaperResult');
     const devBtn = document.getElementById('devBtn');
     const devPasswordOverlay = document.getElementById('devPasswordOverlay');
     const devPasswordInput = document.getElementById('devPasswordInput');
@@ -456,7 +431,7 @@
     const devPanelOverlay = document.getElementById('devPanelOverlay');
     const devSearchInput = document.getElementById('devSearchInput');
     const devSearchBtn = document.getElementById('devSearchBtn');
-    const devShowAllUsers = document.getElementById('devShowAllUsers');
+    const devShowAllUsersBtn = document.getElementById('devShowAllUsersBtn');
     const devUserList = document.getElementById('devUserList');
     const devUserListContent = document.getElementById('devUserListContent');
     const devPlayerInfo = document.getElementById('devPlayerInfo');
@@ -479,19 +454,43 @@
     let playerDiamonds = 0;
     let selectedWallpaper = null;
     let ownedWallpapers = [];
-    let ownedEventWallpapers = [];
     let currentLeaderboardTab = 'highScore';
     let devCurrentPlayerId = null;
     let devCurrentPlayerData = null;
     const DEV_PASSWORD = 'qwaszx20';
+
+    // Event system
+    const events = {
+      halloween: {
+        name: "Halloween Event",
+        start: new Date(new Date().getFullYear(), 9, 1), // October 1
+        end: new Date(new Date().getFullYear(), 9, 31), // October 31
+        color: "#ff8c00",
+        wallpaper: "linear-gradient(135deg, #1a1a1a 0%, #8b0000 50%, #ff8c00 100%)"
+      },
+      winter: {
+        name: "Winter Event",
+        start: new Date(new Date().getFullYear(), 11, 10), // December 10
+        end: new Date(new Date().getFullYear() + 1, 0, 10), // January 10
+        color: "#00bfff",
+        wallpaper: "linear-gradient(135deg, #e6f7ff 0%, #b3e0ff 50%, #66b3ff 100%)"
+      },
+      summer: {
+        name: "Summer Event",
+        start: new Date(new Date().getFullYear(), 5, 15), // June 15
+        end: new Date(new Date().getFullYear(), 6, 15), // July 15
+        color: "#fffacd",
+        wallpaper: "linear-gradient(135deg, #ffeb3b 0%, #ff9800 50%, #ff5722 100%)"
+      }
+    };
     
-    // Event system variables
+    // Special developer wallpapers
+    const devWallpapers = {
+      matrix: "linear-gradient(135deg, #001a00 0%, #003300 50%, #006600 100%)"
+    };
+    
     let currentEvent = null;
-    let eventEndTime = null;
-    let eventTimerInterval = null;
-    
-    // Sound effects
-    const collisionSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==");
+    let eventInterval = null;
 
     let cols = 8, rows = 6;
     let spawnRows = 0;
@@ -504,6 +503,9 @@
     let paused = false;
     let gameLoopId = null, timeIntervalId = null, spawnIntervalId = null;
     let lastSettings = { speedVal:3, mode:'12' };
+
+    // Sound effects
+    const collisionSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==");
 
     // 20 Wallpapers (17 normal + 3 rare)
     const wallpapers = [
@@ -530,144 +532,6 @@
 'linear-gradient(45deg, #ff0000 0%, #ff7f00 12.5%, #ffff00 25%, #00ff00 37.5%, #0000ff 50%, #4b0082 62.5%, #9400d3 75%, #ff0844 87.5%, #ff0000 100%)'  // Full Rainbow Spectrum
     ];
     const rareIndices = [17, 18, 19]; // Last 3 are rare
-    
-    // Event wallpapers
-    const eventWallpapers = {
-      halloween: 'linear-gradient(135deg, #1a1a1a 0%, #8b0000 50%, #ff8c00 100%)', // Spooky Halloween
-      winter: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #e6f3ff 100%)', // Snowy Winter
-      summer: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 50%, #86a8e7 100%)', // Sunny Summer
-      matrix: 'linear-gradient(135deg, #001a00 0%, #003300 50%, #004d00 100%)' // Matrix (developer only)
-    };
-
-    // --- FIXED: Initialize Firebase Only Once ---
-    function initializeFirebase() {
-      if (typeof firebase === 'undefined') {
-        console.log('Firebase not available - running in offline mode');
-        return;
-      }
-
-      // Check if Firebase is already initialized to prevent conflicts
-      if (window.firebaseInitialized) {
-        database = firebase.database();
-        return;
-      }
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
-        authDomain: "games-c3e27.firebaseapp.com",
-        databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "games-c3e27",
-        storageBucket: "games-c3e27.firebasestorage.app",
-        messagingSenderId: "193027632069",
-        appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
-      };
-
-      try {
-        firebase.initializeApp(firebaseConfig);
-        database = firebase.database();
-        window.firebaseInitialized = true;
-        console.log('Firebase initialized successfully');
-      } catch (error) {
-        console.log('Firebase initialization failed - running in offline mode');
-        database = null;
-      }
-    }
-
-    // --- Event System ---
-    function checkCurrentEvent() {
-      const now = new Date();
-      const year = now.getFullYear();
-      
-      // Halloween Event: October 1 - October 31
-      const halloweenStart = new Date(year, 9, 1); // Month is 0-indexed
-      const halloweenEnd = new Date(year, 9, 31);
-      
-      // Winter Event: December 10 - January 10
-      const winterStart = new Date(year, 11, 10);
-      const winterEnd = new Date(year + 1, 0, 10);
-      
-      // Summer Event: June 15 - July 15
-      const summerStart = new Date(year, 5, 15);
-      const summerEnd = new Date(year, 6, 15);
-      
-      if (now >= halloweenStart && now <= halloweenEnd) {
-        currentEvent = 'halloween';
-        eventEndTime = halloweenEnd;
-        eventDisplay.textContent = '🎃 HALLOWEEN EVENT 🎃';
-        eventDisplay.style.background = 'linear-gradient(135deg, #ff8c00, #8b0000)';
-        eventDisplay.style.color = '#fff';
-      } else if (now >= winterStart && now <= winterEnd) {
-        currentEvent = 'winter';
-        eventEndTime = winterEnd;
-        eventDisplay.textContent = '❄️ WINTER EVENT ❄️';
-        eventDisplay.style.background = 'linear-gradient(135deg, #1e3c72, #e6f3ff)';
-        eventDisplay.style.color = '#fff';
-      } else if (now >= summerStart && now <= summerEnd) {
-        currentEvent = 'summer';
-        eventEndTime = summerEnd;
-        eventDisplay.textContent = '☀️ SUMMER EVENT ☀️';
-        eventDisplay.style.background = 'linear-gradient(135deg, #ff7e5f, #feb47b)';
-        eventDisplay.style.color = '#fff';
-      } else {
-        currentEvent = null;
-        eventEndTime = null;
-        eventDisplay.style.display = 'none';
-        eventTimer.style.display = 'none';
-        diamondsDisplay.style.display = 'none';
-        return;
-      }
-      
-      // Show event UI
-      eventDisplay.style.display = 'block';
-      eventTimer.style.display = 'block';
-      diamondsDisplay.style.display = 'block';
-      
-      // Start event timer
-      updateEventTimer();
-      if (eventTimerInterval) clearInterval(eventTimerInterval);
-      eventTimerInterval = setInterval(updateEventTimer, 1000);
-    }
-    
-    function updateEventTimer() {
-      if (!eventEndTime) return;
-      
-      const now = new Date();
-      const timeLeft = eventEndTime - now;
-      
-      if (timeLeft <= 0) {
-        // Event ended
-        currentEvent = null;
-        eventEndTime = null;
-        eventDisplay.style.display = 'none';
-        eventTimer.style.display = 'none';
-        diamondsDisplay.style.display = 'none';
-        clearInterval(eventTimerInterval);
-        
-        // Reset diamonds for all players
-        if (database) {
-          database.ref('players').once('value').then(snapshot => {
-            const updates = {};
-            snapshot.forEach(child => {
-              updates[child.key + '/diamonds'] = 0;
-            });
-            database.ref('players').update(updates);
-          });
-        }
-        
-        // Reset local diamonds
-        playerDiamonds = 0;
-        localStorage.setItem('brickBlasterDiamonds', '0');
-        
-        return;
-      }
-      
-      const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-      
-      eventTimer.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    }
 
     // --- Helpers ---
     function setCanvasSize(w,h){
@@ -841,12 +705,7 @@
               score++;
               
               // Play collision sound
-              try {
-                collisionSound.currentTime = 0;
-                collisionSound.play();
-              } catch(e) {
-                // Sound playback failed, ignore
-              }
+              playCollisionSound();
               
               ball.dy = -ball.dy;
               ball.dx += (Math.random() - 0.5) * 0.2;
@@ -862,45 +721,35 @@
       }
       if(ball.x + ball.dx > canvas.width - ball.r || ball.x + ball.dx < ball.r) {
         ball.dx = -ball.dx;
-        // Play collision sound
-        try {
-          collisionSound.currentTime = 0;
-          collisionSound.play();
-        } catch(e) {
-          // Sound playback failed, ignore
-        }
+        playCollisionSound();
       }
       if(ball.y + ball.dy < ball.r) {
         ball.dy = -ball.dy;
-        // Play collision sound
-        try {
-          collisionSound.currentTime = 0;
-          collisionSound.play();
-        } catch(e) {
-          // Sound playback failed, ignore
-        }
+        playCollisionSound();
       }
       const paddleTop = canvas.height - paddle.h - 10;
       if(ball.y + ball.r >= paddleTop && ball.y - ball.r < paddleTop + paddle.h){
         if(ball.x >= paddle.x && ball.x <= paddle.x + paddle.w){
-          // Play collision sound
-          try {
-            collisionSound.currentTime = 0;
-            collisionSound.play();
-          } catch(e) {
-            // Sound playback failed, ignore
-          }
-          
           const hit = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
           const speed = ball.speed;
           const angle = hit * (Math.PI/3);
           ball.dx = speed * Math.sin(angle);
           ball.dy = -Math.abs(speed * Math.cos(angle));
+          playCollisionSound();
         }
       } else if(ball.y - ball.r > canvas.height){
         lives--;
         if(lives <= 0) endRound(false);
         else resetBall();
+      }
+    }
+
+    function playCollisionSound() {
+      try {
+        collisionSound.currentTime = 0;
+        collisionSound.play();
+      } catch (e) {
+        // Sound playback failed, ignore
       }
     }
 
@@ -955,7 +804,7 @@
       shopBtn.style.display = 'none';
       coinsDisplay.style.display = 'none';
       diamondsDisplay.style.display = 'none';
-      eventDisplay.style.display = 'none';
+      eventBanner.style.display = 'none';
       eventTimer.style.display = 'none';
       devBtn.style.display = 'none';
       hudEl.style.display = 'block';
@@ -1014,7 +863,7 @@
       coinsDisplay.style.display = 'block';
       if (currentEvent) {
         diamondsDisplay.style.display = 'block';
-        eventDisplay.style.display = 'block';
+        eventBanner.style.display = 'block';
         eventTimer.style.display = 'block';
       }
       devBtn.style.display = 'block';
@@ -1037,7 +886,7 @@
       coinsDisplay.style.display = 'block';
       if (currentEvent) {
         diamondsDisplay.style.display = 'block';
-        eventDisplay.style.display = 'block';
+        eventBanner.style.display = 'block';
         eventTimer.style.display = 'block';
       }
       devBtn.style.display = 'block';
@@ -1074,7 +923,7 @@
       coinsDisplay.style.display = 'block';
       if (currentEvent) {
         diamondsDisplay.style.display = 'block';
-        eventDisplay.style.display = 'block';
+        eventBanner.style.display = 'block';
         eventTimer.style.display = 'block';
       }
       devBtn.style.display = 'block';
@@ -1144,7 +993,7 @@
     window.addEventListener('beforeunload', ()=>{
       clearInterval(spawnIntervalId);
       clearInterval(timeIntervalId);
-      if (eventTimerInterval) clearInterval(eventTimerInterval);
+      clearInterval(eventInterval);
     });
 
     setCanvasSize(800,600);
@@ -1153,10 +1002,85 @@
     fillInitialBricks('12');
     draw();
 
-    // --- FIXED: Name and Player System with Proper Sync ---
+    // --- Event System ---
+    function checkCurrentEvent() {
+      const now = new Date();
+      currentEvent = null;
+      
+      for (const eventKey in events) {
+        const event = events[eventKey];
+        if (now >= event.start && now <= event.end) {
+          currentEvent = event;
+          break;
+        }
+      }
+      
+      updateEventDisplay();
+      
+      // Set up interval to update event timer
+      if (currentEvent) {
+        updateEventTimer();
+        eventInterval = setInterval(updateEventTimer, 1000);
+      } else {
+        clearInterval(eventInterval);
+      }
+    }
+    
+    function updateEventDisplay() {
+      if (currentEvent) {
+        eventBanner.textContent = `${currentEvent.name} is Active!`;
+        eventBanner.style.backgroundColor = currentEvent.color;
+        eventBanner.style.color = "#000";
+        eventBanner.style.display = "block";
+        eventTimer.style.display = "block";
+        diamondsDisplay.style.display = "block";
+        diamondsDisplay.textContent = playerDiamonds;
+      } else {
+        eventBanner.style.display = "none";
+        eventTimer.style.display = "none";
+        diamondsDisplay.style.display = "none";
+      }
+    }
+    
+    function updateEventTimer() {
+      if (!currentEvent) return;
+      
+      const now = new Date();
+      const timeLeft = currentEvent.end - now;
+      
+      if (timeLeft <= 0) {
+        // Event ended
+        currentEvent = null;
+        playerDiamonds = 0; // Reset diamonds when event ends
+        updateEventDisplay();
+        clearInterval(eventInterval);
+        return;
+      }
+      
+      const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+      
+      eventTimer.textContent = `Event ends in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    // --- Name and Player System ---
     function initializePlayer() {
       playerId = localStorage.getItem('brickBlasterPlayerId');
       playerName = localStorage.getItem('brickBlasterPlayerName');
+      
+      // Check for undefined or invalid player data
+      if (playerId === "undefined" || playerName === "undefined" || !playerId || !playerName) {
+        localStorage.removeItem('brickBlasterPlayerId');
+        localStorage.removeItem('brickBlasterPlayerName');
+        localStorage.removeItem('brickBlasterCoins');
+        localStorage.removeItem('brickBlasterDiamonds');
+        localStorage.removeItem('brickBlasterOwnedWallpapers');
+        localStorage.removeItem('brickBlasterWallpaper');
+        playerId = '';
+        playerName = '';
+      }
       
       if (!playerId) {
         playerId = 'player_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
@@ -1168,10 +1092,8 @@
         settingsDiv.style.display = 'flex';
         loadPlayerData();
         devBtn.style.display = 'block';
+        checkCurrentEvent();
       }
-      
-      // Check for current event
-      checkCurrentEvent();
     }
 
     nameSubmit.addEventListener('click', submitName);
@@ -1186,22 +1108,7 @@
         return;
       }
       
-      // Check if name already exists - FIXED: Always check both local and Firebase
-      let nameTaken = false;
-      
-      // First check local storage for immediate response
-      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-      if (existingPlayers[name]) {
-        nameTaken = true;
-      }
-      
-      if (nameTaken) {
-        alert('This name is already taken. Please choose another name.');
-        nameInput.value = '';
-        return;
-      }
-      
-      // Then check Firebase if available
+      // Check if name already exists
       if (database) {
         database.ref('players').orderByChild('name').equalTo(name).once('value').then((snapshot) => {
           if (snapshot.exists()) {
@@ -1211,27 +1118,128 @@
           }
           
           // Name is unique, proceed
-          completeNameSubmission(name);
-        }).catch((error) => {
-          // If Firebase check fails, proceed with local check only
-          completeNameSubmission(name);
+          playerName = name;
+          localStorage.setItem('brickBlasterPlayerName', playerName);
+          
+          database.ref('players/' + playerId).set({
+            name: playerName,
+            highScore: 0,
+            allTimeScore: 0,
+            totalGames: 0,
+            totalScore: 0,
+            coins: 0,
+            diamonds: 0,
+            ownedWallpapers: [],
+            selectedWallpaper: null,
+            lastNameChange: Date.now(),
+            lastUpdated: Date.now()
+          });
+          
+          namePrompt.style.display = 'none';
+          settingsDiv.style.display = 'flex';
+          loadPlayerData();
+          devBtn.style.display = 'block';
+          checkCurrentEvent();
         });
       } else {
-        completeNameSubmission(name);
+        // No database, proceed locally
+        playerName = name;
+        localStorage.setItem('brickBlasterPlayerName', playerName);
+        namePrompt.style.display = 'none';
+        settingsDiv.style.display = 'flex';
+        loadPlayerData();
+        devBtn.style.display = 'block';
+        checkCurrentEvent();
       }
     }
 
-    function completeNameSubmission(name) {
-      playerName = name;
-      localStorage.setItem('brickBlasterPlayerName', playerName);
+    function loadPlayerData() {
+      if (!database || !playerId) {
+        // Load from local storage if no database
+        playerCoins = parseInt(localStorage.getItem('brickBlasterCoins')) || 0;
+        playerDiamonds = parseInt(localStorage.getItem('brickBlasterDiamonds')) || 0;
+        coinsDisplay.textContent = playerCoins;
+        diamondsDisplay.textContent = playerDiamonds;
+        coinsDisplay.style.display = 'block';
+        if (currentEvent) diamondsDisplay.style.display = 'block';
+        shopBtn.style.display = 'block';
+        return;
+      }
       
-      // Update local player registry
-      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-      existingPlayers[name] = true;
-      localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
+      database.ref('players/' + playerId).once('value').then((snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          playerCoins = data.coins || 0;
+          playerDiamonds = data.diamonds || 0;
+          ownedWallpapers = data.ownedWallpapers || [];
+          selectedWallpaper = data.selectedWallpaper || null;
+          coinsDisplay.textContent = playerCoins;
+          diamondsDisplay.textContent = playerDiamonds;
+          coinsDisplay.style.display = 'block';
+          if (currentEvent) diamondsDisplay.style.display = 'block';
+          shopBtn.style.display = 'block';
+          
+          // Update local storage with data from database
+          localStorage.setItem('brickBlasterCoins', playerCoins);
+          localStorage.setItem('brickBlasterDiamonds', playerDiamonds);
+          localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(ownedWallpapers));
+          if (selectedWallpaper) {
+            localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
+          }
+        }
+      }).catch((error) => {
+        // If Firebase fails, load from local storage
+        playerCoins = parseInt(localStorage.getItem('brickBlasterCoins')) || 0;
+        playerDiamonds = parseInt(localStorage.getItem('brickBlasterDiamonds')) || 0;
+        coinsDisplay.textContent = playerCoins;
+        diamondsDisplay.textContent = playerDiamonds;
+        coinsDisplay.style.display = 'block';
+        if (currentEvent) diamondsDisplay.style.display = 'block';
+        shopBtn.style.display = 'block';
+      });
+    }
+
+    function updatePlayerStats(newScore) {
+      let coinsEarned = 0;
+      let diamondsEarned = 0;
       
-      if (database) {
-        database.ref('players/' + playerId).set({
+      if (currentEvent) {
+        // During events, earn diamonds instead of coins (up to 10,000)
+        if (playerDiamonds < 10000) {
+          diamondsEarned = newScore;
+          if (playerDiamonds + diamondsEarned > 10000) {
+            // Calculate overflow that becomes coins
+            const overflow = (playerDiamonds + diamondsEarned) - 10000;
+            diamondsEarned = 10000 - playerDiamonds;
+            coinsEarned = overflow;
+          }
+        } else {
+          // Already at max diamonds, all score becomes coins
+          coinsEarned = newScore;
+        }
+      } else {
+        // No event, earn coins normally
+        coinsEarned = newScore;
+      }
+      
+      playerCoins += coinsEarned;
+      playerDiamonds += diamondsEarned;
+      
+      // ALWAYS save to local storage
+      localStorage.setItem('brickBlasterCoins', playerCoins);
+      localStorage.setItem('brickBlasterDiamonds', playerDiamonds);
+      
+      // Update display immediately
+      coinsDisplay.textContent = playerCoins;
+      diamondsDisplay.textContent = playerDiamonds;
+      
+      // Only update Firebase if online
+      if (!database || !playerId) return;
+      
+      const playerRef = database.ref('players/' + playerId);
+      
+      playerRef.once('value').then((snapshot) => {
+        const data = snapshot.val() || {
           name: playerName,
           highScore: 0,
           allTimeScore: 0,
@@ -1239,164 +1247,31 @@
           totalScore: 0,
           coins: 0,
           diamonds: 0,
-          ownedWallpapers: [],
-          ownedEventWallpapers: [],
-          selectedWallpaper: null,
           lastNameChange: Date.now(),
           lastUpdated: Date.now()
+        };
+        
+        const newHighScore = Math.max(data.highScore, newScore);
+        const newAllTimeScore = (data.allTimeScore || 0) + newScore;
+        const newTotalGames = data.totalGames + 1;
+        const newTotalScore = data.totalScore + newScore;
+        
+        return playerRef.update({
+          name: playerName,
+          highScore: newHighScore,
+          allTimeScore: newAllTimeScore,
+          totalGames: newTotalGames,
+          totalScore: newTotalScore,
+          coins: playerCoins,
+          diamonds: playerDiamonds,
+          lastUpdated: Date.now()
         });
-      }
-      
-      namePrompt.style.display = 'none';
-      settingsDiv.style.display = 'flex';
-      loadPlayerData();
-      devBtn.style.display = 'block';
+      }).catch((error) => {
+        console.log('Firebase update failed (offline?), saved locally');
+      });
     }
 
-    function loadPlayerData() {
-      // Always load from local storage first for immediate UI
-      playerCoins = parseInt(localStorage.getItem('brickBlasterCoins')) || 0;
-      playerDiamonds = parseInt(localStorage.getItem('brickBlasterDiamonds')) || 0;
-      
-      try {
-        ownedWallpapers = JSON.parse(localStorage.getItem('brickBlasterOwnedWallpapers') || '[]');
-        ownedEventWallpapers = JSON.parse(localStorage.getItem('brickBlasterOwnedEventWallpapers') || '[]');
-        selectedWallpaper = localStorage.getItem('brickBlasterWallpaper');
-      } catch (e) {
-        ownedWallpapers = [];
-        ownedEventWallpapers = [];
-        selectedWallpaper = null;
-      }
-      
-      coinsDisplay.textContent = playerCoins;
-      diamondsDisplay.textContent = playerDiamonds;
-      coinsDisplay.style.display = 'block';
-      if (currentEvent) diamondsDisplay.style.display = 'block';
-      shopBtn.style.display = 'block';
-      
-      // Then sync with Firebase if available
-      if (database && playerId) {
-        database.ref('players/' + playerId).once('value').then((snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            // Merge data: Use the highest values
-            playerCoins = Math.max(playerCoins, data.coins || 0);
-            playerDiamonds = Math.max(playerDiamonds, data.diamonds || 0);
-            
-            // Merge wallpapers
-            const firebaseWallpapers = data.ownedWallpapers || [];
-            const firebaseEventWallpapers = data.ownedEventWallpapers || [];
-            
-            // Combine without duplicates
-            ownedWallpapers = [...new Set([...ownedWallpapers, ...firebaseWallpapers])];
-            ownedEventWallpapers = [...new Set([...ownedEventWallpapers, ...firebaseEventWallpapers])];
-            
-            // Update selected wallpaper if Firebase has one
-            if (data.selectedWallpaper) {
-              selectedWallpaper = data.selectedWallpaper;
-            }
-            
-            // Save merged data back to local storage
-            localStorage.setItem('brickBlasterCoins', playerCoins.toString());
-            localStorage.setItem('brickBlasterDiamonds', playerDiamonds.toString());
-            localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(ownedWallpapers));
-            localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify(ownedEventWallpapers));
-            if (selectedWallpaper) {
-              localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
-            }
-            
-            // Update UI
-            coinsDisplay.textContent = playerCoins;
-            diamondsDisplay.textContent = playerDiamonds;
-            
-            // Sync back to Firebase with merged data
-            if (database && playerId) {
-              database.ref('players/' + playerId).update({
-                coins: playerCoins,
-                diamonds: playerDiamonds,
-                ownedWallpapers: ownedWallpapers,
-                ownedEventWallpapers: ownedEventWallpapers,
-                selectedWallpaper: selectedWallpaper,
-                lastUpdated: Date.now()
-              });
-            }
-          }
-        }).catch((error) => {
-          console.log('Firebase load failed, using local data');
-        });
-      }
-    }
-
-    function updatePlayerStats(newScore) {
-  let coinsEarned = 0;
-  let diamondsEarned = 0;
-  
-  if (currentEvent) {
-    // During events, earn diamonds instead of coins
-    diamondsEarned = newScore;
-    
-    // If diamonds would exceed 10,000, convert excess to coins
-    if (playerDiamonds + diamondsEarned > 10000) {
-      const excess = (playerDiamonds + diamondsEarned) - 10000;
-      diamondsEarned = 10000 - playerDiamonds;
-      coinsEarned = excess;
-    }
-    
-    playerDiamonds += diamondsEarned;
-  } else {
-    // Normal gameplay - earn coins
-    coinsEarned = newScore;
-  }
-  
-  playerCoins += coinsEarned;
-  
-  // ALWAYS save to local storage immediately
-  localStorage.setItem('brickBlasterCoins', playerCoins.toString());
-  localStorage.setItem('brickBlasterDiamonds', playerDiamonds.toString());
-  
-  // Update display immediately
-  coinsDisplay.textContent = playerCoins;
-  diamondsDisplay.textContent = playerDiamonds;
-  
-  // Only update Firebase if online - FIXED: Proper error handling
-  if (!database || !playerId) return;
-  
-  const playerRef = database.ref('players/' + playerId);
-  
-  playerRef.once('value').then((snapshot) => {
-    const data = snapshot.val() || {
-      name: playerName,
-      highScore: 0,
-      allTimeScore: 0,
-      totalGames: 0,
-      totalScore: 0,
-      coins: 0,
-      diamonds: 0,
-      lastNameChange: Date.now(),
-      lastUpdated: Date.now()
-    };
-    
-    const newHighScore = Math.max(data.highScore, newScore);
-    const newAllTimeScore = (data.allTimeScore || 0) + newScore;
-    const newTotalGames = data.totalGames + 1;
-    const newTotalScore = data.totalScore + newScore;
-    
-    return playerRef.update({
-      name: playerName,
-      highScore: newHighScore,
-      allTimeScore: newAllTimeScore,
-      totalGames: newTotalGames,
-      totalScore: newTotalScore,
-      coins: playerCoins,
-      diamonds: playerDiamonds,
-      lastUpdated: Date.now()
-    });
-  }).catch((error) => {
-    console.log('Firebase update failed (offline?), saved locally');
-  });
-}
-
-    // --- FIXED: Leaderboard with Proper Data ---
+    // --- Leaderboard ---
     leaderboardBtn.addEventListener('click', showLeaderboard);
     backFromLeaderboard.addEventListener('click', () => {
       leaderboardOverlay.style.display = 'none';
@@ -1419,7 +1294,7 @@
 
     function showLeaderboard() {
       if (!database) {
-        leaderboardList.innerHTML = '<p style="color:#dfeefb;text-align:center">Leaderboard not available offline</p>';
+        leaderboardList.innerHTML = '<p style="color:#dfeefb;text-align:center">Leaderboard not available</p>';
         leaderboardOverlay.style.display = 'flex';
         return;
       }
@@ -1459,8 +1334,6 @@
         });
         
         leaderboardList.innerHTML = html;
-      }).catch((error) => {
-        leaderboardList.innerHTML = '<p style="color:#dfeefb;text-align:center">Error loading leaderboard</p>';
       });
     }
 
@@ -1547,7 +1420,11 @@
       }
       
       if (!database || !playerId) {
-        alert('Name changes require an internet connection');
+        playerName = newName;
+        localStorage.setItem('brickBlasterPlayerName', playerName);
+        alert('Name updated locally!');
+        newNameInputUS.value = '';
+        showUserSettings();
         return;
       }
       
@@ -1563,105 +1440,20 @@
           return;
         }
         
-        // Check if name is already taken
-        database.ref('players').orderByChild('name').equalTo(newName).once('value').then((nameSnapshot) => {
-          if (nameSnapshot.exists()) {
-            alert('This name is already taken. Please choose another name.');
-            return;
-          }
-          
-          playerName = newName;
-          localStorage.setItem('brickBlasterPlayerName', playerName);
-          
-          // Update local player registry
-          const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-          const oldName = data.name;
-          delete existingPlayers[oldName];
-          existingPlayers[newName] = true;
-          localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-          
-          database.ref('players/' + playerId).update({
-            name: playerName,
-            lastNameChange: now,
-            lastUpdated: now
-          }).then(() => {
-            alert('Name updated successfully!');
-            newNameInputUS.value = '';
-            showUserSettings();
-          });
+        playerName = newName;
+        localStorage.setItem('brickBlasterPlayerName', playerName);
+        
+        database.ref('players/' + playerId).update({
+          name: playerName,
+          lastNameChange: now,
+          lastUpdated: now
+        }).then(() => {
+          alert('Name updated successfully!');
+          newNameInputUS.value = '';
+          showUserSettings();
         });
       });
     });
-
-    // --- FIXED: Delete User Account ---
-    function deleteUserAccount() {
-      if (!confirm('Are you sure you want to PERMANENTLY DELETE your account? This will remove ALL your data including scores, coins, and wallpapers. This action cannot be undone!')) {
-        return;
-      }
-      
-      if (!confirm('FINAL WARNING: This will completely erase your account from both local storage and the database. Are you absolutely sure?')) {
-        return;
-      }
-      
-      // Delete from Firebase if online
-      if (database && playerId) {
-        database.ref('players/' + playerId).remove().then(() => {
-          completeAccountDeletion();
-        }).catch((error) => {
-          console.log('Firebase deletion failed, proceeding with local deletion');
-          completeAccountDeletion();
-        });
-      } else {
-        completeAccountDeletion();
-      }
-    }
-
-    function completeAccountDeletion() {
-      // Clear all local storage data
-      const playerNameToRemove = localStorage.getItem('brickBlasterPlayerName');
-      
-      // Remove from local player registry
-      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-      delete existingPlayers[playerNameToRemove];
-      localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-      
-      // Clear player data
-      localStorage.removeItem('brickBlasterPlayerId');
-      localStorage.removeItem('brickBlasterPlayerName');
-      localStorage.removeItem('brickBlasterCoins');
-      localStorage.removeItem('brickBlasterDiamonds');
-      localStorage.removeItem('brickBlasterOwnedWallpapers');
-      localStorage.removeItem('brickBlasterOwnedEventWallpapers');
-      localStorage.removeItem('brickBlasterWallpaper');
-      
-      // Reset all player variables
-      playerId = '';
-      playerName = '';
-      playerCoins = 0;
-      playerDiamonds = 0;
-      ownedWallpapers = [];
-      ownedEventWallpapers = [];
-      selectedWallpaper = null;
-      
-      // Show confirmation and reset UI
-      alert('Your account has been successfully deleted. All data has been removed.');
-      
-      // Close overlays and show name prompt
-      userSettingsOverlay.style.display = 'none';
-      settingsDiv.style.display = 'none';
-      coinsDisplay.style.display = 'none';
-      diamondsDisplay.style.display = 'none';
-      shopBtn.style.display = 'none';
-      devBtn.style.display = 'none';
-      leaderboardBtn.style.display = 'none';
-      userSettingsBtn.style.display = 'none';
-      
-      // Reset name prompt and show it
-      nameInput.value = '';
-      namePrompt.style.display = 'flex';
-    }
-
-    deleteAccountBtn.addEventListener('click', deleteUserAccount);
 
     // --- Shop System ---
     shopBtn.addEventListener('click', showShop);
@@ -1681,8 +1473,8 @@
       }
       spinResult.textContent = '';
       renderWallpaperGrid();
-      renderEventWallpaperGrid();
       updateSpinButton();
+      updateEventWallpaperSection();
     }
 
     function updateSpinButton() {
@@ -1690,6 +1482,30 @@
         spinBtn.disabled = false;
       } else {
         spinBtn.disabled = true;
+      }
+    }
+
+    function updateEventWallpaperSection() {
+      if (currentEvent) {
+        eventWallpaperSection.style.display = 'block';
+        eventWallpaperItem.style.background = currentEvent.wallpaper;
+        
+        // Check if player already owns the event wallpaper
+        if (ownedWallpapers.includes(currentEvent.wallpaper)) {
+          buyEventWallpaperBtn.disabled = true;
+          buyEventWallpaperBtn.textContent = "Already Purchased";
+          eventWallpaperResult.textContent = "You already own this event wallpaper!";
+        } else if (playerDiamonds >= 10000) {
+          buyEventWallpaperBtn.disabled = false;
+          buyEventWallpaperBtn.textContent = "Purchase Event Wallpaper";
+          eventWallpaperResult.textContent = "";
+        } else {
+          buyEventWallpaperBtn.disabled = true;
+          buyEventWallpaperBtn.textContent = "Purchase Event Wallpaper";
+          eventWallpaperResult.textContent = "You need 10,000 diamonds to purchase this wallpaper";
+        }
+      } else {
+        eventWallpaperSection.style.display = 'none';
       }
     }
 
@@ -1702,7 +1518,6 @@
       playerCoins -= 500;
       coinsDisplay.textContent = playerCoins;
       shopCoins.textContent = playerCoins;
-      localStorage.setItem('brickBlasterCoins', playerCoins.toString());
       
       // Spin logic: 10% chance for rare wallpapers
       let selectedIndex;
@@ -1719,7 +1534,6 @@
       
       // ALWAYS add the wallpaper to owned wallpapers (allow duplicates)
       ownedWallpapers.push(wonWallpaper);
-      localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(ownedWallpapers));
       
       const isRare = rareIndices.includes(selectedIndex);
       spinResult.textContent = isRare ? '✨ RARE WALLPAPER UNLOCKED! ✨' : '🎉 New Wallpaper Unlocked!';
@@ -1728,13 +1542,45 @@
       if (database && playerId) {
         database.ref('players/' + playerId).update({
           coins: playerCoins,
-          ownedWallpapers: ownedWallpapers,
-          lastUpdated: Date.now()
+          ownedWallpapers: ownedWallpapers
         });
       }
       
       renderWallpaperGrid();
       updateSpinButton();
+    });
+
+    buyEventWallpaperBtn.addEventListener('click', () => {
+      if (!currentEvent) return;
+      
+      if (playerDiamonds < 10000) {
+        eventWallpaperResult.textContent = "❌ Not enough diamonds!";
+        return;
+      }
+      
+      if (ownedWallpapers.includes(currentEvent.wallpaper)) {
+        eventWallpaperResult.textContent = "❌ You already own this wallpaper!";
+        return;
+      }
+      
+      playerDiamonds -= 10000;
+      diamondsDisplay.textContent = playerDiamonds;
+      shopDiamonds.textContent = playerDiamonds;
+      
+      // Add event wallpaper to owned wallpapers
+      ownedWallpapers.push(currentEvent.wallpaper);
+      
+      eventWallpaperResult.textContent = "✅ Event wallpaper purchased!";
+      
+      if (database && playerId) {
+        database.ref('players/' + playerId).update({
+          diamonds: playerDiamonds,
+          ownedWallpapers: ownedWallpapers
+        });
+      }
+      
+      renderWallpaperGrid();
+      updateEventWallpaperSection();
     });
 
     function renderWallpaperGrid() {
@@ -1757,73 +1603,12 @@
       document.querySelectorAll('.wallpaper-item').forEach((item, idx) => {
         item.addEventListener('click', () => {
           selectedWallpaper = ownedWallpapers[idx];
-          localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
           if (database && playerId) {
             database.ref('players/' + playerId).update({
-              selectedWallpaper: selectedWallpaper,
-              lastUpdated: Date.now()
+              selectedWallpaper: selectedWallpaper
             });
           }
           renderWallpaperGrid();
-        });
-      });
-    }
-    
-    function renderEventWallpaperGrid() {
-      if (!currentEvent) {
-        eventShopSection.style.display = 'none';
-        return;
-      }
-      
-      eventShopSection.style.display = 'block';
-      
-      const eventWallpaper = eventWallpapers[currentEvent];
-      const isOwned = ownedEventWallpapers.includes(currentEvent);
-      const canAfford = playerDiamonds >= 10000;
-      
-      let html = '';
-      html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background:${eventWallpaper}">
-        <div class="price">${isOwned ? 'OWNED' : '10,000 💎'}</div>
-      </div>`;
-      
-      eventWallpaperGrid.innerHTML = html;
-      
-      document.querySelectorAll('.event-wallpaper-item').forEach((item) => {
-        item.addEventListener('click', () => {
-          if (isOwned) {
-            selectedWallpaper = eventWallpaper;
-            localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
-            if (database && playerId) {
-              database.ref('players/' + playerId).update({
-                selectedWallpaper: selectedWallpaper,
-                lastUpdated: Date.now()
-              });
-            }
-            renderEventWallpaperGrid();
-            renderWallpaperGrid();
-          } else if (canAfford) {
-            if (confirm(`Purchase this event wallpaper for 10,000 Diamonds?`)) {
-              playerDiamonds -= 10000;
-              diamondsDisplay.textContent = playerDiamonds;
-              shopDiamonds.textContent = playerDiamonds;
-              localStorage.setItem('brickBlasterDiamonds', playerDiamonds.toString());
-              ownedEventWallpapers.push(currentEvent);
-              localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify(ownedEventWallpapers));
-              
-              if (database && playerId) {
-                database.ref('players/' + playerId).update({
-                  diamonds: playerDiamonds,
-                  ownedEventWallpapers: ownedEventWallpapers,
-                  lastUpdated: Date.now()
-                });
-              }
-              
-              renderEventWallpaperGrid();
-              alert('Event wallpaper purchased!');
-            }
-          } else {
-            alert('You need 10,000 Diamonds to purchase this event wallpaper!');
-          }
         });
       });
     }
@@ -1889,7 +1674,6 @@
             devCoins.value = data.coins || 0;
             devDiamonds.value = data.diamonds || 0;
             
-            // Show diamonds field if there's an active event
             if (currentEvent) {
               devDiamondsField.style.display = 'flex';
             } else {
@@ -1906,48 +1690,53 @@
         }
       });
     });
-    
-    devShowAllUsers.addEventListener('click', () => {
+
+    devShowAllUsersBtn.addEventListener('click', () => {
       if (!database) {
         alert('Database not available');
         return;
       }
       
+      devUserListContent.innerHTML = '<p style="color:#ff9999">Loading users...</p>';
+      devUserList.style.display = 'block';
+      devPlayerInfo.style.display = 'none';
+      
       database.ref('players').once('value').then((snapshot) => {
         const users = [];
         snapshot.forEach((child) => {
+          const data = child.val();
           users.push({
             id: child.key,
-            name: child.val().name,
-            highScore: child.val().highScore || 0
+            name: data.name,
+            highScore: data.highScore || 0
           });
         });
         
         if (users.length === 0) {
-          devUserListContent.innerHTML = '<p style="color:#ff9999;text-align:center">No users found</p>';
-        } else {
-          let html = '';
-          users.forEach(user => {
-            html += `<div class="dev-user-item" data-id="${user.id}">
-              ${user.name} (High Score: ${user.highScore})
-            </div>`;
-          });
-          devUserListContent.innerHTML = html;
-          
-          // Add click handlers
-          document.querySelectorAll('.dev-user-item').forEach(item => {
-            item.addEventListener('click', () => {
-              const userId = item.getAttribute('data-id');
-              loadPlayerInDevPanel(userId);
-            });
-          });
+          devUserListContent.innerHTML = '<p style="color:#ff9999">No users found</p>';
+          return;
         }
         
-        devUserList.style.display = 'block';
-        devPlayerInfo.style.display = 'none';
+        // Sort by name
+        users.sort((a, b) => a.name.localeCompare(b.name));
+        
+        let html = '';
+        users.forEach(user => {
+          html += `<div class="dev-user-item" data-id="${user.id}">${user.name} (High Score: ${user.highScore})</div>`;
+        });
+        
+        devUserListContent.innerHTML = html;
+        
+        // Add click handlers
+        document.querySelectorAll('.dev-user-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const userId = item.getAttribute('data-id');
+            loadPlayerInDevPanel(userId);
+          });
+        });
       });
     });
-    
+
     function loadPlayerInDevPanel(userId) {
       if (!database) return;
       
@@ -1965,7 +1754,6 @@
           devCoins.value = data.coins || 0;
           devDiamonds.value = data.diamonds || 0;
           
-          // Show diamonds field if there's an active event
           if (currentEvent) {
             devDiamondsField.style.display = 'flex';
           } else {
@@ -1992,13 +1780,14 @@
         if (devCurrentPlayerId === playerId) {
           if (field === 'coins') {
             playerCoins = value;
-            localStorage.setItem('brickBlasterCoins', value.toString());
+            localStorage.setItem('brickBlasterCoins', value);
             coinsDisplay.textContent = value;
           } else if (field === 'diamonds') {
             playerDiamonds = value;
-            localStorage.setItem('brickBlasterDiamonds', value.toString());
+            localStorage.setItem('brickBlasterDiamonds', value);
             diamondsDisplay.textContent = value;
           }
+          // Add other fields if needed for local storage
         }
         alert(`${field} updated successfully!`);
       });
@@ -2126,12 +1915,12 @@
         document.body.removeChild(modal);
       });
     };
-    
+
     window.giveEventWallpapers = function() {
       if (!devCurrentPlayerId || !database) return;
       
       // Create a modal for selecting event wallpapers
-      const selectedEvents = [];
+      const selectedWallpapers = [];
       const modal = document.createElement('div');
       modal.style.cssText = `
         position: fixed;
@@ -2152,21 +1941,26 @@
         padding: 30px;
         border-radius: 10px;
         border: 2px solid #ff0000;
-        max-width: 600px;
+        max-width: 800px;
         max-height: 80vh;
         overflow-y: auto;
       `;
       
       modalContent.innerHTML = `
         <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Select Event Wallpapers to Give</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
-          ${Object.entries(eventWallpapers).map(([eventName, wallpaper]) => `
-            <div class="event-wallpaper-select-item" style="height: 100px; border-radius: 8px; background: ${wallpaper}; border: 2px solid #333; cursor: pointer; position: relative;" data-event="${eventName}">
-              <div style="position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 3px; font-size: 10px; text-transform: uppercase;">
-                ${eventName}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;">
+          ${Object.values(events).map((event, index) => `
+            <div class="event-wallpaper-select-item" style="height: 80px; border-radius: 8px; background: ${event.wallpaper}; border: 2px solid #333; cursor: pointer; position: relative;" data-wallpaper="${event.wallpaper}">
+              <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 3px; font-size: 10px;">
+                ${event.name}
               </div>
             </div>
           `).join('')}
+          <div class="event-wallpaper-select-item" style="height: 80px; border-radius: 8px; background: ${devWallpapers.matrix}; border: 2px solid #333; cursor: pointer; position: relative;" data-wallpaper="${devWallpapers.matrix}">
+            <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 3px; font-size: 10px;">
+              Matrix (Dev Only)
+            </div>
+          </div>
         </div>
         <div style="display: flex; gap: 10px; justify-content: center;">
           <button id="confirmGiveEvent" style="background: #ff0000; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Give Selected</button>
@@ -2177,19 +1971,19 @@
       modal.appendChild(modalContent);
       document.body.appendChild(modal);
       
-      // Handle event wallpaper selection
-      const eventWallpaperItems = modalContent.querySelectorAll('.event-wallpaper-select-item');
-      eventWallpaperItems.forEach(item => {
+      // Handle wallpaper selection
+      const wallpaperItems = modalContent.querySelectorAll('.event-wallpaper-select-item');
+      wallpaperItems.forEach(item => {
         item.addEventListener('click', () => {
-          const eventName = item.dataset.event;
-          if (selectedEvents.includes(eventName)) {
+          const wallpaper = item.getAttribute('data-wallpaper');
+          if (selectedWallpapers.includes(wallpaper)) {
             // Remove if already selected
-            const eventIndex = selectedEvents.indexOf(eventName);
-            selectedEvents.splice(eventIndex, 1);
+            const wpIndex = selectedWallpapers.indexOf(wallpaper);
+            selectedWallpapers.splice(wpIndex, 1);
             item.style.borderColor = '#333';
           } else {
             // Add to selection
-            selectedEvents.push(eventName);
+            selectedWallpapers.push(wallpaper);
             item.style.borderColor = '#ffd700';
           }
         });
@@ -2197,30 +1991,30 @@
       
       // Handle confirm button
       modalContent.querySelector('#confirmGiveEvent').addEventListener('click', () => {
-        if (selectedEvents.length === 0) {
-          alert('Please select at least one event wallpaper!');
+        if (selectedWallpapers.length === 0) {
+          alert('Please select at least one wallpaper!');
           return;
         }
         
         database.ref('players/' + devCurrentPlayerId).once('value').then((snapshot) => {
           const data = snapshot.val();
-          const currentEventWallpapers = data.ownedEventWallpapers || [];
+          const currentWallpapers = data.ownedWallpapers || [];
           
-          // Add selected event wallpapers
-          const newEventWallpapers = [...currentEventWallpapers, ...selectedEvents];
+          // Add selected wallpapers (allow duplicates)
+          const newWallpapers = [...currentWallpapers, ...selectedWallpapers];
           
           database.ref('players/' + devCurrentPlayerId).update({
-            ownedEventWallpapers: newEventWallpapers,
+            ownedWallpapers: newWallpapers,
             lastUpdated: Date.now()
           }).then(() => {
             // If updating current player, also update local storage
             if (devCurrentPlayerId === playerId) {
-              ownedEventWallpapers = newEventWallpapers;
-              localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify(newEventWallpapers));
+              ownedWallpapers = newWallpapers;
+              localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(newWallpapers));
             }
-            alert(`Successfully gave ${selectedEvents.length} event wallpapers!`);
+            alert(`Successfully gave ${selectedWallpapers.length} event wallpapers!`);
             document.body.removeChild(modal);
-            devCurrentPlayerData.ownedEventWallpapers = newEventWallpapers;
+            devCurrentPlayerData.ownedWallpapers = newWallpapers;
           });
         });
       });
@@ -2263,16 +2057,11 @@
         database.ref('players/' + devCurrentPlayerId).remove().then(() => {
           // Delete from local storage if it's the current player
           if (devCurrentPlayerId === playerId) {
-            const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-            delete existingPlayers[playerNameToDelete];
-            localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-            
             localStorage.removeItem('brickBlasterPlayerId');
             localStorage.removeItem('brickBlasterPlayerName');
             localStorage.removeItem('brickBlasterCoins');
             localStorage.removeItem('brickBlasterDiamonds');
             localStorage.removeItem('brickBlasterOwnedWallpapers');
-            localStorage.removeItem('brickBlasterOwnedEventWallpapers');
             localStorage.removeItem('brickBlasterWallpaper');
             
             // Reset all player data
@@ -2281,7 +2070,6 @@
             playerCoins = 0;
             playerDiamonds = 0;
             ownedWallpapers = [];
-            ownedEventWallpapers = [];
             selectedWallpaper = null;
             
             // Hide UI elements and show name prompt
@@ -2305,20 +2093,24 @@
       if (!devCurrentPlayerId || !database) return;
       
       const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
-      const playerEventWallpapers = devCurrentPlayerData.ownedEventWallpapers || [];
       
-      if (playerWallpapers.length === 0 && playerEventWallpapers.length === 0) {
+      if (playerWallpapers.length === 0) {
         alert('This player has no wallpapers!');
         return;
       }
       
       let html = '';
-      
-      // Regular wallpapers
       playerWallpapers.forEach((wp, index) => {
         const wpIndex = wallpapers.indexOf(wp);
         const isRare = rareIndices.includes(wpIndex);
-        const rareLabel = isRare ? '<div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">RARE</div>' : '';
+        const isEvent = Object.values(events).some(event => event.wallpaper === wp);
+        const isDev = wp === devWallpapers.matrix;
+        let label = 'COMMON';
+        if (isRare) label = 'RARE';
+        if (isEvent) label = 'EVENT';
+        if (isDev) label = 'DEV';
+        
+        const rareLabel = `<div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">${label}</div>`;
         html += `<div style="position:relative">
           <div style="height:70px;border-radius:5px;background:${wp};border:2px solid #ff0000"></div>
           ${rareLabel}
@@ -2326,64 +2118,35 @@
         </div>`;
       });
       
-      // Event wallpapers
-      playerEventWallpapers.forEach((eventName, index) => {
-        const wp = eventWallpapers[eventName];
-        html += `<div style="position:relative">
-          <div style="height:70px;border-radius:5px;background:${wp};border:2px solid #ffd700"></div>
-          <div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">${eventName.toUpperCase()}</div>
-          <button onclick="removeEventWallpaperAtIndex(${index})" style="width:100%;margin-top:5px;background:#990000;color:#fff;border:0;padding:5px;border-radius:5px;cursor:pointer;font-size:11px">Delete</button>
-        </div>`;
-      });
-      
       devWallpaperList.innerHTML = html;
       devWallpaperManager.style.display = 'block';
-    };
-    
-    window.removeEventWallpaperAtIndex = function(index) {
-      if (!devCurrentPlayerId || !database) return;
-      
-      const playerEventWallpapers = devCurrentPlayerData.ownedEventWallpapers || [];
-      
-      if (confirm('Delete this event wallpaper from player\'s collection?')) {
-        playerEventWallpapers.splice(index, 1);
-        
-        database.ref('players/' + devCurrentPlayerId).update({
-          ownedEventWallpapers: playerEventWallpapers,
-          lastUpdated: Date.now()
-        }).then(() => {
-          // If updating current player, also update local storage
-          if (devCurrentPlayerId === playerId) {
-            ownedEventWallpapers = playerEventWallpapers;
-            localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify(playerEventWallpapers));
-          }
-          alert('Event wallpaper deleted!');
-          devCurrentPlayerData.ownedEventWallpapers = playerEventWallpapers;
-          showWallpaperManager();
-        });
-      }
     };
 
     window.hideWallpaperManager = function() {
       devWallpaperManager.style.display = 'none';
     };
 
-    // --- FIXED: Initialize Game Properly ---
+    // Clean up duplicate names and undefined users on load
     window.addEventListener('load', () => {
-      // Initialize Firebase first
-      initializeFirebase();
-      
-      // Then initialize the game
       setTimeout(() => {
-        // Clean up duplicate names on load
-        if (database) {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+          database = firebase.database();
+          
+          // Remove duplicate names and undefined users
           database.ref('players').once('value').then((snapshot) => {
             const nameMap = {};
             const duplicates = [];
+            const undefinedUsers = [];
             
             snapshot.forEach((child) => {
               const data = child.val();
               const name = data.name;
+              
+              // Check for undefined users
+              if (!name || name === "undefined") {
+                undefinedUsers.push(child.key);
+                return;
+              }
               
               if (nameMap[name]) {
                 // Duplicate found, keep the older one
@@ -2398,8 +2161,9 @@
               }
             });
             
-            // Delete duplicates
-            duplicates.forEach(id => {
+            // Delete duplicates and undefined users
+            const toDelete = [...duplicates, ...undefinedUsers];
+            toDelete.forEach(id => {
               database.ref('players/' + id).remove();
             });
           });
@@ -2411,5 +2175,69 @@
   
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+  <script>
+    window.addEventListener('load', function() {
+      if (typeof firebase === 'undefined') {
+        console.error('Firebase failed to load');
+        return;
+      }
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
+        authDomain: "games-c3e27.firebaseapp.com",
+        databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "games-c3e27",
+        storageBucket: "games-c3e27.firebasestorage.app",
+        messagingSenderId: "193027632069",
+        appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+
+      const userId = generateUserId();
+      let userRef = null;
+      let isConnected = true;
+
+      function generateUserId() {
+        let userId = localStorage.getItem('gameHubUserId');
+        if (!userId) {
+          userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+          localStorage.setItem('gameHubUserId', userId);
+        }
+        return userId;
+      }
+
+      function setupUserPresence() {
+        userRef = database.ref('onlineUsers/' + userId);
+        
+        userRef.set({ 
+          id: userId, 
+          connected: true, 
+          lastSeen: Date.now(), 
+          page: window.location.pathname,
+          userAgent: navigator.userAgent.substring(0, 50) 
+        });
+        
+        userRef.onDisconnect().remove();
+
+        const heartbeat = setInterval(() => {
+          if (isConnected && userRef) {
+            userRef.update({ lastSeen: Date.now(), page: window.location.pathname });
+          } else {
+            clearInterval(heartbeat);
+          }
+        }, 10000);
+
+        window.addEventListener('beforeunload', () => {
+          isConnected = false;
+          if (userRef) userRef.remove();
+        });
+      }
+
+      setupUserPresence();
+    });
+  </script>
 </body>
 </html>
