@@ -2301,50 +2301,64 @@
     };
 
     window.deletePlayerAccount = function() {
-      if (!devCurrentPlayerId || !database) return;
+  if (!devCurrentPlayerId || !database) return;
+  
+  const playerNameToDelete = devPlayerName.textContent;
+  if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
+    database.ref('players/' + devCurrentPlayerId).remove().then(() => {
+      // Delete from local player registry
+      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+      delete existingPlayers[playerNameToDelete];
+      localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
       
-      const playerNameToDelete = devPlayerName.textContent;
-      if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
-        database.ref('players/' + devCurrentPlayerId).remove().then(() => {
-          // Delete from local storage if it's the current player
-          if (devCurrentPlayerId === playerId) {
-            const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-            delete existingPlayers[playerNameToDelete];
-            localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-            
-            localStorage.removeItem('brickBlasterPlayerId');
-            localStorage.removeItem('brickBlasterPlayerName');
-            localStorage.removeItem('brickBlasterCoins');
-            localStorage.removeItem('brickBlasterDiamonds');
-            localStorage.removeItem('brickBlasterOwnedWallpapers');
-            localStorage.removeItem('brickBlasterOwnedEventWallpapers');
-            localStorage.removeItem('brickBlasterWallpaper');
-            
-            // Reset all player data
-            playerId = '';
-            playerName = '';
-            playerCoins = 0;
-            playerDiamonds = 0;
-            ownedWallpapers = [];
-            ownedEventWallpapers = [];
-            selectedWallpaper = null;
-            
-            // Hide UI elements and show name prompt
-            settingsDiv.style.display = 'none';
-            coinsDisplay.style.display = 'none';
-            diamondsDisplay.style.display = 'none';
-            shopBtn.style.display = 'none';
-            devBtn.style.display = 'none';
-            namePrompt.style.display = 'flex';
-          }
-          
-          alert('Account deleted successfully!');
-          devPlayerInfo.style.display = 'none';
-          devSearchInput.value = '';
-          devCurrentPlayerId = null;
-        });
+      // If deleting the current player, also clear local storage
+      if (devCurrentPlayerId === playerId) {
+        localStorage.removeItem('brickBlasterPlayerId');
+        localStorage.removeItem('brickBlasterPlayerName');
+        localStorage.removeItem('brickBlasterCoins');
+        localStorage.removeItem('brickBlasterDiamonds');
+        localStorage.removeItem('brickBlasterOwnedWallpapers');
+        localStorage.removeItem('brickBlasterOwnedEventWallpapers');
+        localStorage.removeItem('brickBlasterWallpaper');
+        
+        // Reset all player variables
+        playerId = '';
+        playerName = '';
+        playerCoins = 0;
+        playerDiamonds = 0;
+        ownedWallpapers = [];
+        ownedEventWallpapers = [];
+        selectedWallpaper = null;
+        
+        // Hide UI elements and show name prompt
+        settingsDiv.style.display = 'none';
+        coinsDisplay.style.display = 'none';
+        diamondsDisplay.style.display = 'none';
+        shopBtn.style.display = 'none';
+        devBtn.style.display = 'none';
+        leaderboardBtn.style.display = 'none';
+        userSettingsBtn.style.display = 'none';
+        
+        // Reset name prompt and show it
+        nameInput.value = '';
+        namePrompt.style.display = 'flex';
       }
-    };
+      
+      alert('Account deleted successfully!');
+      devPlayerInfo.style.display = 'none';
+      devSearchInput.value = '';
+      devCurrentPlayerId = null;
+      
+      // Refresh the user list if it's open
+      if (devUserList.style.display !== 'none') {
+        devShowAllUsers.click();
+      }
+    }).catch((error) => {
+      console.log('Firebase deletion failed: ', error);
+      alert('Error deleting account from database. Please try again.');
+    });
+  }
+};
 
     window.showWallpaperManager = function() {
       if (!devCurrentPlayerId || !database) return;
