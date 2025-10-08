@@ -1343,8 +1343,11 @@
       let coinsEarned = 0;
       let diamondsEarned = 0;
       
-      if (currentEvent) {
-        // During events, earn diamonds instead of coins
+      // Check if player already owns the current event wallpaper
+      const ownsCurrentEventWallpaper = currentEvent && ownedEventWallpapers.includes(currentEvent);
+      
+      if (currentEvent && !ownsCurrentEventWallpaper) {
+        // During events, earn diamonds instead of coins (only if player doesn't own the event wallpaper)
         diamondsEarned = newScore;
         
         // If diamonds would exceed 10,000, convert excess to coins
@@ -1356,7 +1359,7 @@
         
         playerDiamonds += diamondsEarned;
       } else {
-        // Normal gameplay - earn coins
+        // Normal gameplay - earn coins (or if player already owns event wallpaper)
         coinsEarned = newScore;
       }
       
@@ -1775,25 +1778,35 @@
     });
 
     function renderWallpaperGrid() {
-      if (ownedWallpapers.length === 0) {
+      // Combine regular wallpapers with owned event wallpapers
+      const allOwnedWallpapers = [...ownedWallpapers];
+      
+      // Add event wallpapers to main collection if owned
+      if (currentEvent && ownedEventWallpapers.includes(currentEvent)) {
+        allOwnedWallpapers.push(eventWallpapers[currentEvent]);
+      }
+      
+      if (allOwnedWallpapers.length === 0) {
         wallpaperGrid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>';
         return;
       }
       
       let html = '';
-      ownedWallpapers.forEach((wp, index) => {
+      allOwnedWallpapers.forEach((wp, index) => {
+        const isEventWallpaper = Object.values(eventWallpapers).includes(wp);
         const isSelected = wp === selectedWallpaper;
         const isRare = rareIndices.includes(wallpapers.indexOf(wp));
         const rareClass = isRare ? 'rare' : '';
         const selectedClass = isSelected ? 'selected' : '';
-        html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp}" data-index="${index}"></div>`;
+        const eventLabel = isEventWallpaper ? '<div style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.7);color:#ffd700;padding:2px 5px;border-radius:3px;font-size:10px;">EVENT</div>' : '';
+        html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp};position:relative">${eventLabel}</div>`;
       });
       
       wallpaperGrid.innerHTML = html;
       
       document.querySelectorAll('.wallpaper-item').forEach((item, idx) => {
         item.addEventListener('click', () => {
-          selectedWallpaper = ownedWallpapers[idx];
+          selectedWallpaper = allOwnedWallpapers[idx];
           localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
           
           // FIXED: Update database immediately
@@ -1810,7 +1823,8 @@
     }
     
     function renderEventWallpaperGrid() {
-      if (!currentEvent) {
+      // Hide event section if player already owns the current event wallpaper
+      if (!currentEvent || ownedEventWallpapers.includes(currentEvent)) {
         eventShopSection.style.display = 'none';
         return;
       }
@@ -1818,33 +1832,18 @@
       eventShopSection.style.display = 'block';
       
       const eventWallpaper = eventWallpapers[currentEvent];
-      const isOwned = ownedEventWallpapers.includes(currentEvent);
       const canAfford = playerDiamonds >= 10000;
       
       let html = '';
-      html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background:${eventWallpaper}">
-        <div class="price">${isOwned ? 'OWNED' : '10,000 💎'}</div>
+      html += `<div class="event-wallpaper-item" style="background:${eventWallpaper}">
+        <div class="price">10,000 💎</div>
       </div>`;
       
       eventWallpaperGrid.innerHTML = html;
       
       document.querySelectorAll('.event-wallpaper-item').forEach((item) => {
         item.addEventListener('click', () => {
-          if (isOwned) {
-            selectedWallpaper = eventWallpaper;
-            localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
-            
-            // FIXED: Update database immediately
-            if (database && playerId) {
-              database.ref('players/' + playerId).update({
-                selectedWallpaper: selectedWallpaper,
-                lastUpdated: Date.now()
-              });
-            }
-            
-            renderEventWallpaperGrid();
-            renderWallpaperGrid();
-          } else if (canAfford) {
+          if (canAfford) {
             if (confirm(`Purchase this event wallpaper for 10,000 Diamonds?`)) {
               playerDiamonds -= 10000;
               diamondsDisplay.textContent = playerDiamonds;
@@ -1862,8 +1861,10 @@
                 });
               }
               
-              renderEventWallpaperGrid();
-              alert('Event wallpaper purchased!');
+              // Hide event section and refresh both grids
+              eventShopSection.style.display = 'none';
+              renderWallpaperGrid();
+              alert('Event wallpaper purchased! It has been added to your main wallpaper collection.');
             }
           } else {
             alert('You need 10,000 Diamonds to purchase this event wallpaper!');
@@ -2411,6 +2412,28 @@
     window.hideWallpaperManager = function() {
       devWallpaperManager.style.display = 'none';
     };
+
+    // --- Tab Visibility Handling ---
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden && running && !paused) {
+        // Game is running and tab becomes hidden - pause the game
+        paused = true;
+        if (endlessMode) {
+          clearInterval(spawnIntervalId);
+        }
+        clearInterval(timeIntervalId);
+      } else if (!document.hidden && running && paused) {
+        // Game was running and tab becomes visible - resume if it was paused due to tab switch
+        paused = false;
+        if (endlessMode) {
+          spawnIntervalId = setInterval(spawnNewBrick, 3000);
+        }
+        timeIntervalId = setInterval(() => {
+          if (running && !paused) timePlayed++;
+        }, 1000);
+        requestAnimationFrame(loop);
+      }
+    });
 
     // --- FIXED: Initialize Game Properly ---
     window.addEventListener('load', () => {
