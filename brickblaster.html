@@ -1270,93 +1270,75 @@
     }
 
     function loadPlayerData() {
-  // Always load from local storage first for immediate UI
-  playerCoins = parseInt(localStorage.getItem('brickBlasterCoins')) || 0;
-  playerDiamonds = parseInt(localStorage.getItem('brickBlasterDiamonds')) || 0;
-  
-  try {
-    ownedWallpapers = JSON.parse(localStorage.getItem('brickBlasterOwnedWallpapers') || '[]');
-    ownedEventWallpapers = JSON.parse(localStorage.getItem('brickBlasterOwnedEventWallpapers') || '[]');
-    selectedWallpaper = localStorage.getItem('brickBlasterWallpaper');
-  } catch (e) {
-    ownedWallpapers = [];
-    ownedEventWallpapers = [];
-    selectedWallpaper = null;
-  }
-  
-  coinsDisplay.textContent = playerCoins;
-  diamondsDisplay.textContent = playerDiamonds;
-  coinsDisplay.style.display = 'block';
-  if (currentEvent) diamondsDisplay.style.display = 'block';
-  shopBtn.style.display = 'block';
-  
-  // Then sync with Firebase if available - FIXED: Check if account still exists
-  if (database && playerId) {
-    database.ref('players/' + playerId).once('value').then((snapshot) => {
-      if (!snapshot.exists()) {
-        // Account was deleted from Firebase - clear local storage and reset
-        
-        ;
-        alert('Your account was deleted by an administrator. You can create a new account with the same name if you wish.');
-        namePrompt.style.display = 'flex';
-        settingsDiv.style.display = 'none';
-        return;
+      // Always load from local storage first for immediate UI
+      playerCoins = parseInt(localStorage.getItem('brickBlasterCoins')) || 0;
+      playerDiamonds = parseInt(localStorage.getItem('brickBlasterDiamonds')) || 0;
+      
+      try {
+        ownedWallpapers = JSON.parse(localStorage.getItem('brickBlasterOwnedWallpapers') || '[]');
+        ownedEventWallpapers = JSON.parse(localStorage.getItem('brickBlasterOwnedEventWallpapers') || '[]');
+        selectedWallpaper = localStorage.getItem('brickBlasterWallpaper');
+      } catch (e) {
+        ownedWallpapers = [];
+        ownedEventWallpapers = [];
+        selectedWallpaper = null;
       }
       
-      const data = snapshot.val();
-      if (data) {
-        // Use database data as source of truth when online
-        playerCoins = data.coins || 0;
-        playerDiamonds = data.diamonds || 0;
-        ownedWallpapers = data.ownedWallpapers || [];
-        ownedEventWallpapers = data.ownedEventWallpapers || [];
-        selectedWallpaper = data.selectedWallpaper || null;
-        
-        // Update local storage with database data
-        localStorage.setItem('brickBlasterCoins', playerCoins.toString());
-        localStorage.setItem('brickBlasterDiamonds', playerDiamonds.toString());
-        localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(ownedWallpapers));
-        localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify(ownedEventWallpapers));
-        if (selectedWallpaper) {
-          localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
-        }
-        
-        // Update UI
-        coinsDisplay.textContent = playerCoins;
-        diamondsDisplay.textContent = playerDiamonds;
+      coinsDisplay.textContent = playerCoins;
+      diamondsDisplay.textContent = playerDiamonds;
+      coinsDisplay.style.display = 'block';
+      if (currentEvent) diamondsDisplay.style.display = 'block';
+      shopBtn.style.display = 'block';
+      
+      // Then sync with Firebase if available - FIXED: Always get data from database when online
+      if (database && playerId) {
+        database.ref('players/' + playerId).once('value').then((snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            // Use database data as source of truth when online
+            playerCoins = data.coins || 0;
+            playerDiamonds = data.diamonds || 0;
+            ownedWallpapers = data.ownedWallpapers || [];
+            ownedEventWallpapers = data.ownedEventWallpapers || [];
+            selectedWallpaper = data.selectedWallpaper || null;
+            
+            // Update local storage with database data
+            localStorage.setItem('brickBlasterCoins', playerCoins.toString());
+            localStorage.setItem('brickBlasterDiamonds', playerDiamonds.toString());
+            localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(ownedWallpapers));
+            localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify(ownedEventWallpapers));
+            if (selectedWallpaper) {
+              localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
+            }
+            
+            // Update UI
+            coinsDisplay.textContent = playerCoins;
+            diamondsDisplay.textContent = playerDiamonds;
+          } else {
+            // Player doesn't exist in database, create them
+            const playerData = {
+              name: playerName,
+              highScore: 0,
+              allTimeScore: 0,
+              totalGames: 0,
+              totalScore: 0,
+              coins: playerCoins,
+              diamonds: playerDiamonds,
+              ownedWallpapers: ownedWallpapers,
+              ownedEventWallpapers: ownedEventWallpapers,
+              selectedWallpaper: selectedWallpaper,
+              lastNameChange: Date.now(),
+              lastUpdated: Date.now()
+            };
+            
+            database.ref('players/' + playerId).set(playerData);
+          }
+        }).catch((error) => {
+          console.log('Firebase load failed, using local data');
+        });
       }
-    }).catch((error) => {
-      console.log('Firebase load failed, using local data');
-    });
-  }
-}
+    }
 
-function clearLocalPlayerData() {
-  const playerNameToRemove = localStorage.getItem('brickBlasterPlayerName');
-  
-  // Remove from local player registry
-  const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-  delete existingPlayers[playerNameToRemove];
-  localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-  
-  // Clear player data
-  localStorage.removeItem('brickBlasterPlayerId');
-  localStorage.removeItem('brickBlasterPlayerName');
-  localStorage.removeItem('brickBlasterCoins');
-  localStorage.removeItem('brickBlasterDiamonds');
-  localStorage.removeItem('brickBlasterOwnedWallpapers');
-  localStorage.removeItem('brickBlasterOwnedEventWallpapers');
-  localStorage.removeItem('brickBlasterWallpaper');
-  
-  // Reset all player variables
-  playerId = '';
-  playerName = '';
-  playerCoins = 0;
-  playerDiamonds = 0;
-  ownedWallpapers = [];
-  ownedEventWallpapers = [];
-  selectedWallpaper = null;
-}
     function updatePlayerStats(newScore) {
       let coinsEarned = 0;
       let diamondsEarned = 0;
@@ -2319,59 +2301,50 @@ function clearLocalPlayerData() {
     };
 
     window.deletePlayerAccount = function() {
-  if (!devCurrentPlayerId || !database) return;
-  
-  const playerNameToDelete = devPlayerName.textContent;
-  if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
-    // First, get the player's data before deleting
-    database.ref('players/' + devCurrentPlayerId).once('value').then((snapshot) => {
-      const playerData = snapshot.val();
-      if (!playerData) {
-        alert('Player not found!');
-        return;
+      if (!devCurrentPlayerId || !database) return;
+      
+      const playerNameToDelete = devPlayerName.textContent;
+      if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
+        database.ref('players/' + devCurrentPlayerId).remove().then(() => {
+          // Delete from local storage if it's the current player
+          if (devCurrentPlayerId === playerId) {
+            const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+            delete existingPlayers[playerNameToDelete];
+            localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
+            
+            localStorage.removeItem('brickBlasterPlayerId');
+            localStorage.removeItem('brickBlasterPlayerName');
+            localStorage.removeItem('brickBlasterCoins');
+            localStorage.removeItem('brickBlasterDiamonds');
+            localStorage.removeItem('brickBlasterOwnedWallpapers');
+            localStorage.removeItem('brickBlasterOwnedEventWallpapers');
+            localStorage.removeItem('brickBlasterWallpaper');
+            
+            // Reset all player data
+            playerId = '';
+            playerName = '';
+            playerCoins = 0;
+            playerDiamonds = 0;
+            ownedWallpapers = [];
+            ownedEventWallpapers = [];
+            selectedWallpaper = null;
+            
+            // Hide UI elements and show name prompt
+            settingsDiv.style.display = 'none';
+            coinsDisplay.style.display = 'none';
+            diamondsDisplay.style.display = 'none';
+            shopBtn.style.display = 'none';
+            devBtn.style.display = 'none';
+            namePrompt.style.display = 'flex';
+          }
+          
+          alert('Account deleted successfully!');
+          devPlayerInfo.style.display = 'none';
+          devSearchInput.value = '';
+          devCurrentPlayerId = null;
+        });
       }
-      
-      // Delete from Firebase
-      return database.ref('players/' + devCurrentPlayerId).remove();
-    }).then(() => {
-      // Delete from local player registry on THIS device (admin's device)
-      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-      delete existingPlayers[playerNameToDelete];
-      localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-      
-      // If deleting the current player, also clear local storage
-      if (devCurrentPlayerId === playerId) {
-        clearLocalPlayerData();
-        
-        // Hide UI elements and show name prompt
-        settingsDiv.style.display = 'none';
-        coinsDisplay.style.display = 'none';
-        diamondsDisplay.style.display = 'none';
-        shopBtn.style.display = 'none';
-        devBtn.style.display = 'none';
-        leaderboardBtn.style.display = 'none';
-        userSettingsBtn.style.display = 'none';
-        
-        // Reset name prompt and show it
-        nameInput.value = '';
-        namePrompt.style.display = 'flex';
-      }
-      
-      alert('Account deleted successfully! The player can now create a new account with the same name if desired.');
-      devPlayerInfo.style.display = 'none';
-      devSearchInput.value = '';
-      devCurrentPlayerId = null;
-      
-      // Refresh the user list if it's open
-      if (devUserList.style.display !== 'none') {
-        devShowAllUsers.click();
-      }
-    }).catch((error) => {
-      console.log('Firebase deletion failed: ', error);
-      alert('Error deleting account from database. Please try again.');
-    });
-  }
-};
+    };
 
     window.showWallpaperManager = function() {
       if (!devCurrentPlayerId || !database) return;
