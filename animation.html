@@ -210,17 +210,19 @@ function stopCpuStress(){
     cpuWorkers = [];
 }
 
-// STR stress: allocate up to ~1-2 GB gradually
+// STR stress: allocate gradually up to ~2 GB safely
 function startStrStress() {
     stopStrStress();
     strActive = true;
+    const maxBlocks = 50; // ~2GB
+    const blockSize = 40e6; // ~40MB
     function allocLoop() {
         if(!strActive) return;
         try {
-            strArrays.push(new Array(5e6).fill(Math.random())); // ~40 MB each
-            if(strArrays.length>50) strArrays.shift(); // cap ~2 GB
+            strArrays.push(new Array(blockSize).fill(Math.random()));
+            if(strArrays.length > maxBlocks) strArrays.shift(); // release oldest block
         } catch(e) {
-            // ignore memory error
+            // ignore memory errors
         }
         setTimeout(allocLoop, 50);
     }
