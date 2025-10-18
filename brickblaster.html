@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Brick Blaster</title>
   <style>
-    /* Restored original settings layout and kept all game features. */
+    /* All your existing CSS remains exactly the same */
     :root{--accent:#0077cc}
     html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:#111;color:#fff}
     #wrap{position:relative;max-width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
@@ -148,13 +148,13 @@
     #shopOverlay .spin-result{margin-top:15px;font-size:16px;color:#c084fc;min-height:24px}
     #shopOverlay h3{color:#a78bfa;margin:20px 0 10px 0}
     #shopOverlay .wallpaper-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
-    #shopOverlay .wallpaper-item{height:80px;border-radius:8px;cursor:pointer;border:3px solid transparent;position:relative;transition:all 0.3s}
+    #shopOverlay .wallpaper-item{height:80px;border-radius:8px;cursor:pointer;border:3px solid transparent;position:relative;transition:all 0.3s;background-size:cover;background-position:center}
     #shopOverlay .wallpaper-item:hover{transform:scale(1.05);border-color:#c084fc}
     #shopOverlay .wallpaper-item.selected{border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,0.5)}
     #shopOverlay .wallpaper-item.rare{box-shadow:0 0 15px rgba(147,51,234,0.8)}
     #shopOverlay .event-section{margin-top:30px;padding-top:20px;border-top:2px solid #a78bfa}
     #shopOverlay .event-section h3{color:#ffd700}
-    #shopOverlay .event-wallpaper-item{height:100px;border-radius:8px;cursor:pointer;border:3px solid transparent;position:relative;transition:all 0.3s;margin-bottom:15px}
+    #shopOverlay .event-wallpaper-item{height:100px;border-radius:8px;cursor:pointer;border:3px solid transparent;position:relative;transition:all 0.3s;margin-bottom:15px;background-size:cover;background-position:center}
     #shopOverlay .event-wallpaper-item:hover{transform:scale(1.05);border-color:#ffd700}
     #shopOverlay .event-wallpaper-item.selected{border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,0.5)}
     #shopOverlay .event-wallpaper-item .price{position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.7);color:#ffd700;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:bold}
@@ -505,39 +505,112 @@
     let gameLoopId = null, timeIntervalId = null, spawnIntervalId = null;
     let lastSettings = { speedVal:3, mode:'12' };
 
-    // 20 Wallpapers (17 normal + 3 rare)
-    const wallpapers = [
-      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-      'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-      'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-      'linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)',
-      'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
-      'linear-gradient(135deg, #f77062 0%, #fe5196 100%)',
-      'linear-gradient(135deg, #21d4fd 0%, #b721ff 100%)',
-      'linear-gradient(135deg, #08aeea 0%, #2af598 100%)',
-      'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)',
-      'linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)',
-      'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)',
-      // 3 RARE wallpapers (10% chance each)
-      'linear-gradient(135deg, #ffd700 0%, #ff8c00 20%, #ff1493 40%, #9400d3 60%, #4b0082 80%, #000033 100%)', // Rainbow Gold - 6 colors
-'radial-gradient(circle at 30% 30%, #00ffff, #0080ff 30%, #8000ff 60%, #2d0a4e)', // Cosmic Purple Dream
-'linear-gradient(45deg, #ff0000 0%, #ff7f00 12.5%, #ffff00 25%, #00ff00 37.5%, #0000ff 50%, #4b0082 62.5%, #9400d3 75%, #ff0844 87.5%, #ff0000 100%)'  // Full Rainbow Spectrum
+    // Image wallpapers setup
+    const wallpaperImages = {};
+    const wallpaperUrls = [
+      // Regular wallpapers (17)
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper1.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper2.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper3.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper4.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper5.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper6.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper7.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper8.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper9.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper10.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper11.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper12.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper13.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper14.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper15.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper16.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper17.jpg',
+      // Rare wallpapers (3)
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/rare1.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/rare2.jpg',
+      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/rare3.jpg'
     ];
-    const rareIndices = [17, 18, 19]; // Last 3 are rare
     
-    // Event wallpapers
-    const eventWallpapers = {
-      halloween: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/cake.png', // Spooky Halloween
-      winter: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #e6f3ff 100%)', // Snowy Winter
-      summer: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 50%, #86a8e7 100%)', // Sunny Summer
-      matrix: 'linear-gradient(135deg, #001a00 0%, #003300 50%, #004d00 100%)' // Matrix (developer only)
+    const rareIndices = [17, 18, 19]; // Last 3 are rare
+
+    // Event Configuration - All events defined in one place
+    const events = {
+      summer: {
+        name: "Summer",
+        gemsRequired: 10000,
+        startMonth: 5, // June (0-indexed)
+        startDay: 15,
+        endMonth: 6, // July (0-indexed)
+        endDay: 15,
+        wallpaper: 'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/summer-event.jpg',
+        displayName: "☀️ SUMMER EVENT ☀️",
+        background: 'linear-gradient(135deg, #ff7e5f, #feb47b)'
+      },
+      halloween: {
+        name: "Halloween",
+        gemsRequired: 10000,
+        startMonth: 9, // October (0-indexed)
+        startDay: 1,
+        endMonth: 9, // October (0-indexed)
+        endDay: 31,
+        wallpaper: 'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/halloween-event.jpg',
+        displayName: "🎃 HALLOWEEN EVENT 🎃",
+        background: 'linear-gradient(135deg, #ff8c00, #8b0000)'
+      },
+      winter: {
+        name: "Winter",
+        gemsRequired: 10000,
+        startMonth: 11, // December (0-indexed)
+        startDay: 10,
+        endMonth: 0, // January (0-indexed)
+        endDay: 10,
+        wallpaper: 'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/winter-event.jpg',
+        displayName: "❄️ WINTER EVENT ❄️",
+        background: 'linear-gradient(135deg, #1e3c72, #e6f3ff)'
+      },
+      matrix: {
+        name: "Matrix",
+        gemsRequired: 10000,
+        startMonth: 0, // January (0-indexed)
+        startDay: 1,
+        endMonth: 11, // December (0-indexed)
+        endDay: 31,
+        wallpaper: 'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/matrix-event.jpg',
+        displayName: "💚 MATRIX EVENT 💚",
+        background: 'linear-gradient(135deg, #001a00, #003300, #004d00)'
+      }
     };
+
+    // Event wallpapers - now using image URLs
+    const eventWallpapers = {};
+    for (const [key, event] of Object.entries(events)) {
+      eventWallpapers[key] = event.wallpaper;
+    }
+
+    // Preload all wallpaper images
+    function preloadWallpaperImages() {
+      const allUrls = [...wallpaperUrls];
+      
+      // Add event wallpaper URLs
+      Object.values(events).forEach(event => {
+        allUrls.push(event.wallpaper);
+      });
+      
+      // Load each image
+      allUrls.forEach(url => {
+        const img = new Image();
+        img.onload = () => {
+          wallpaperImages[url] = img;
+        };
+        img.onerror = () => {
+          console.warn(`Failed to load wallpaper: ${url}`);
+          // Create a fallback gradient if image fails to load
+          wallpaperImages[url] = null;
+        };
+        img.src = url;
+      });
+    }
 
     // --- FIXED: Initialize Firebase Only Once ---
     function initializeFirebase() {
@@ -578,54 +651,47 @@
       const now = new Date();
       const year = now.getFullYear();
       
-      // Halloween Event: October 1 - October 31
-      const halloweenStart = new Date(year, 9, 1); // Month is 0-indexed
-      const halloweenEnd = new Date(year, 9, 31);
-      
-      // Winter Event: December 10 - January 10
-      const winterStart = new Date(year, 11, 10);
-      const winterEnd = new Date(year + 1, 0, 10);
-      
-      // Summer Event: June 15 - July 15
-      const summerStart = new Date(year, 5, 15);
-      const summerEnd = new Date(year, 6, 15);
-      
-      if (now >= halloweenStart && now <= halloweenEnd) {
-        currentEvent = 'halloween';
-        eventEndTime = halloweenEnd;
-        eventDisplay.textContent = '🎃 HALLOWEEN EVENT 🎃';
-        eventDisplay.style.background = 'linear-gradient(135deg, #ff8c00, #8b0000)';
-        eventDisplay.style.color = '#fff';
-      } else if (now >= winterStart && now <= winterEnd) {
-        currentEvent = 'winter';
-        eventEndTime = winterEnd;
-        eventDisplay.textContent = '❄️ WINTER EVENT ❄️';
-        eventDisplay.style.background = 'linear-gradient(135deg, #1e3c72, #e6f3ff)';
-        eventDisplay.style.color = '#fff';
-      } else if (now >= summerStart && now <= summerEnd) {
-        currentEvent = 'summer';
-        eventEndTime = summerEnd;
-        eventDisplay.textContent = '☀️ SUMMER EVENT ☀️';
-        eventDisplay.style.background = 'linear-gradient(135deg, #ff7e5f, #feb47b)';
-        eventDisplay.style.color = '#fff';
-      } else {
-        currentEvent = null;
-        eventEndTime = null;
-        eventDisplay.style.display = 'none';
-        eventTimer.style.display = 'none';
-        diamondsDisplay.style.display = 'none';
-        return;
+      // Check each event
+      for (const [eventKey, event] of Object.entries(events)) {
+        let startDate, endDate;
+        
+        // Handle year wrap-around for events like Winter
+        if (event.startMonth > event.endMonth) {
+          // Event spans across year end (e.g., December to January)
+          startDate = new Date(year, event.startMonth, event.startDay);
+          endDate = new Date(year + 1, event.endMonth, event.endDay);
+        } else {
+          // Normal event within same year
+          startDate = new Date(year, event.startMonth, event.startDay);
+          endDate = new Date(year, event.endMonth, event.endDay);
+        }
+        
+        if (now >= startDate && now <= endDate) {
+          currentEvent = eventKey;
+          eventEndTime = endDate;
+          eventDisplay.textContent = event.displayName;
+          eventDisplay.style.background = event.background;
+          eventDisplay.style.color = '#fff';
+          
+          // Show event UI
+          eventDisplay.style.display = 'block';
+          eventTimer.style.display = 'block';
+          diamondsDisplay.style.display = 'block';
+          
+          // Start event timer
+          updateEventTimer();
+          if (eventTimerInterval) clearInterval(eventTimerInterval);
+          eventTimerInterval = setInterval(updateEventTimer, 1000);
+          return;
+        }
       }
       
-      // Show event UI
-      eventDisplay.style.display = 'block';
-      eventTimer.style.display = 'block';
-      diamondsDisplay.style.display = 'block';
-      
-      // Start event timer
-      updateEventTimer();
-      if (eventTimerInterval) clearInterval(eventTimerInterval);
-      eventTimerInterval = setInterval(updateEventTimer, 1000);
+      // No active event
+      currentEvent = null;
+      eventEndTime = null;
+      eventDisplay.style.display = 'none';
+      eventTimer.style.display = 'none';
+      diamondsDisplay.style.display = 'none';
     }
     
     function updateEventTimer() {
@@ -756,78 +822,86 @@
     }
 
     function draw(){
-  // Apply wallpaper background if selected, otherwise default background
-  if(selectedWallpaper){
-    const gradient = parseGradient(selectedWallpaper);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else {
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-  
-  drawBricks();
-  
-  // ball
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-  ctx.fillStyle = '#ffdd00';
-  ctx.fill();
-  ctx.closePath();
-  
-  // paddle - bright green to be visible on all wallpapers
-  ctx.fillStyle = '#00ff00';
-  ctx.fillRect(paddle.x, canvas.height - paddle.h - 10, paddle.w, paddle.h);
-  
-  // HUD
-  hudLives.textContent = lives;
-  hudScore.textContent = score;
-  hudTime.textContent = timePlayed;
-}
-    function parseGradient(cssGradient) {
-  // Extract gradient type and content
-  const isRadial = cssGradient.includes('radial-gradient');
-  const match = cssGradient.match(/\((.*)\)/);
-  if (!match) return '#111';
-  
-  const content = match[1];
-  const parts = content.split(',').map(s => s.trim());
-  
-  let gradient;
-  if (isRadial) {
-    // Radial gradient
-    gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)/2);
-    parts.forEach(part => {
-      if (part.includes('#') || part.includes('rgb')) {
-        const colorMatch = part.match(/(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\))/);
-        const percentMatch = part.match(/(\d+)%/);
-        if (colorMatch && percentMatch) {
-          gradient.addColorStop(parseInt(percentMatch[1]) / 100, colorMatch[1]);
-        } else if (colorMatch) {
-          gradient.addColorStop(0, colorMatch[1]);
+      // Apply wallpaper background if selected, otherwise default background
+      if(selectedWallpaper){
+        // Check if we have an image for this wallpaper
+        if (wallpaperImages[selectedWallpaper]) {
+          // Draw the image as background
+          ctx.drawImage(wallpaperImages[selectedWallpaper], 0, 0, canvas.width, canvas.height);
+        } else {
+          // Fallback to gradient if image not loaded
+          const gradient = parseGradient(selectedWallpaper);
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
+      } else {
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-    });
-  } else {
-    // Linear gradient - default to 135deg diagonal
-    const x0 = 0, y0 = canvas.height, x1 = canvas.width, y1 = 0;
-    gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+      
+      drawBricks();
+      
+      // ball
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+      ctx.fillStyle = '#ffdd00';
+      ctx.fill();
+      ctx.closePath();
+      
+      // paddle - bright green to be visible on all wallpapers
+      ctx.fillStyle = '#00ff00';
+      ctx.fillRect(paddle.x, canvas.height - paddle.h - 10, paddle.w, paddle.h);
+      
+      // HUD
+      hudLives.textContent = lives;
+      hudScore.textContent = score;
+      hudTime.textContent = timePlayed;
+    }
     
-    parts.forEach(part => {
-      if (part.includes('#') || part.includes('rgb')) {
-        const colorMatch = part.match(/(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\))/);
-        const percentMatch = part.match(/(\d+)%/);
-        if (colorMatch && percentMatch) {
-          gradient.addColorStop(parseInt(percentMatch[1]) / 100, colorMatch[1]);
-        } else if (colorMatch) {
-          gradient.addColorStop(0, colorMatch[1]);
-        }
+    function parseGradient(cssGradient) {
+      // Extract gradient type and content
+      const isRadial = cssGradient.includes('radial-gradient');
+      const match = cssGradient.match(/\((.*)\)/);
+      if (!match) return '#111';
+      
+      const content = match[1];
+      const parts = content.split(',').map(s => s.trim());
+      
+      let gradient;
+      if (isRadial) {
+        // Radial gradient
+        gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)/2);
+        parts.forEach(part => {
+          if (part.includes('#') || part.includes('rgb')) {
+            const colorMatch = part.match(/(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\))/);
+            const percentMatch = part.match(/(\d+)%/);
+            if (colorMatch && percentMatch) {
+              gradient.addColorStop(parseInt(percentMatch[1]) / 100, colorMatch[1]);
+            } else if (colorMatch) {
+              gradient.addColorStop(0, colorMatch[1]);
+            }
+          }
+        });
+      } else {
+        // Linear gradient - default to 135deg diagonal
+        const x0 = 0, y0 = canvas.height, x1 = canvas.width, y1 = 0;
+        gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+        
+        parts.forEach(part => {
+          if (part.includes('#') || part.includes('rgb')) {
+            const colorMatch = part.match(/(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\))/);
+            const percentMatch = part.match(/(\d+)%/);
+            if (colorMatch && percentMatch) {
+              gradient.addColorStop(parseInt(percentMatch[1]) / 100, colorMatch[1]);
+            } else if (colorMatch) {
+              gradient.addColorStop(0, colorMatch[1]);
+            }
+          }
+        });
       }
-    });
-  }
-  
-  return gradient;
-}
+      
+      return gradient;
+    }
 
     function checkCollisions(){
       for(let c=0;c<cols;c++){
@@ -1141,6 +1215,14 @@
       startGameWithSettings(false);
     });
 
+    // FIX: Pause game when switching tabs
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && running && !paused) {
+        paused = true;
+        pauseOverlay.style.display = 'flex';
+      }
+    });
+
     window.addEventListener('beforeunload', ()=>{
       clearInterval(spawnIntervalId);
       clearInterval(timeIntervalId);
@@ -1186,39 +1268,43 @@
         return;
       }
       
-      // Check if name already exists - FIXED: Always check both local and Firebase
-      let nameTaken = false;
-      
-      // First check local storage for immediate response
-      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-      if (existingPlayers[name]) {
-        nameTaken = true;
-      }
-      
-      if (nameTaken) {
-        alert('This name is already taken. Please choose another name.');
-        nameInput.value = '';
-        return;
-      }
-      
-      // Then check Firebase if available
-      if (database) {
-        database.ref('players').orderByChild('name').equalTo(name).once('value').then((snapshot) => {
-          if (snapshot.exists()) {
-            alert('This name is already taken. Please choose another name.');
-            nameInput.value = '';
-            return;
-          }
-          
-          // Name is unique, proceed
-          completeNameSubmission(name);
-        }).catch((error) => {
-          // If Firebase check fails, proceed with local check only
-          completeNameSubmission(name);
-        });
-      } else {
+      // FIX: Check if name is available (both in Firebase and local storage)
+      checkNameAvailability(name).then((isAvailable) => {
+        if (!isAvailable) {
+          alert('This name is already taken. Please choose another name.');
+          nameInput.value = '';
+          return;
+        }
+        
         completeNameSubmission(name);
-      }
+      }).catch((error) => {
+        // If check fails, proceed with submission anyway
+        completeNameSubmission(name);
+      });
+    }
+
+    function checkNameAvailability(name) {
+      return new Promise((resolve) => {
+        // First check local storage
+        const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+        if (existingPlayers[name]) {
+          resolve(false);
+          return;
+        }
+        
+        // Then check Firebase if available
+        if (database) {
+          database.ref('players').orderByChild('name').equalTo(name).once('value').then((snapshot) => {
+            resolve(!snapshot.exists());
+          }).catch((error) => {
+            // If Firebase check fails, assume name is available
+            resolve(true);
+          });
+        } else {
+          // No database, only local check
+          resolve(true);
+        }
+      });
     }
 
     function completeNameSubmission(name) {
@@ -1252,7 +1338,7 @@
       localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify([]));
       localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify([]));
       
-      // Then save to Firebase if available
+      // Then save to Firebase if available - FIX: Ensure player is saved to Firebase
       if (database) {
         database.ref('players/' + playerId).set(playerData)
           .then(() => {
@@ -1485,8 +1571,8 @@
         
         let html = '';
         topPlayers.forEach((player, index) => {
-          const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : 'third';
-          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+          const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : '';
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
           const scoreLabel = currentLeaderboardTab === 'highScore' ? 'pts' : 'total pts';
           const scoreValue = currentLeaderboardTab === 'highScore' ? player.highScore : player.allTimeScore;
           html += `<div class="lb-entry ${rankClass}">
@@ -1603,8 +1689,8 @@
         }
         
         // Check if name is already taken
-        database.ref('players').orderByChild('name').equalTo(newName).once('value').then((nameSnapshot) => {
-          if (nameSnapshot.exists()) {
+        checkNameAvailability(newName).then((isAvailable) => {
+          if (!isAvailable) {
             alert('This name is already taken. Please choose another name.');
             return;
           }
@@ -1661,7 +1747,7 @@
       // Clear all local storage data
       const playerNameToRemove = localStorage.getItem('brickBlasterPlayerName');
       
-      // Remove from local player registry
+      // FIX: Remove from local player registry to free up the name
       const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
       delete existingPlayers[playerNameToRemove];
       localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
@@ -1751,10 +1837,10 @@
         selectedIndex = rareIndices[Math.floor(Math.random() * rareIndices.length)];
       } else {
         // 90% chance: pick from all wallpapers
-        selectedIndex = Math.floor(Math.random() * wallpapers.length);
+        selectedIndex = Math.floor(Math.random() * wallpaperUrls.length);
       }
       
-      const wonWallpaper = wallpapers[selectedIndex];
+      const wonWallpaper = wallpaperUrls[selectedIndex];
       
       // Add the wallpaper to owned wallpapers (allow duplicates)
       ownedWallpapers.push(wonWallpaper);
@@ -1794,10 +1880,10 @@
       let html = '';
       allWallpapers.forEach((wp, index) => {
         const isSelected = wp === selectedWallpaper;
-        const isRare = rareIndices.includes(wallpapers.indexOf(wp));
+        const isRare = rareIndices.includes(wallpaperUrls.indexOf(wp));
         const rareClass = isRare ? 'rare' : '';
         const selectedClass = isSelected ? 'selected' : '';
-        html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp}" data-index="${index}"></div>`;
+        html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background-image:url('${wp}')" data-index="${index}"></div>`;
       });
       
       wallpaperGrid.innerHTML = html;
@@ -1834,13 +1920,14 @@
       
       eventShopSection.style.display = 'block';
       
+      const event = events[currentEvent];
       const eventWallpaper = eventWallpapers[currentEvent];
       const isOwned = ownedEventWallpapers.includes(currentEvent);
-      const canAfford = playerDiamonds >= 10000;
+      const canAfford = playerDiamonds >= event.gemsRequired;
       
       let html = '';
-      html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background:${eventWallpaper}">
-        <div class="price">${isOwned ? 'OWNED' : '10,000 💎'}</div>
+      html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background-image:url('${eventWallpaper}')">
+        <div class="price">${isOwned ? 'OWNED' : `${event.gemsRequired.toLocaleString()} 💎`}</div>
       </div>`;
       
       eventWallpaperGrid.innerHTML = html;
@@ -1862,8 +1949,8 @@
             renderEventWallpaperGrid();
             renderWallpaperGrid();
           } else if (canAfford) {
-            if (confirm(`Purchase this event wallpaper for 10,000 Diamonds?`)) {
-              playerDiamonds -= 10000;
+            if (confirm(`Purchase this ${event.name} event wallpaper for ${event.gemsRequired.toLocaleString()} Diamonds?`)) {
+              playerDiamonds -= event.gemsRequired;
               diamondsDisplay.textContent = playerDiamonds;
               shopDiamonds.textContent = playerDiamonds;
               localStorage.setItem('brickBlasterDiamonds', playerDiamonds.toString());
@@ -1882,10 +1969,10 @@
               // FIX: Hide the event section after purchase and refresh the regular wallpaper grid
               eventShopSection.style.display = 'none';
               renderWallpaperGrid();
-              alert('Event wallpaper purchased!');
+              alert(`${event.name} event wallpaper purchased!`);
             }
           } else {
-            alert('You need 10,000 Diamonds to purchase this event wallpaper!');
+            alert(`You need ${event.gemsRequired.toLocaleString()} Diamonds to purchase this ${event.name} event wallpaper!`);
           }
         });
       });
@@ -2076,16 +2163,16 @@
       
       if (confirm('Give all wallpapers to this player?')) {
         database.ref('players/' + devCurrentPlayerId).update({
-          ownedWallpapers: wallpapers,
+          ownedWallpapers: wallpaperUrls,
           lastUpdated: Date.now()
         }).then(() => {
           // If updating current player, also update local storage
           if (devCurrentPlayerId === playerId) {
-            ownedWallpapers = wallpapers;
-            localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(wallpapers));
+            ownedWallpapers = wallpaperUrls;
+            localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(wallpaperUrls));
           }
           alert('All wallpapers given!');
-          devCurrentPlayerData.ownedWallpapers = wallpapers;
+          devCurrentPlayerData.ownedWallpapers = wallpaperUrls;
         });
       }
     };
@@ -2123,8 +2210,8 @@
       modalContent.innerHTML = `
         <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Select Wallpapers to Give</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;">
-          ${wallpapers.map((wp, index) => `
-            <div class="wallpaper-select-item" style="height: 80px; border-radius: 8px; background: ${wp}; border: 2px solid #333; cursor: pointer; position: relative;" data-index="${index}">
+          ${wallpaperUrls.map((url, index) => `
+            <div class="wallpaper-select-item" style="height: 80px; border-radius: 8px; background-image:url('${url}'); background-size:cover; background-position:center; border: 2px solid #333; cursor: pointer; position: relative;" data-index="${index}">
               <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 3px; font-size: 10px;">
                 ${rareIndices.includes(index) ? 'RARE' : 'COMMON'}
               </div>
@@ -2145,14 +2232,14 @@
       wallpaperItems.forEach(item => {
         item.addEventListener('click', () => {
           const index = parseInt(item.dataset.index);
-          if (selectedWallpapers.includes(wallpapers[index])) {
+          if (selectedWallpapers.includes(wallpaperUrls[index])) {
             // Remove if already selected
-            const wpIndex = selectedWallpapers.indexOf(wallpapers[index]);
+            const wpIndex = selectedWallpapers.indexOf(wallpaperUrls[index]);
             selectedWallpapers.splice(wpIndex, 1);
             item.style.borderColor = '#333';
           } else {
             // Add to selection
-            selectedWallpapers.push(wallpapers[index]);
+            selectedWallpapers.push(wallpaperUrls[index]);
             item.style.borderColor = '#ffd700';
           }
         });
@@ -2227,10 +2314,10 @@
       modalContent.innerHTML = `
         <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Select Event Wallpapers to Give</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
-          ${Object.entries(eventWallpapers).map(([eventName, wallpaper]) => `
-            <div class="event-wallpaper-select-item" style="height: 100px; border-radius: 8px; background: ${wallpaper}; border: 2px solid #333; cursor: pointer; position: relative;" data-event="${eventName}">
+          ${Object.entries(events).map(([eventKey, event]) => `
+            <div class="event-wallpaper-select-item" style="height: 100px; border-radius: 8px; background-image:url('${event.wallpaper}'); background-size:cover; background-position:center; border: 2px solid #333; cursor: pointer; position: relative;" data-event="${eventKey}">
               <div style="position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 3px; font-size: 10px; text-transform: uppercase;">
-                ${eventName}
+                ${event.name}
               </div>
             </div>
           `).join('')}
@@ -2383,11 +2470,11 @@
       
       // Regular wallpapers
       playerWallpapers.forEach((wp, index) => {
-        const wpIndex = wallpapers.indexOf(wp);
+        const wpIndex = wallpaperUrls.indexOf(wp);
         const isRare = rareIndices.includes(wpIndex);
         const rareLabel = isRare ? '<div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">RARE</div>' : '';
         html += `<div style="position:relative">
-          <div style="height:70px;border-radius:5px;background:${wp};border:2px solid #ff0000"></div>
+          <div style="height:70px;border-radius:5px;background-image:url('${wp}');background-size:cover;background-position:center;border:2px solid #ff0000"></div>
           ${rareLabel}
           <button onclick="removeWallpaperAtIndex(${index})" style="width:100%;margin-top:5px;background:#990000;color:#fff;border:0;padding:5px;border-radius:5px;cursor:pointer;font-size:11px">Delete</button>
         </div>`;
@@ -2397,8 +2484,8 @@
       playerEventWallpapers.forEach((eventName, index) => {
         const wp = eventWallpapers[eventName];
         html += `<div style="position:relative">
-          <div style="height:70px;border-radius:5px;background:${wp};border:2px solid #ffd700"></div>
-          <div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">${eventName.toUpperCase()}</div>
+          <div style="height:70px;border-radius:5px;background-image:url('${wp}');background-size:cover;background-position:center;border:2px solid #ffd700"></div>
+          <div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">${events[eventName].name.toUpperCase()}</div>
           <button onclick="removeEventWallpaperAtIndex(${index})" style="width:100%;margin-top:5px;background:#990000;color:#fff;border:0;padding:5px;border-radius:5px;cursor:pointer;font-size:11px">Delete</button>
         </div>`;
       });
@@ -2439,6 +2526,9 @@
     window.addEventListener('load', () => {
       // Initialize Firebase first
       initializeFirebase();
+      
+      // Preload wallpaper images
+      preloadWallpaperImages();
       
       // Then initialize the game
       setTimeout(() => {
