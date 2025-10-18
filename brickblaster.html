@@ -1343,23 +1343,20 @@
       let coinsEarned = 0;
       let diamondsEarned = 0;
       
-      // Check if player already owns the current event wallpaper
-      const ownsCurrentEventWallpaper = currentEvent && ownedEventWallpapers.includes(currentEvent);
-      
-      if (currentEvent && !ownsCurrentEventWallpaper) {
-        // During events, earn diamonds instead of coins (only if player doesn't own the event wallpaper)
+      if (currentEvent) {
+        // During events, earn diamonds instead of coins
         diamondsEarned = newScore;
         
-        // If diamonds would exceed 10,000, convert excess to coins
-        if (playerDiamonds + diamondsEarned > 10000) {
-          const excess = (playerDiamonds + diamondsEarned) - 10000;
+        // FIX: If diamonds would exceed 10,000, don't earn any more diamonds
+        if (playerDiamonds >= 10000) {
+          diamondsEarned = 0;
+        } else if (playerDiamonds + diamondsEarned > 10000) {
           diamondsEarned = 10000 - playerDiamonds;
-          coinsEarned = excess;
         }
         
         playerDiamonds += diamondsEarned;
       } else {
-        // Normal gameplay - earn coins (or if player already owns event wallpaper)
+        // Normal gameplay - earn coins
         coinsEarned = newScore;
       }
       
@@ -1459,11 +1456,14 @@
         const players = [];
         snapshot.forEach((child) => {
           const playerData = child.val();
-          players.push({
-            name: playerData.name,
-            highScore: playerData.highScore || 0,
-            allTimeScore: playerData.allTimeScore || 0
-          });
+          // FIX: Filter out undefined or invalid player names
+          if (playerData.name && playerData.name !== 'undefined' && playerData.name.trim() !== '') {
+            players.push({
+              name: playerData.name,
+              highScore: playerData.highScore || 0,
+              allTimeScore: playerData.allTimeScore || 0
+            });
+          }
         });
         
         // Sort by current tab
@@ -1485,8 +1485,8 @@
         
         let html = '';
         topPlayers.forEach((player, index) => {
-          const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : '';
-          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+          const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : 'third';
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
           const scoreLabel = currentLeaderboardTab === 'highScore' ? 'pts' : 'total pts';
           const scoreValue = currentLeaderboardTab === 'highScore' ? player.highScore : player.allTimeScore;
           html += `<div class="lb-entry ${rankClass}">
@@ -1775,38 +1775,36 @@
       
       renderWallpaperGrid();
       updateSpinButton();
-    }
+    });
 
     function renderWallpaperGrid() {
       // Combine regular wallpapers with owned event wallpapers
-      const allOwnedWallpapers = [...ownedWallpapers];
+      const allWallpapers = [...ownedWallpapers];
       
-      // Add event wallpapers to main collection if owned
+      // Add event wallpapers that are owned
       if (currentEvent && ownedEventWallpapers.includes(currentEvent)) {
-        allOwnedWallpapers.push(eventWallpapers[currentEvent]);
+        allWallpapers.push(eventWallpapers[currentEvent]);
       }
       
-      if (allOwnedWallpapers.length === 0) {
+      if (allWallpapers.length === 0) {
         wallpaperGrid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>';
         return;
       }
       
       let html = '';
-      allOwnedWallpapers.forEach((wp, index) => {
-        const isEventWallpaper = Object.values(eventWallpapers).includes(wp);
+      allWallpapers.forEach((wp, index) => {
         const isSelected = wp === selectedWallpaper;
         const isRare = rareIndices.includes(wallpapers.indexOf(wp));
         const rareClass = isRare ? 'rare' : '';
         const selectedClass = isSelected ? 'selected' : '';
-        const eventLabel = isEventWallpaper ? '<div style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.7);color:#ffd700;padding:2px 5px;border-radius:3px;font-size:10px;">EVENT</div>' : '';
-        html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp};position:relative">${eventLabel}</div>`;
+        html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp}" data-index="${index}"></div>`;
       });
       
       wallpaperGrid.innerHTML = html;
       
       document.querySelectorAll('.wallpaper-item').forEach((item, idx) => {
         item.addEventListener('click', () => {
-          selectedWallpaper = allOwnedWallpapers[idx];
+          selectedWallpaper = allWallpapers[idx];
           localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
           
           // FIXED: Update database immediately
@@ -1823,8 +1821,13 @@
     }
     
     function renderEventWallpaperGrid() {
-      // Hide event section if player already owns the current event wallpaper
-      if (!currentEvent || ownedEventWallpapers.includes(currentEvent)) {
+      if (!currentEvent) {
+        eventShopSection.style.display = 'none';
+        return;
+      }
+      
+      // FIX: Only show event wallpaper section if the wallpaper is not already owned
+      if (ownedEventWallpapers.includes(currentEvent)) {
         eventShopSection.style.display = 'none';
         return;
       }
@@ -1832,18 +1835,33 @@
       eventShopSection.style.display = 'block';
       
       const eventWallpaper = eventWallpapers[currentEvent];
+      const isOwned = ownedEventWallpapers.includes(currentEvent);
       const canAfford = playerDiamonds >= 10000;
       
       let html = '';
-      html += `<div class="event-wallpaper-item" style="background:${eventWallpaper}">
-        <div class="price">10,000 💎</div>
+      html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background:${eventWallpaper}">
+        <div class="price">${isOwned ? 'OWNED' : '10,000 💎'}</div>
       </div>`;
       
       eventWallpaperGrid.innerHTML = html;
       
       document.querySelectorAll('.event-wallpaper-item').forEach((item) => {
         item.addEventListener('click', () => {
-          if (canAfford) {
+          if (isOwned) {
+            selectedWallpaper = eventWallpaper;
+            localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
+            
+            // FIXED: Update database immediately
+            if (database && playerId) {
+              database.ref('players/' + playerId).update({
+                selectedWallpaper: selectedWallpaper,
+                lastUpdated: Date.now()
+              });
+            }
+            
+            renderEventWallpaperGrid();
+            renderWallpaperGrid();
+          } else if (canAfford) {
             if (confirm(`Purchase this event wallpaper for 10,000 Diamonds?`)) {
               playerDiamonds -= 10000;
               diamondsDisplay.textContent = playerDiamonds;
@@ -1861,10 +1879,10 @@
                 });
               }
               
-              // Hide event section and refresh both grids
+              // FIX: Hide the event section after purchase and refresh the regular wallpaper grid
               eventShopSection.style.display = 'none';
               renderWallpaperGrid();
-              alert('Event wallpaper purchased! It has been added to your main wallpaper collection.');
+              alert('Event wallpaper purchased!');
             }
           } else {
             alert('You need 10,000 Diamonds to purchase this event wallpaper!');
@@ -1961,11 +1979,15 @@
       database.ref('players').once('value').then((snapshot) => {
         const users = [];
         snapshot.forEach((child) => {
-          users.push({
-            id: child.key,
-            name: child.val().name,
-            highScore: child.val().highScore || 0
-          });
+          const playerData = child.val();
+          // FIX: Filter out undefined or invalid player names
+          if (playerData.name && playerData.name !== 'undefined' && playerData.name.trim() !== '') {
+            users.push({
+              id: child.key,
+              name: playerData.name,
+              highScore: playerData.highScore || 0
+            });
+          }
         });
         
         if (users.length === 0) {
@@ -2300,7 +2322,6 @@
       }
     };
 
-    // --- FIXED: Delete Player Account Function ---
     window.deletePlayerAccount = function() {
       if (!devCurrentPlayerId || !database) return;
       
@@ -2337,25 +2358,9 @@
             shopBtn.style.display = 'none';
             devBtn.style.display = 'none';
             namePrompt.style.display = 'flex';
-          } else {
-            // For other players, also remove from local player registry
-            const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-            delete existingPlayers[playerNameToDelete];
-            localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
           }
           
           alert('Account deleted successfully!');
-          devPlayerInfo.style.display = 'none';
-          devSearchInput.value = '';
-          devCurrentPlayerId = null;
-        }).catch((error) => {
-          console.log('Firebase deletion failed, but removed from local registry');
-          // Still remove from local registry even if Firebase fails
-          const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-          delete existingPlayers[playerNameToDelete];
-          localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-          
-          alert('Account deleted from local registry! Firebase deletion may have failed.');
           devPlayerInfo.style.display = 'none';
           devSearchInput.value = '';
           devCurrentPlayerId = null;
@@ -2430,28 +2435,6 @@
       devWallpaperManager.style.display = 'none';
     };
 
-    // --- Tab Visibility Handling ---
-    document.addEventListener('visibilitychange', function() {
-      if (document.hidden && running && !paused) {
-        // Game is running and tab becomes hidden - pause the game
-        paused = true;
-        if (endlessMode) {
-          clearInterval(spawnIntervalId);
-        }
-        clearInterval(timeIntervalId);
-      } else if (!document.hidden && running && paused) {
-        // Game was running and tab becomes visible - resume if it was paused due to tab switch
-        paused = false;
-        if (endlessMode) {
-          spawnIntervalId = setInterval(spawnNewBrick, 3000);
-        }
-        timeIntervalId = setInterval(() => {
-          if (running && !paused) timePlayed++;
-        }, 1000);
-        requestAnimationFrame(loop);
-      }
-    });
-
     // --- FIXED: Initialize Game Properly ---
     window.addEventListener('load', () => {
       // Initialize Firebase first
@@ -2469,6 +2452,12 @@
               const data = child.val();
               const name = data.name;
               
+              // FIX: Skip undefined or invalid names
+              if (!name || name === 'undefined' || name.trim() === '') {
+                duplicates.push(child.key);
+                return;
+              }
+              
               if (nameMap[name]) {
                 // Duplicate found, keep the older one
                 if (data.lastUpdated < nameMap[name].lastUpdated) {
@@ -2482,7 +2471,7 @@
               }
             });
             
-            // Delete duplicates
+            // Delete duplicates and invalid names
             duplicates.forEach(id => {
               database.ref('players/' + id).remove();
             });
