@@ -543,7 +543,7 @@
         startDay: 15,
         endMonth: 6, // July (0-indexed)
         endDay: 15,
-        wallpaper: 'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/summer-event.jpg',
+        wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/summer.jpg',
         displayName: "☀️ SUMMER EVENT ☀️",
         background: 'linear-gradient(135deg, #ff7e5f, #feb47b)'
       },
@@ -554,7 +554,7 @@
         startDay: 1,
         endMonth: 9, // October (0-indexed)
         endDay: 31,
-        wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/cake.PNG',
+        wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/haloween%20event.jpg',
         displayName: "🎃 HALLOWEEN EVENT 🎃",
         background: 'linear-gradient(135deg, #ff8c00, #8b0000)'
       },
@@ -565,7 +565,7 @@
         startDay: 10,
         endMonth: 0, // January (0-indexed)
         endDay: 10,
-        wallpaper: 'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/winter-event.jpg',
+        wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/Background_winter.jpg',
         displayName: "❄️ WINTER EVENT ❄️",
         background: 'linear-gradient(135deg, #1e3c72, #e6f3ff)'
       },
@@ -611,6 +611,24 @@
         img.src = url;
       });
     }
+
+    function preloadAndCacheWallpapers() {
+  console.log('Preloading and caching all wallpapers...');
+  
+  const allWallpaperUrls = [
+    ...wallpaperUrls,
+    ...Object.values(eventWallpapers)
+  ];
+  
+  allWallpaperUrls.forEach(url => {
+    const img = new Image();
+    img.src = url;
+    // Store in your existing wallpaperImages object for later use
+    wallpaperImages[url] = img;
+  });
+  
+  console.log('Wallpapers preloaded for offline use');
+}
 
     // --- FIXED: Initialize Firebase Only Once ---
     function initializeFirebase() {
@@ -2523,53 +2541,55 @@
     };
 
     // --- FIXED: Initialize Game Properly ---
-    window.addEventListener('load', () => {
-      // Initialize Firebase first
-      initializeFirebase();
-      
-      // Preload wallpaper images
-      preloadWallpaperImages();
-      
-      // Then initialize the game
-      setTimeout(() => {
-        // Clean up duplicate names on load
-        if (database) {
-          database.ref('players').once('value').then((snapshot) => {
-            const nameMap = {};
-            const duplicates = [];
-            
-            snapshot.forEach((child) => {
-              const data = child.val();
-              const name = data.name;
-              
-              // FIX: Skip undefined or invalid names
-              if (!name || name === 'undefined' || name.trim() === '') {
-                duplicates.push(child.key);
-                return;
-              }
-              
-              if (nameMap[name]) {
-                // Duplicate found, keep the older one
-                if (data.lastUpdated < nameMap[name].lastUpdated) {
-                  duplicates.push(nameMap[name].id);
-                  nameMap[name] = { id: child.key, lastUpdated: data.lastUpdated };
-                } else {
-                  duplicates.push(child.key);
-                }
-              } else {
-                nameMap[name] = { id: child.key, lastUpdated: data.lastUpdated };
-              }
-            });
-            
-            // Delete duplicates and invalid names
-            duplicates.forEach(id => {
-              database.ref('players/' + id).remove();
-            });
-          });
-        }
-        initializePlayer();
-      }, 500);
-    });
+window.addEventListener('load', () => {
+  // Initialize Firebase first
+  initializeFirebase();
+  
+  // ======== ADD THESE TWO LINES RIGHT HERE ========
+  preloadWallpaperImages(); // Your existing function
+  preloadAndCacheWallpapers(); // The new function you just added
+  // ======== END OF ADDED LINES ========
+  
+  // Then initialize the game
+  setTimeout(() => {
+    // Clean up duplicate names on load
+    if (database) {
+      database.ref('players').once('value').then((snapshot) => {
+        const nameMap = {};
+        const duplicates = [];
+        
+        snapshot.forEach((child) => {
+          const data = child.val();
+          const name = data.name;
+          
+          // FIX: Skip undefined or invalid player names
+          if (!name || name === 'undefined' || name.trim() === '') {
+            duplicates.push(child.key);
+            return;
+          }
+          
+          if (nameMap[name]) {
+            // Duplicate found, keep the older one
+            if (data.lastUpdated < nameMap[name].lastUpdated) {
+              duplicates.push(nameMap[name].id);
+              nameMap[name] = { id: child.key, lastUpdated: data.lastUpdated };
+            } else {
+              duplicates.push(child.key);
+            }
+          } else {
+            nameMap[name] = { id: child.key, lastUpdated: data.lastUpdated };
+          }
+        });
+        
+        // Delete duplicates and invalid names
+        duplicates.forEach(id => {
+          database.ref('players/' + id).remove();
+        });
+      });
+    }
+    initializePlayer();
+  }, 500);
+});
   </script>
   
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
