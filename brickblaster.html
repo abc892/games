@@ -2655,52 +2655,61 @@ function resetUIAfterDeletion() {
   }
 };
     window.deletePlayerAccount = function() {
-  if (!devCurrentPlayerId || !database) return;
+  if (!devCurrentPlayerId) return;
   
   const playerNameToDelete = devPlayerName.textContent;
   if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
-    database.ref('players/' + devCurrentPlayerId).remove().then(() => {
-      // ALWAYS clean up local storage for the deleted player, regardless of who it is
-      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-      delete existingPlayers[playerNameToDelete];
-      localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
+    
+    // First, clean up local storage immediately (works offline)
+    const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+    delete existingPlayers[playerNameToDelete];
+    localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
+    
+    // Remove player-specific local storage data
+    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_coins`);
+    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_diamonds`);
+    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedWallpapers`);
+    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedEventWallpapers`);
+    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_wallpaper`);
+    
+    // Special handling if deleting the CURRENT player
+    if (devCurrentPlayerId === playerId) {
+      localStorage.removeItem('brickBlasterPlayerId');
+      localStorage.removeItem('brickBlasterPlayerName');
+      localStorage.removeItem('brickBlasterEarnGemsMode');
       
-      // Remove player-specific local storage data
-      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_coins`);
-      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_diamonds`);
-      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedWallpapers`);
-      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedEventWallpapers`);
-      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_wallpaper`);
+      // Reset all player data
+      playerId = '';
+      playerName = '';
+      playerCoins = 0;
+      playerDiamonds = 0;
+      ownedWallpapers = [];
+      ownedEventWallpapers = [];
+      selectedWallpaper = null;
       
-      // Special handling if deleting the CURRENT player
-      if (devCurrentPlayerId === playerId) {
-        localStorage.removeItem('brickBlasterPlayerId');
-        localStorage.removeItem('brickBlasterPlayerName');
-        localStorage.removeItem('brickBlasterEarnGemsMode');
-        
-        // Reset all player data
-        playerId = '';
-        playerName = '';
-        playerCoins = 0;
-        playerDiamonds = 0;
-        ownedWallpapers = [];
-        ownedEventWallpapers = [];
-        selectedWallpaper = null;
-        
-        // Hide UI elements and show name prompt
-        settingsDiv.style.display = 'none';
-        coinsDisplay.style.display = 'none';
-        diamondsDisplay.style.display = 'none';
-        shopBtn.style.display = 'none';
-        devBtn.style.display = 'none';
-        namePrompt.style.display = 'flex';
-      }
-      
-      alert('Account deleted successfully!');
-      devPlayerInfo.style.display = 'none';
-      devSearchInput.value = '';
-      devCurrentPlayerId = null;
-    });
+      // Hide UI elements and show name prompt
+      settingsDiv.style.display = 'none';
+      coinsDisplay.style.display = 'none';
+      diamondsDisplay.style.display = 'none';
+      shopBtn.style.display = 'none';
+      devBtn.style.display = 'none';
+      namePrompt.style.display = 'flex';
+    }
+    
+    // Then try to delete from Firebase (if online)
+    if (database) {
+      database.ref('players/' + devCurrentPlayerId).remove().then(() => {
+        alert('Account deleted successfully from both local storage and database!');
+      }).catch((error) => {
+        alert('Account deleted from local storage, but failed to remove from database (offline). The account will be removed from database when you go online.');
+      });
+    } else {
+      alert('Account deleted from local storage. Database was unavailable (offline).');
+    }
+    
+    devPlayerInfo.style.display = 'none';
+    devSearchInput.value = '';
+    devCurrentPlayerId = null;
   }
 };
 
