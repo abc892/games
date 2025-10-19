@@ -507,30 +507,30 @@
 
     // Image wallpapers setup
     const wallpaperImages = {};
-    const wallpaperUrls = [
-      // Regular wallpapers (17)
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper1.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper2.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper3.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper4.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper5.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper6.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper7.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper8.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper9.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper10.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper11.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper12.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper13.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper14.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper15.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper16.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/wallpaper17.jpg',
-      // Rare wallpapers (3)
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/rare1.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/rare2.jpg',
-      'https://raw.githubusercontent.com/yourusername/brick-blaster-images/main/rare3.jpg'
-    ];
+    // Keep gradients for spinning, use images for events
+const wallpaperUrls = [
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+  'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+  'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+  'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+  'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+  'linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)',
+  'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
+  'linear-gradient(135deg, #f77062 0%, #fe5196 100%)',
+  'linear-gradient(135deg, #21d4fd 0%, #b721ff 100%)',
+  'linear-gradient(135deg, #08aeea 0%, #2af598 100%)',
+  'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)',
+  'linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)',
+  'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)',
+  // 3 RARE wallpapers (10% chance each)
+  'linear-gradient(135deg, #ffd700 0%, #ff8c00 20%, #ff1493 40%, #9400d3 60%, #4b0082 80%, #000033 100%)',
+  'radial-gradient(circle at 30% 30%, #00ffff, #0080ff 30%, #8000ff 60%, #2d0a4e)',
+  'linear-gradient(45deg, #ff0000 0%, #ff7f00 12.5%, #ffff00 25%, #00ff00 37.5%, #0000ff 50%, #4b0082 62.5%, #9400d3 75%, #ff0844 87.5%, #ff0000 100%)'
+];
     
     const rareIndices = [17, 18, 19]; // Last 3 are rare
 
@@ -588,46 +588,35 @@
       eventWallpapers[key] = event.wallpaper;
     }
 
-    // Preload all wallpaper images
-    function preloadWallpaperImages() {
-      const allUrls = [...wallpaperUrls];
-      
-      // Add event wallpaper URLs
-      Object.values(events).forEach(event => {
-        allUrls.push(event.wallpaper);
-      });
-      
-      // Load each image
-      allUrls.forEach(url => {
-        const img = new Image();
-        img.onload = () => {
-          wallpaperImages[url] = img;
-        };
-        img.onerror = () => {
-          console.warn(`Failed to load wallpaper: ${url}`);
-          // Create a fallback gradient if image fails to load
-          wallpaperImages[url] = null;
-        };
-        img.src = url;
-      });
-    }
+    // Preload only event wallpapers (gradients don't need preloading)
+function preloadWallpaperImages() {
+  // Only preload event wallpapers (images)
+  Object.values(events).forEach(event => {
+    const url = event.wallpaper;
+    const img = new Image();
+    img.onload = () => {
+      wallpaperImages[url] = img;
+    };
+    img.onerror = () => {
+      console.warn(`Failed to load event wallpaper: ${url}`);
+      wallpaperImages[url] = null;
+    };
+    img.src = url;
+  });
+}
 
-    function preloadAndCacheWallpapers() {
-  console.log('Preloading and caching all wallpapers...');
+// Preload and cache - only event wallpapers need caching
+function preloadAndCacheWallpapers() {
+  console.log('Preloading and caching event wallpapers...');
   
-  const allWallpaperUrls = [
-    ...wallpaperUrls,
-    ...Object.values(eventWallpapers)
-  ];
-  
-  allWallpaperUrls.forEach(url => {
+  // Only cache event wallpapers (gradients don't need caching)
+  Object.values(eventWallpapers).forEach(url => {
     const img = new Image();
     img.src = url;
-    // Store in your existing wallpaperImages object for later use
     wallpaperImages[url] = img;
   });
   
-  console.log('Wallpapers preloaded for offline use');
+  console.log('Event wallpapers preloaded for offline use');
 }
 
     // --- FIXED: Initialize Firebase Only Once ---
@@ -840,41 +829,47 @@
     }
 
     function draw(){
-      // Apply wallpaper background if selected, otherwise default background
-      if(selectedWallpaper){
-        // Check if we have an image for this wallpaper
-        if (wallpaperImages[selectedWallpaper]) {
-          // Draw the image as background
-          ctx.drawImage(wallpaperImages[selectedWallpaper], 0, 0, canvas.width, canvas.height);
-        } else {
-          // Fallback to gradient if image not loaded
-          const gradient = parseGradient(selectedWallpaper);
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+  // Apply wallpaper background if selected
+  if(selectedWallpaper){
+    // Check if it's a gradient or image
+    if (selectedWallpaper.includes('gradient')) {
+      // It's a gradient - use parseGradient
+      const gradient = parseGradient(selectedWallpaper);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+      // It's an image - check if loaded
+      if (wallpaperImages[selectedWallpaper] && wallpaperImages[selectedWallpaper].complete && wallpaperImages[selectedWallpaper].naturalWidth > 0) {
+        ctx.drawImage(wallpaperImages[selectedWallpaper], 0, 0, canvas.width, canvas.height);
       } else {
+        // Fallback to default background
         ctx.fillStyle = '#111';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-      
-      drawBricks();
-      
-      // ball
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-      ctx.fillStyle = '#ffdd00';
-      ctx.fill();
-      ctx.closePath();
-      
-      // paddle - bright green to be visible on all wallpapers
-      ctx.fillStyle = '#00ff00';
-      ctx.fillRect(paddle.x, canvas.height - paddle.h - 10, paddle.w, paddle.h);
-      
-      // HUD
-      hudLives.textContent = lives;
-      hudScore.textContent = score;
-      hudTime.textContent = timePlayed;
     }
+  } else {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  
+  drawBricks();
+  
+  // ball
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+  ctx.fillStyle = '#ffdd00';
+  ctx.fill();
+  ctx.closePath();
+  
+  // paddle - bright green to be visible on all wallpapers
+  ctx.fillStyle = '#00ff00';
+  ctx.fillRect(paddle.x, canvas.height - paddle.h - 10, paddle.w, paddle.h);
+  
+  // HUD
+  hudLives.textContent = lives;
+  hudScore.textContent = score;
+  hudTime.textContent = timePlayed;
+}
     
     function parseGradient(cssGradient) {
       // Extract gradient type and content
@@ -1881,48 +1876,55 @@
       updateSpinButton();
     });
 
-    function renderWallpaperGrid() {
-      // Combine regular wallpapers with owned event wallpapers
-      const allWallpapers = [...ownedWallpapers];
-      
-      // Add event wallpapers that are owned
-      if (currentEvent && ownedEventWallpapers.includes(currentEvent)) {
-        allWallpapers.push(eventWallpapers[currentEvent]);
-      }
-      
-      if (allWallpapers.length === 0) {
-        wallpaperGrid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>';
-        return;
-      }
-      
-      let html = '';
-      allWallpapers.forEach((wp, index) => {
-        const isSelected = wp === selectedWallpaper;
-        const isRare = rareIndices.includes(wallpaperUrls.indexOf(wp));
-        const rareClass = isRare ? 'rare' : '';
-        const selectedClass = isSelected ? 'selected' : '';
-        html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background-image:url('${wp}')" data-index="${index}"></div>`;
-      });
-      
-      wallpaperGrid.innerHTML = html;
-      
-      document.querySelectorAll('.wallpaper-item').forEach((item, idx) => {
-        item.addEventListener('click', () => {
-          selectedWallpaper = allWallpapers[idx];
-          localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
-          
-          // FIXED: Update database immediately
-          if (database && playerId) {
-            database.ref('players/' + playerId).update({
-              selectedWallpaper: selectedWallpaper,
-              lastUpdated: Date.now()
-            });
-          }
-          
-          renderWallpaperGrid();
-        });
-      });
+   function renderWallpaperGrid() {
+  // Combine regular wallpapers with owned event wallpapers
+  const allWallpapers = [...ownedWallpapers];
+  
+  // Add event wallpapers that are owned
+  if (currentEvent && ownedEventWallpapers.includes(currentEvent)) {
+    allWallpapers.push(eventWallpapers[currentEvent]);
+  }
+  
+  if (allWallpapers.length === 0) {
+    wallpaperGrid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center">No wallpapers yet. Spin to get some!</p>';
+    return;
+  }
+  
+  let html = '';
+  allWallpapers.forEach((wp, index) => {
+    const isSelected = wp === selectedWallpaper;
+    const isRare = rareIndices.includes(wallpaperUrls.indexOf(wp));
+    const rareClass = isRare ? 'rare' : '';
+    const selectedClass = isSelected ? 'selected' : '';
+    
+    // Check if it's a gradient or image URL
+    if (wp.includes('gradient')) {
+      // It's a gradient - use background
+      html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp}" data-index="${index}"></div>`;
+    } else {
+      // It's an image - use background-image
+      html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background-image:url('${wp}')" data-index="${index}"></div>`;
     }
+  });
+  
+  wallpaperGrid.innerHTML = html;
+  
+  document.querySelectorAll('.wallpaper-item').forEach((item, idx) => {
+    item.addEventListener('click', () => {
+      selectedWallpaper = allWallpapers[idx];
+      localStorage.setItem('brickBlasterWallpaper', selectedWallpaper);
+      
+      if (database && playerId) {
+        database.ref('players/' + playerId).update({
+          selectedWallpaper: selectedWallpaper,
+          lastUpdated: Date.now()
+        });
+      }
+      
+      renderWallpaperGrid();
+    });
+  });
+}
     
     function renderEventWallpaperGrid() {
       if (!currentEvent) {
@@ -2177,23 +2179,22 @@
     };
 
     window.giveAllWallpapers = function() {
-      if (!devCurrentPlayerId || !database) return;
-      
-      if (confirm('Give all wallpapers to this player?')) {
-        database.ref('players/' + devCurrentPlayerId).update({
-          ownedWallpapers: wallpaperUrls,
-          lastUpdated: Date.now()
-        }).then(() => {
-          // If updating current player, also update local storage
-          if (devCurrentPlayerId === playerId) {
-            ownedWallpapers = wallpaperUrls;
-            localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(wallpaperUrls));
-          }
-          alert('All wallpapers given!');
-          devCurrentPlayerData.ownedWallpapers = wallpaperUrls;
-        });
+  if (!devCurrentPlayerId || !database) return;
+  
+  if (confirm('Give all wallpapers to this player?')) {
+    database.ref('players/' + devCurrentPlayerId).update({
+      ownedWallpapers: wallpaperUrls, // Give gradient wallpapers
+      lastUpdated: Date.now()
+    }).then(() => {
+      if (devCurrentPlayerId === playerId) {
+        ownedWallpapers = wallpaperUrls;
+        localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(wallpaperUrls));
       }
-    };
+      alert('All wallpapers given!');
+      devCurrentPlayerData.ownedWallpapers = wallpaperUrls;
+    });
+  }
+};
 
     window.giveSelectedWallpapers = function() {
       if (!devCurrentPlayerId || !database) return;
