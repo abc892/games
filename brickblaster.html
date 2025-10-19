@@ -2660,20 +2660,23 @@ function resetUIAfterDeletion() {
   const playerNameToDelete = devPlayerName.textContent;
   if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
     database.ref('players/' + devCurrentPlayerId).remove().then(() => {
-      // Delete from local storage if it's the current player
+      // ALWAYS clean up local storage for the deleted player, regardless of who it is
+      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+      delete existingPlayers[playerNameToDelete];
+      localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
+      
+      // Remove player-specific local storage data
+      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_coins`);
+      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_diamonds`);
+      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedWallpapers`);
+      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedEventWallpapers`);
+      localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_wallpaper`);
+      
+      // Special handling if deleting the CURRENT player
       if (devCurrentPlayerId === playerId) {
-        const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-        delete existingPlayers[playerNameToDelete];
-        localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-        
         localStorage.removeItem('brickBlasterPlayerId');
         localStorage.removeItem('brickBlasterPlayerName');
-        // Use player-scoped keys:
-        localStorage.removeItem(`brickBlaster_${playerId}_coins`);
-        localStorage.removeItem(`brickBlaster_${playerId}_diamonds`);
-        localStorage.removeItem(`brickBlaster_${playerId}_ownedWallpapers`);
-        localStorage.removeItem(`brickBlaster_${playerId}_ownedEventWallpapers`);
-        localStorage.removeItem(`brickBlaster_${playerId}_wallpaper`);
+        localStorage.removeItem('brickBlasterEarnGemsMode');
         
         // Reset all player data
         playerId = '';
