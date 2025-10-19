@@ -2197,108 +2197,119 @@ function preloadAndCacheWallpapers() {
 };
 
     window.giveSelectedWallpapers = function() {
-      if (!devCurrentPlayerId || !database) return;
-      
-      // Create a modal for selecting wallpapers
-      const selectedWallpapers = [];
-      const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 3000;
-      `;
-      
-      const modalContent = document.createElement('div');
-      modalContent.style.cssText = `
-        background: #1a1a1a;
-        padding: 30px;
-        border-radius: 10px;
-        border: 2px solid #ff0000;
-        max-width: 800px;
-        max-height: 80vh;
-        overflow-y: auto;
-      `;
-      
-      modalContent.innerHTML = `
-        <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Select Wallpapers to Give</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;">
-          ${wallpaperUrls.map((url, index) => `
-            <div class="wallpaper-select-item" style="height: 80px; border-radius: 8px; background-image:url('${url}'); background-size:cover; background-position:center; border: 2px solid #333; cursor: pointer; position: relative;" data-index="${index}">
-              <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 3px; font-size: 10px;">
-                ${rareIndices.includes(index) ? 'RARE' : 'COMMON'}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-        <div style="display: flex; gap: 10px; justify-content: center;">
-          <button id="confirmGiveSelected" style="background: #ff0000; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Give Selected</button>
-          <button id="cancelGiveSelected" style="background: #555; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Cancel</button>
-        </div>
-      `;
-      
-      modal.appendChild(modalContent);
-      document.body.appendChild(modal);
-      
-      // Handle wallpaper selection
-      const wallpaperItems = modalContent.querySelectorAll('.wallpaper-select-item');
-      wallpaperItems.forEach(item => {
-        item.addEventListener('click', () => {
-          const index = parseInt(item.dataset.index);
-          if (selectedWallpapers.includes(wallpaperUrls[index])) {
-            // Remove if already selected
-            const wpIndex = selectedWallpapers.indexOf(wallpaperUrls[index]);
-            selectedWallpapers.splice(wpIndex, 1);
-            item.style.borderColor = '#333';
-          } else {
-            // Add to selection
-            selectedWallpapers.push(wallpaperUrls[index]);
-            item.style.borderColor = '#ffd700';
-          }
-        });
-      });
-      
-      // Handle confirm button
-      modalContent.querySelector('#confirmGiveSelected').addEventListener('click', () => {
-        if (selectedWallpapers.length === 0) {
-          alert('Please select at least one wallpaper!');
-          return;
+  if (!devCurrentPlayerId || !database) return;
+  
+  // Create a modal for selecting wallpapers
+  const selectedWallpapers = [];
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+  `;
+  
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = `
+    background: #1a1a1a;
+    padding: 30px;
+    border-radius: 10px;
+    border: 2px solid #ff0000;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+  `;
+  
+  // Fix the wallpaper display in the modal
+  modalContent.innerHTML = `
+    <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Select Wallpapers to Give</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;">
+      ${wallpaperUrls.map((url, index) => {
+        // Check if it's a gradient or image URL
+        let backgroundStyle;
+        if (url.includes('gradient')) {
+          backgroundStyle = `background:${url}`;
+        } else {
+          backgroundStyle = `background-image:url('${url}')`;
         }
         
-        database.ref('players/' + devCurrentPlayerId).once('value').then((snapshot) => {
-          const data = snapshot.val();
-          const currentWallpapers = data.ownedWallpapers || [];
-          
-          // Add selected wallpapers (allow duplicates)
-          const newWallpapers = [...currentWallpapers, ...selectedWallpapers];
-          
-          database.ref('players/' + devCurrentPlayerId).update({
-            ownedWallpapers: newWallpapers,
-            lastUpdated: Date.now()
-          }).then(() => {
-            // If updating current player, also update local storage
-            if (devCurrentPlayerId === playerId) {
-              ownedWallpapers = newWallpapers;
-              localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(newWallpapers));
-            }
-            alert(`Successfully gave ${selectedWallpapers.length} wallpapers!`);
-            document.body.removeChild(modal);
-            devCurrentPlayerData.ownedWallpapers = newWallpapers;
-          });
-        });
-      });
+        return `
+          <div class="wallpaper-select-item" style="height: 80px; border-radius: 8px; ${backgroundStyle}; background-size:cover; background-position:center; border: 2px solid #333; cursor: pointer; position: relative;" data-index="${index}">
+            <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 3px; font-size: 10px;">
+              ${rareIndices.includes(index) ? 'RARE' : 'COMMON'}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button id="confirmGiveSelected" style="background: #ff0000; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Give Selected</button>
+      <button id="cancelGiveSelected" style="background: #555; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Cancel</button>
+    </div>
+  `;
+  
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  
+  // Handle wallpaper selection
+  const wallpaperItems = modalContent.querySelectorAll('.wallpaper-select-item');
+  wallpaperItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const index = parseInt(item.dataset.index);
+      if (selectedWallpapers.includes(wallpaperUrls[index])) {
+        // Remove if already selected
+        const wpIndex = selectedWallpapers.indexOf(wallpaperUrls[index]);
+        selectedWallpapers.splice(wpIndex, 1);
+        item.style.borderColor = '#333';
+      } else {
+        // Add to selection
+        selectedWallpapers.push(wallpaperUrls[index]);
+        item.style.borderColor = '#ffd700';
+      }
+    });
+  });
+  
+  // Handle confirm button
+  modalContent.querySelector('#confirmGiveSelected').addEventListener('click', () => {
+    if (selectedWallpapers.length === 0) {
+      alert('Please select at least one wallpaper!');
+      return;
+    }
+    
+    database.ref('players/' + devCurrentPlayerId).once('value').then((snapshot) => {
+      const data = snapshot.val();
+      const currentWallpapers = data.ownedWallpapers || [];
       
-      // Handle cancel button
-      modalContent.querySelector('#cancelGiveSelected').addEventListener('click', () => {
+      // Add selected wallpapers (allow duplicates)
+      const newWallpapers = [...currentWallpapers, ...selectedWallpapers];
+      
+      database.ref('players/' + devCurrentPlayerId).update({
+        ownedWallpapers: newWallpapers,
+        lastUpdated: Date.now()
+      }).then(() => {
+        // If updating current player, also update local storage
+        if (devCurrentPlayerId === playerId) {
+          ownedWallpapers = newWallpapers;
+          localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify(newWallpapers));
+        }
+        alert(`Successfully gave ${selectedWallpapers.length} wallpapers!`);
         document.body.removeChild(modal);
+        devCurrentPlayerData.ownedWallpapers = newWallpapers;
       });
-    };
+    });
+  });
+  
+  // Handle cancel button
+  modalContent.querySelector('#cancelGiveSelected').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+};
     
     window.giveEventWallpapers = function() {
       if (!devCurrentPlayerId || !database) return;
@@ -2475,43 +2486,54 @@ function preloadAndCacheWallpapers() {
     };
 
     window.showWallpaperManager = function() {
-      if (!devCurrentPlayerId || !database) return;
-      
-      const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
-      const playerEventWallpapers = devCurrentPlayerData.ownedEventWallpapers || [];
-      
-      if (playerWallpapers.length === 0 && playerEventWallpapers.length === 0) {
-        alert('This player has no wallpapers!');
-        return;
-      }
-      
-      let html = '';
-      
-      // Regular wallpapers
-      playerWallpapers.forEach((wp, index) => {
-        const wpIndex = wallpaperUrls.indexOf(wp);
-        const isRare = rareIndices.includes(wpIndex);
-        const rareLabel = isRare ? '<div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">RARE</div>' : '';
-        html += `<div style="position:relative">
-          <div style="height:70px;border-radius:5px;background-image:url('${wp}');background-size:cover;background-position:center;border:2px solid #ff0000"></div>
-          ${rareLabel}
-          <button onclick="removeWallpaperAtIndex(${index})" style="width:100%;margin-top:5px;background:#990000;color:#fff;border:0;padding:5px;border-radius:5px;cursor:pointer;font-size:11px">Delete</button>
-        </div>`;
-      });
-      
-      // Event wallpapers
-      playerEventWallpapers.forEach((eventName, index) => {
-        const wp = eventWallpapers[eventName];
-        html += `<div style="position:relative">
-          <div style="height:70px;border-radius:5px;background-image:url('${wp}');background-size:cover;background-position:center;border:2px solid #ffd700"></div>
-          <div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">${events[eventName].name.toUpperCase()}</div>
-          <button onclick="removeEventWallpaperAtIndex(${index})" style="width:100%;margin-top:5px;background:#990000;color:#fff;border:0;padding:5px;border-radius:5px;cursor:pointer;font-size:11px">Delete</button>
-        </div>`;
-      });
-      
-      devWallpaperList.innerHTML = html;
-      devWallpaperManager.style.display = 'block';
-    };
+  if (!devCurrentPlayerId || !database) return;
+  
+  const playerWallpapers = devCurrentPlayerData.ownedWallpapers || [];
+  const playerEventWallpapers = devCurrentPlayerData.ownedEventWallpapers || [];
+  
+  if (playerWallpapers.length === 0 && playerEventWallpapers.length === 0) {
+    alert('This player has no wallpapers!');
+    return;
+  }
+  
+  let html = '';
+  
+  // Regular wallpapers
+  playerWallpapers.forEach((wp, index) => {
+    const wpIndex = wallpaperUrls.indexOf(wp);
+    const isRare = rareIndices.includes(wpIndex);
+    const rareLabel = isRare ? '<div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">RARE</div>' : '';
+    
+    // Check if it's a gradient or image URL
+    let backgroundStyle;
+    if (wp.includes('gradient')) {
+      // It's a gradient - use background
+      backgroundStyle = `background:${wp}`;
+    } else {
+      // It's an image - use background-image
+      backgroundStyle = `background-image:url('${wp}')`;
+    }
+    
+    html += `<div style="position:relative">
+      <div style="height:70px;border-radius:5px;${backgroundStyle};background-size:cover;background-position:center;border:2px solid #ff0000"></div>
+      ${rareLabel}
+      <button onclick="removeWallpaperAtIndex(${index})" style="width:100%;margin-top:5px;background:#990000;color:#fff;border:0;padding:5px;border-radius:5px;cursor:pointer;font-size:11px">Delete</button>
+    </div>`;
+  });
+  
+  // Event wallpapers
+  playerEventWallpapers.forEach((eventName, index) => {
+    const wp = eventWallpapers[eventName];
+    html += `<div style="position:relative">
+      <div style="height:70px;border-radius:5px;background-image:url('${wp}');background-size:cover;background-position:center;border:2px solid #ffd700"></div>
+      <div style="color:#ffd700;font-size:10px;text-align:center;margin-top:5px">${events[eventName].name.toUpperCase()}</div>
+      <button onclick="removeEventWallpaperAtIndex(${index})" style="width:100%;margin-top:5px;background:#990000;color:#fff;border:0;padding:5px;border-radius:5px;cursor:pointer;font-size:11px">Delete</button>
+    </div>`;
+  });
+  
+  devWallpaperList.innerHTML = html;
+  devWallpaperManager.style.display = 'block';
+};
     
     window.removeEventWallpaperAtIndex = function(index) {
       if (!devCurrentPlayerId || !database) return;
