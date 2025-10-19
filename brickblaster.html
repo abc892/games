@@ -543,7 +543,64 @@ nameSubmit.disabled = true;
     let eventTimerInterval = null;
     
     // Sound effects
-    const collisionSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==");
+    let audioContext = null;
+let collisionSoundBuffer = null;
+
+// Initialize audio system
+function initAudio() {
+  try {
+    // Create audio context (handles browser compatibility)
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioContext = new AudioContext();
+    
+    // Create collision sound programmatically (beep sound)
+    createCollisionSound();
+    
+    console.log('Web Audio API initialized successfully');
+  } catch (error) {
+    console.log('Web Audio API not supported, sounds disabled:', error);
+  }
+}
+
+// Create a simple beep sound for collisions
+function createCollisionSound() {
+  if (!audioContext) return;
+  
+  const duration = 0.1;
+  const sampleRate = audioContext.sampleRate;
+  const frameCount = duration * sampleRate;
+  
+  const buffer = audioContext.createBuffer(1, frameCount, sampleRate);
+  const channelData = buffer.getChannelData(0);
+  
+  // Generate a simple beep tone (440Hz - A4)
+  for (let i = 0; i < frameCount; i++) {
+    const t = i / sampleRate;
+    // Simple sine wave with fade out
+    channelData[i] = Math.sin(2 * Math.PI * 440 * t) * (1 - t / duration) * 0.3;
+  }
+  
+  collisionSoundBuffer = buffer;
+}
+
+// Play collision sound
+function playCollisionSound() {
+  if (!audioContext || !collisionSoundBuffer) return;
+  
+  try {
+    // Resume audio context if it's suspended (browser autoplay policy)
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    
+    const source = audioContext.createBufferSource();
+    source.buffer = collisionSoundBuffer;
+    source.connect(audioContext.destination);
+    source.start(0);
+  } catch (error) {
+    console.log('Error playing sound:', error);
+  }
+}
 
     let cols = 8, rows = 6;
     let spawnRows = 0;
@@ -1009,12 +1066,7 @@ function preloadAndCacheWallpapers() {
               score++;
               
               // Play collision sound
-              try {
-                collisionSound.currentTime = 0;
-                collisionSound.play();
-              } catch(e) {
-                // Sound playback failed, ignore
-              }
+              playCollisionSound();
               
               ball.dy = -ball.dy;
               ball.dx += (Math.random() - 0.5) * 0.2;
@@ -1031,33 +1083,18 @@ function preloadAndCacheWallpapers() {
       if(ball.x + ball.dx > canvas.width - ball.r || ball.x + ball.dx < ball.r) {
         ball.dx = -ball.dx;
         // Play collision sound
-        try {
-          collisionSound.currentTime = 0;
-          collisionSound.play();
-        } catch(e) {
-          // Sound playback failed, ignore
-        }
+        playCollisionSound();
       }
       if(ball.y + ball.dy < ball.r) {
         ball.dy = -ball.dy;
         // Play collision sound
-        try {
-          collisionSound.currentTime = 0;
-          collisionSound.play();
-        } catch(e) {
-          // Sound playback failed, ignore
-        }
+        playCollisionSound();
       }
       const paddleTop = canvas.height - paddle.h - 10;
       if(ball.y + ball.r >= paddleTop && ball.y - ball.r < paddleTop + paddle.h){
         if(ball.x >= paddle.x && ball.x <= paddle.x + paddle.w){
           // Play collision sound
-          try {
-            collisionSound.currentTime = 0;
-            collisionSound.play();
-          } catch(e) {
-            // Sound playback failed, ignore
-          }
+          playCollisionSound();
           
           const hit = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
           const speed = ball.speed;
@@ -1107,6 +1144,13 @@ function preloadAndCacheWallpapers() {
     }
 
     function beginPlay(){
+      if (!audioContext) {
+    initAudio();
+  }
+  
+  running = true;
+  paused = false;
+  timePlayed = 0;
       running = true;
       paused = false;
       timePlayed = 0;
@@ -2844,7 +2888,25 @@ function resetUIAfterDeletion() {
 // Run cleanup occasionally (once per day)
 setInterval(cleanupDeletedPlayers, 24 * 60 * 60 * 1000);
 
-    // --- FIXED: Initialize Game Properly ---
+ function unlockAudio() {
+  if (!audioContext) return;
+  
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().then(() => {
+      console.log('Audio context unlocked');
+    });
+  }
+}
+
+// Add event listeners for user interaction
+document.addEventListener('click', unlockAudio, { once: true });
+document.addEventListener('keydown', unlockAudio, { once: true });
+document.addEventListener('touchstart', unlockAudio, { once: true });
+
+// Also unlock when game starts
+startBtn.addEventListener('click', unlockAudio);   
+
+  // --- FIXED: Initialize Game Properly ---
 window.addEventListener('load', () => {
   // Initialize Firebase first
   initializeFirebase();
