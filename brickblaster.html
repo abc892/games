@@ -1115,6 +1115,7 @@ function preloadAndCacheWallpapers() {
       hudLives.textContent = lives;
       hudScore.textContent = score;
       hudTime.textContent = timePlayed;
+      startDeletionMonitoring();
       resetBall();
       paddle.x = (canvas.width - paddle.w)/2;
       pauseBtn.style.display = 'block';
@@ -1170,6 +1171,7 @@ function preloadAndCacheWallpapers() {
     function endRound(win){
       running = false;
       paused = false;
+      stopDeletionMonitoring();
       pauseBtn.style.display = 'none';
       clearInterval(timeIntervalId);
       clearInterval(spawnIntervalId);
@@ -1342,7 +1344,6 @@ function preloadAndCacheWallpapers() {
   
   // Check if we have BOTH ID and name (complete player data)
   if (!playerId || !playerName) {
-    // Incomplete player data - treat as new player
     console.log('No valid player data found, showing name prompt');
     resetToNewPlayerState();
     namePrompt.style.display = 'flex';
@@ -1357,14 +1358,24 @@ function preloadAndCacheWallpapers() {
     return;
   }
   
-  // Valid existing player - load their data
-  console.log('Loading existing player:', playerName);
-  settingsDiv.style.display = 'flex';
-  loadPlayerData();
-  devBtn.style.display = 'block';
-  
-  // Check for current event
-  checkCurrentEvent();
+  // NEW: Check if this player was deleted by developer
+  checkIfPlayerDeleted().then((wasDeleted) => {
+    if (wasDeleted) {
+      // Account was deleted - show message and reset
+      alert('Your account has been deleted by an administrator. Please create a new account.');
+      resetToNewPlayerState();
+      namePrompt.style.display = 'flex';
+    } else {
+      // Valid existing player - load their data
+      console.log('Loading existing player:', playerName);
+      settingsDiv.style.display = 'flex';
+      loadPlayerData();
+      devBtn.style.display = 'block';
+      
+      // Check for current event
+      checkCurrentEvent();
+    }
+  });
 }
 
 function resetToNewPlayerState() {
@@ -1967,6 +1978,49 @@ function resetToNewPlayerState() {
   
   // Force UI reset
   resetUIAfterDeletion();
+}
+
+    function checkIfPlayerDeleted() {
+  if (!playerId || !database) return Promise.resolve(false);
+  
+  return database.ref('deletedPlayers/' + playerId).once('value')
+    .then((snapshot) => {
+      if (snapshot.exists()) {
+        // Player was deleted by developer - clean up local storage
+        console.log('Player account was deleted by developer - cleaning local storage');
+        completeAccountDeletion();
+        return true;
+      }
+      return false;
+    })
+    .catch((error) => {
+      console.log('Could not check deletion status (offline)');
+      return false;
+    });
+}
+
+    let deletionCheckInterval;
+
+function startDeletionMonitoring() {
+  if (!playerId || !database) return;
+  
+  // Check every 30 seconds if player was deleted
+  deletionCheckInterval = setInterval(() => {
+    checkIfPlayerDeleted().then((wasDeleted) => {
+      if (wasDeleted && running) {
+        // If game is running and player was deleted, end the game
+        endRound(false);
+        alert('Your account has been deleted. Game over.');
+      }
+    });
+  }, 30000);
+}
+
+function stopDeletionMonitoring() {
+  if (deletionCheckInterval) {
+    clearInterval(deletionCheckInterval);
+    deletionCheckInterval = null;
+  }
 }
 
 function resetUIAfterDeletion() {
@@ -2655,61 +2709,32 @@ function resetUIAfterDeletion() {
   }
 };
     window.deletePlayerAccount = function() {
-  if (!devCurrentPlayerId) return;
+  if (!devCurrentPlayerId || !database) return;
   
   const playerNameToDelete = devPlayerName.textContent;
   if (confirm(`Are you sure you want to PERMANENTLY DELETE the account of "${playerNameToDelete}"? This cannot be undone!`)) {
     
-    // First, clean up local storage immediately (works offline)
-    const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-    delete existingPlayers[playerNameToDelete];
-    localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-    
-    // Remove player-specific local storage data
-    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_coins`);
-    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_diamonds`);
-    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedWallpapers`);
-    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedEventWallpapers`);
-    localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_wallpaper`);
-    
-    // Special handling if deleting the CURRENT player
-    if (devCurrentPlayerId === playerId) {
-      localStorage.removeItem('brickBlasterPlayerId');
-      localStorage.removeItem('brickBlasterPlayerName');
-      localStorage.removeItem('brickBlasterEarnGemsMode');
-      
-      // Reset all player data
-      playerId = '';
-      playerName = '';
-      playerCoins = 0;
-      playerDiamonds = 0;
-      ownedWallpapers = [];
-      ownedEventWallpapers = [];
-      selectedWallpaper = null;
-      
-      // Hide UI elements and show name prompt
-      settingsDiv.style.display = 'none';
-      coinsDisplay.style.display = 'none';
-      diamondsDisplay.style.display = 'none';
-      shopBtn.style.display = 'none';
-      devBtn.style.display = 'none';
-      namePrompt.style.display = 'flex';
-    }
-    
-    // Then try to delete from Firebase (if online)
-    if (database) {
-      database.ref('players/' + devCurrentPlayerId).remove().then(() => {
-        alert('Account deleted successfully from both local storage and database!');
-      }).catch((error) => {
-        alert('Account deleted from local storage, but failed to remove from database (offline). The account will be removed from database when you go online.');
+    // 1. Mark as deleted in Firebase (so player knows they're deleted)
+    database.ref('deletedPlayers/' + devCurrentPlayerId).set(Date.now())
+      .then(() => {
+        // 2. Then remove from main players list
+        return database.ref('players/' + devCurrentPlayerId).remove();
+      })
+      .then(() => {
+        // 3. Clean up local registry
+        const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+        delete existingPlayers[playerNameToDelete];
+        localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
+        
+        alert('Account marked for deletion. Player will be logged out on their next refresh.');
+        
+        devPlayerInfo.style.display = 'none';
+        devSearchInput.value = '';
+        devCurrentPlayerId = null;
+      })
+      .catch((error) => {
+        alert('Deletion failed: ' + error.message);
       });
-    } else {
-      alert('Account deleted from local storage. Database was unavailable (offline).');
-    }
-    
-    devPlayerInfo.style.display = 'none';
-    devSearchInput.value = '';
-    devCurrentPlayerId = null;
   }
 };
 
@@ -2790,6 +2815,27 @@ function resetUIAfterDeletion() {
     window.hideWallpaperManager = function() {
       devWallpaperManager.style.display = 'none';
     };
+
+    function cleanupDeletedPlayers() {
+  if (!database) return;
+  
+  const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  
+  database.ref('deletedPlayers').once('value').then((snapshot) => {
+    const updates = {};
+    snapshot.forEach((child) => {
+      if (child.val() < oneWeekAgo) {
+        updates[child.key] = null; // Remove old records
+      }
+    });
+    if (Object.keys(updates).length > 0) {
+      database.ref('deletedPlayers').update(updates);
+    }
+  });
+}
+
+// Run cleanup occasionally (once per day)
+setInterval(cleanupDeletedPlayers, 24 * 60 * 60 * 1000);
 
     // --- FIXED: Initialize Game Properly ---
 window.addEventListener('load', () => {
