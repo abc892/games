@@ -537,6 +537,21 @@
     let gameLoopId = null, timeIntervalId = null, spawnIntervalId = null;
     let lastSettings = { speedVal:3, mode:'12' };
 
+    function debugPlayerState() {
+  console.log('=== PLAYER STATE DEBUG ===');
+  console.log('Player ID:', localStorage.getItem('brickBlasterPlayerId'));
+  console.log('Player Name:', localStorage.getItem('brickBlasterPlayerName'));
+  console.log('All Players Registry:', JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}'));
+  console.log('UI Elements:');
+  console.log('- Settings Div:', settingsDiv.style.display);
+  console.log('- Name Prompt:', namePrompt.style.display);
+  console.log('- Shop Button:', shopBtn.style.display);
+  console.log('- Leaderboard Button:', leaderboardBtn.style.display);
+  console.log('- User Settings Button:', userSettingsBtn.style.display);
+  console.log('- Dev Button:', devBtn.style.display);
+  console.log('==========================');
+}
+
     // Image wallpapers setup
     const wallpaperImages = {};
     // Keep gradients for spinning, use images for events
@@ -1300,29 +1315,56 @@ function preloadAndCacheWallpapers() {
 
     // --- FIXED: Name and Player System with Proper Database Sync ---
     function initializePlayer() {
-      playerId = localStorage.getItem('brickBlasterPlayerId');
-      playerName = localStorage.getItem('brickBlasterPlayerName');
-      
-      if (!playerId) {
-        playerId = 'player_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
-        localStorage.setItem('brickBlasterPlayerId', playerId);
-        namePrompt.style.display = 'flex';
-      } else if (!playerName) {
-        namePrompt.style.display = 'flex';
-      } else {
-        settingsDiv.style.display = 'flex';
-        loadPlayerData();
-        devBtn.style.display = 'block';
-      }
-      
-      // Check for current event
-      checkCurrentEvent();
-    }
+  playerId = localStorage.getItem('brickBlasterPlayerId');
+  playerName = localStorage.getItem('brickBlasterPlayerName');
+  
+  console.log('Initializing player:', { playerId, playerName });
+  
+  // Check if we have BOTH ID and name (complete player data)
+  if (!playerId || !playerName) {
+    // Incomplete player data - treat as new player
+    console.log('No valid player data found, showing name prompt');
+    resetToNewPlayerState();
+    namePrompt.style.display = 'flex';
+    return;
+  }
+  
+  // We have player data - validate it's not corrupted
+  if (playerName === 'undefined' || playerName.trim() === '' || playerId === 'undefined') {
+    console.log('Corrupted player data found, resetting');
+    resetToNewPlayerState();
+    namePrompt.style.display = 'flex';
+    return;
+  }
+  
+  // Valid existing player - load their data
+  console.log('Loading existing player:', playerName);
+  settingsDiv.style.display = 'flex';
+  loadPlayerData();
+  devBtn.style.display = 'block';
+  
+  // Check for current event
+  checkCurrentEvent();
+}
 
-    nameSubmit.addEventListener('click', submitName);
-    nameInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') submitName();
-    });
+function resetToNewPlayerState() {
+  // Clear any partial player data
+  localStorage.removeItem('brickBlasterPlayerId');
+  localStorage.removeItem('brickBlasterPlayerName');
+  
+  // Reset variables
+  playerId = '';
+  playerName = '';
+  
+  // Reset UI to new player state
+  settingsDiv.style.display = 'none';
+  coinsDisplay.style.display = 'none';
+  diamondsDisplay.style.display = 'none';
+  shopBtn.style.display = 'none';
+  devBtn.style.display = 'none';
+  leaderboardBtn.style.display = 'none';
+  userSettingsBtn.style.display = 'none';
+}
 
     function submitName() {
       const name = nameInput.value.trim();
@@ -1347,78 +1389,110 @@ function preloadAndCacheWallpapers() {
     }
 
     function checkNameAvailability(name) {
-      return new Promise((resolve) => {
-        // First check local storage
-        const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-        if (existingPlayers[name]) {
-          resolve(false);
-          return;
-        }
-        
-        // Then check Firebase if available
-        if (database) {
-          database.ref('players').orderByChild('name').equalTo(name).once('value').then((snapshot) => {
-            resolve(!snapshot.exists());
-          }).catch((error) => {
-            // If Firebase check fails, assume name is available
-            resolve(true);
-          });
-        } else {
-          // No database, only local check
-          resolve(true);
-        }
-      });
-    }
-
-    function completeNameSubmission(name) {
-      playerName = name;
-      localStorage.setItem('brickBlasterPlayerName', playerName);
+  return new Promise((resolve) => {
+    // First check local storage registry
+    const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+    
+    // Check if name exists AND has a valid player ID (not deleted)
+    if (existingPlayers[name]) {
+      // Verify the player actually exists by checking if we have their ID
+      const playerId = localStorage.getItem('brickBlasterPlayerId');
+      const playerName = localStorage.getItem('brickBlasterPlayerName');
       
-      // Update local player registry
-      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-      existingPlayers[name] = true;
-      localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-      
-      // Create player data
-      const playerData = {
-        name: playerName,
-        highScore: 0,
-        allTimeScore: 0,
-        totalGames: 0,
-        totalScore: 0,
-        coins: 0,
-        diamonds: 0,
-        ownedWallpapers: [],
-        ownedEventWallpapers: [],
-        selectedWallpaper: null,
-        lastNameChange: Date.now(),
-        lastUpdated: Date.now()
-      };
-      
-      // Save to local storage first
-      localStorage.setItem('brickBlasterCoins', '0');
-      localStorage.setItem('brickBlasterDiamonds', '0');
-      localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify([]));
-      localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify([]));
-      
-      // Then save to Firebase if available - FIX: Ensure player is saved to Firebase
-      if (database) {
-        database.ref('players/' + playerId).set(playerData)
-          .then(() => {
-            console.log('Player saved to database');
-          })
-          .catch((error) => {
-            console.log('Failed to save player to database, saved locally');
-          });
+      // Allow the name if it's the current player's own name (for name changes)
+      if (playerName === name) {
+        resolve(true);
+        return;
       }
       
-      namePrompt.style.display = 'none';
-      settingsDiv.style.display = 'flex';
-      loadPlayerData();
-      devBtn.style.display = 'block';
+      // Name is taken by someone else
+      resolve(false);
+      return;
     }
+    
+    // Then check Firebase if available
+    if (database) {
+      database.ref('players').orderByChild('name').equalTo(name).once('value').then((snapshot) => {
+        resolve(!snapshot.exists());
+      }).catch((error) => {
+        // If Firebase check fails, assume name is available
+        resolve(true);
+      });
+    } else {
+      // No database, only local check passed
+      resolve(true);
+    }
+  });
+}
+
+    function completeNameSubmission(name) {
+  playerName = name;
+  
+  // Generate new player ID
+  playerId = 'player_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+  
+  // Save to local storage
+  localStorage.setItem('brickBlasterPlayerId', playerId);
+  localStorage.setItem('brickBlasterPlayerName', playerName);
+  
+  // Update local player registry
+  const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+  existingPlayers[name] = true;
+  localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
+  
+  // Initialize default player data
+  const playerData = {
+    name: playerName,
+    highScore: 0,
+    allTimeScore: 0,
+    totalGames: 0,
+    totalScore: 0,
+    coins: 0,
+    diamonds: 0,
+    ownedWallpapers: [],
+    ownedEventWallpapers: [],
+    selectedWallpaper: null,
+    lastNameChange: Date.now(),
+    lastUpdated: Date.now()
+  };
+  
+  // Save to local storage first
+  localStorage.setItem('brickBlasterCoins', '0');
+  localStorage.setItem('brickBlasterDiamonds', '0');
+  localStorage.setItem('brickBlasterOwnedWallpapers', JSON.stringify([]));
+  localStorage.setItem('brickBlasterOwnedEventWallpapers', JSON.stringify([]));
+  
+  // Then save to Firebase if available
+  if (database) {
+    database.ref('players/' + playerId).set(playerData)
+      .then(() => {
+        console.log('Player saved to database');
+      })
+      .catch((error) => {
+        console.log('Failed to save player to database, saved locally');
+      });
+  }
+  
+  // Complete the initialization
+  namePrompt.style.display = 'none';
+  settingsDiv.style.display = 'flex';
+  
+  // Load player data and show UI elements
+  loadPlayerData();
+  devBtn.style.display = 'block';
+  leaderboardBtn.style.display = 'block';
+  userSettingsBtn.style.display = 'block';
+  shopBtn.style.display = 'block';
+  coinsDisplay.style.display = 'block';
+  
+  console.log('New player created successfully:', playerName);
+}
 
     function loadPlayerData() {
+      if (!playerId || !playerName) {
+    console.error('Cannot load player data: missing ID or name');
+    return;
+  }
       // Always load from local storage first for immediate UI
       playerCoins = parseInt(localStorage.getItem('brickBlasterCoins')) || 0;
       playerDiamonds = parseInt(localStorage.getItem('brickBlasterDiamonds')) || 0;
@@ -1813,49 +1887,82 @@ function preloadAndCacheWallpapers() {
     }
 
     function completeAccountDeletion() {
-      // Clear all local storage data
-      const playerNameToRemove = localStorage.getItem('brickBlasterPlayerName');
-      
-      // FIX: Remove from local player registry to free up the name
-      const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
-      delete existingPlayers[playerNameToRemove];
-      localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
-      
-      // Clear player data
-      localStorage.removeItem('brickBlasterPlayerId');
-      localStorage.removeItem('brickBlasterPlayerName');
-      localStorage.removeItem('brickBlasterCoins');
-      localStorage.removeItem('brickBlasterDiamonds');
-      localStorage.removeItem('brickBlasterOwnedWallpapers');
-      localStorage.removeItem('brickBlasterOwnedEventWallpapers');
-      localStorage.removeItem('brickBlasterWallpaper');
-      
-      // Reset all player variables
-      playerId = '';
-      playerName = '';
-      playerCoins = 0;
-      playerDiamonds = 0;
-      ownedWallpapers = [];
-      ownedEventWallpapers = [];
-      selectedWallpaper = null;
-      
-      // Show confirmation and reset UI
-      alert('Your account has been successfully deleted. All data has been removed.');
-      
-      // Close overlays and show name prompt
-      userSettingsOverlay.style.display = 'none';
-      settingsDiv.style.display = 'none';
-      coinsDisplay.style.display = 'none';
-      diamondsDisplay.style.display = 'none';
-      shopBtn.style.display = 'none';
-      devBtn.style.display = 'none';
-      leaderboardBtn.style.display = 'none';
-      userSettingsBtn.style.display = 'none';
-      
-      // Reset name prompt and show it
-      nameInput.value = '';
-      namePrompt.style.display = 'flex';
-    }
+  // Get the name to remove BEFORE clearing storage
+  const playerNameToRemove = localStorage.getItem('brickBlasterPlayerName');
+  
+  // Clear ALL player-related local storage
+  const keysToRemove = [
+    'brickBlasterPlayerId',
+    'brickBlasterPlayerName', 
+    'brickBlasterCoins',
+    'brickBlasterDiamonds',
+    'brickBlasterOwnedWallpapers',
+    'brickBlasterOwnedEventWallpapers',
+    'brickBlasterWallpaper',
+    'brickBlasterEarnGemsMode'
+  ];
+  
+  keysToRemove.forEach(key => {
+    localStorage.removeItem(key);
+  });
+  
+  // Remove from local player registry
+  if (playerNameToRemove) {
+    const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
+    delete existingPlayers[playerNameToRemove];
+    localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
+  }
+  
+  // Reset all player variables
+  playerId = '';
+  playerName = '';
+  playerCoins = 0;
+  playerDiamonds = 0;
+  ownedWallpapers = [];
+  ownedEventWallpapers = [];
+  selectedWallpaper = null;
+  earnGemsMode = true;
+  
+  // Force UI reset
+  resetUIAfterDeletion();
+}
+
+function resetUIAfterDeletion() {
+  // Hide all overlays and UI elements
+  userSettingsOverlay.style.display = 'none';
+  shopOverlay.style.display = 'none';
+  leaderboardOverlay.style.display = 'none';
+  devPanelOverlay.style.display = 'none';
+  devPasswordOverlay.style.display = 'none';
+  pauseOverlay.style.display = 'none';
+  overlay.style.display = 'none';
+  
+  // Reset main UI
+  settingsDiv.style.display = 'none';
+  canvas.style.display = 'none';
+  coinsDisplay.style.display = 'none';
+  diamondsDisplay.style.display = 'none';
+  eventDisplay.style.display = 'none';
+  eventTimer.style.display = 'none';
+  eventToggle.style.display = 'none';
+  shopBtn.style.display = 'none';
+  devBtn.style.display = 'none';
+  leaderboardBtn.style.display = 'none';
+  userSettingsBtn.style.display = 'none';
+  hudEl.style.display = 'none';
+  pauseBtn.style.display = 'none';
+  
+  // Clear any game state
+  running = false;
+  paused = false;
+  clearInterval(timeIntervalId);
+  clearInterval(spawnIntervalId);
+  clearInterval(eventTimerInterval);
+  
+  // Show name prompt with fresh state
+  nameInput.value = '';
+  namePrompt.style.display = 'flex';
+}
 
     // --- Shop System ---
     shopBtn.addEventListener('click', showShop);
