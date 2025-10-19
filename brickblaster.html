@@ -1393,14 +1393,26 @@ function resetToNewPlayerState() {
     // First check local storage registry
     const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
     
+    // Get current player name (if any)
+    const currentPlayerName = localStorage.getItem('brickBlasterPlayerName');
+    
     // Check if name exists AND has a valid player ID (not deleted)
     if (existingPlayers[name]) {
-      // Verify the player actually exists by checking if we have their ID
-      const playerId = localStorage.getItem('brickBlasterPlayerId');
-      const playerName = localStorage.getItem('brickBlasterPlayerName');
+      // If we have a current player name and it matches the requested name, allow it
+      // This handles the case where a player just deleted their account and is trying to recreate
+      if (currentPlayerName === name) {
+        resolve(true);
+        return;
+      }
       
-      // Allow the name if it's the current player's own name (for name changes)
-      if (playerName === name) {
+      // If we don't have a current player but the name exists in registry,
+      // check if there's actually a player ID associated
+      const playerId = localStorage.getItem('brickBlasterPlayerId');
+      if (!playerId) {
+        // No current player ID - this means the account was deleted
+        // Remove the name from registry and allow it
+        delete existingPlayers[name];
+        localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
         resolve(true);
         return;
       }
