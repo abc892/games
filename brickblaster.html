@@ -2717,16 +2717,23 @@ function resetUIAfterDeletion() {
     // 1. Mark as deleted in Firebase (so player knows they're deleted)
     database.ref('deletedPlayers/' + devCurrentPlayerId).set(Date.now())
       .then(() => {
-        // 2. Then remove from main players list
-        return database.ref('players/' + devCurrentPlayerId).remove();
-      })
-      .then(() => {
-        // 3. Clean up local registry
+        // 2. Remove player-specific local storage data (CRITICAL FIX)
+        localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_coins`);
+        localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_diamonds`);
+        localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedWallpapers`);
+        localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_ownedEventWallpapers`);
+        localStorage.removeItem(`brickBlaster_${devCurrentPlayerId}_wallpaper`);
+        
+        // 3. Clean up local name registry
         const existingPlayers = JSON.parse(localStorage.getItem('brickBlasterAllPlayers') || '{}');
         delete existingPlayers[playerNameToDelete];
         localStorage.setItem('brickBlasterAllPlayers', JSON.stringify(existingPlayers));
         
-        alert('Account marked for deletion. Player will be logged out on their next refresh.');
+        // 4. Then remove from main players list
+        return database.ref('players/' + devCurrentPlayerId).remove();
+      })
+      .then(() => {
+        alert('Account deleted successfully! Player data cleared from all storage.');
         
         devPlayerInfo.style.display = 'none';
         devSearchInput.value = '';
