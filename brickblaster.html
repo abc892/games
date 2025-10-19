@@ -441,6 +441,26 @@
     const namePrompt = document.getElementById('namePrompt');
     const nameInput = document.getElementById('nameInput');
     const nameSubmit = document.getElementById('nameSubmit');
+    nameInput.addEventListener('input', function() {
+    const name = nameInput.value.trim();
+    nameSubmit.disabled = name.length === 0;
+});
+
+// Also add keypress event to submit on Enter
+nameInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const name = nameInput.value.trim();
+        if (name.length > 0) {
+            submitName();
+        }
+    }
+});
+
+// Add click event to the submit button
+nameSubmit.addEventListener('click', submitName);
+
+// Initialize button state
+nameSubmit.disabled = true;
     const leaderboardBtn = document.getElementById('leaderboardBtn');
     const leaderboardOverlay = document.getElementById('leaderboardOverlay');
     const backFromLeaderboard = document.getElementById('backFromLeaderboard');
@@ -1367,26 +1387,35 @@ function resetToNewPlayerState() {
 }
 
     function submitName() {
-      const name = nameInput.value.trim();
-      if (name.length === 0) {
+    const name = nameInput.value.trim();
+    console.log('Submit button clicked with name:', name);
+    
+    if (name.length === 0) {
         alert('Please enter a valid name');
         return;
-      }
-      
-      // FIX: Check if name is available (both in Firebase and local storage)
-      checkNameAvailability(name).then((isAvailable) => {
+    }
+    
+    console.log('Checking name availability...');
+    
+    // FIX: Check if name is available (both in Firebase and local storage)
+    checkNameAvailability(name).then((isAvailable) => {
+        console.log('Name availability result:', isAvailable);
+        
         if (!isAvailable) {
-          alert('This name is already taken. Please choose another name.');
-          nameInput.value = '';
-          return;
+            alert('This name is already taken. Please choose another name.');
+            nameInput.value = '';
+            nameSubmit.disabled = true; // Disable button again
+            return;
         }
         
+        console.log('Completing name submission...');
         completeNameSubmission(name);
-      }).catch((error) => {
+    }).catch((error) => {
+        console.log('Name check failed, proceeding anyway:', error);
         // If check fails, proceed with submission anyway
         completeNameSubmission(name);
-      });
-    }
+    });
+}
 
     function checkNameAvailability(name) {
   return new Promise((resolve) => {
