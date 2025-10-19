@@ -674,10 +674,10 @@ const wallpaperUrls = [
       halloween: {
         name: "Halloween",
         gemsRequired: 10000,
-        startMonth: 3, // October (0-indexed)
+        startMonth: 9, // October (0-indexed)
         startDay: 1,
-        endMonth: 4, // October (0-indexed)
-        endDay: 31,
+        endMonth: 10, // October (0-indexed)
+        endDay: 1,
         wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/haloween.png',
         displayName: "🎃 HALLOWEEN EVENT 🎃",
         background: 'linear-gradient(135deg, #ff8c00, #8b0000)'
@@ -2149,7 +2149,7 @@ function resetUIAfterDeletion() {
       // Spin logic: 10% chance for rare wallpapers
       let selectedIndex;
       const rand = Math.random();
-      if (rand < 0.1) {
+      if (rand < 0.03) {
         // 10% chance: pick from rare wallpapers
         selectedIndex = rareIndices[Math.floor(Math.random() * rareIndices.length)];
       } else {
