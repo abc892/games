@@ -2233,72 +2233,69 @@ function resetUIAfterDeletion() {
 }
     
     function renderEventWallpaperGrid() {
-      if (!currentEvent) {
-        eventShopSection.style.display = 'none';
-        return;
-      }
-      
-      
-      eventShopSection.style.display = 'block';
-      
-      eventShopSection.style.display = 'block';
-      
-      const event = events[currentEvent];
-      const eventWallpaper = eventWallpapers[currentEvent];
-      const isOwned = ownedEventWallpapers.includes(currentEvent);
-      const canAfford = playerDiamonds >= event.gemsRequired;
-      
-      let html = '';
-const isOwned = ownedEventWallpapers.includes(currentEvent);
-const ownedCount = ownedEventWallpapers.filter(e => e === currentEvent).length;
-const ownedText = isOwned ? ` (Owned: ${ownedCount})` : '';
-
-html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background-image:url('${eventWallpaper}')">
-  <div class="price">${event.gemsRequired.toLocaleString()} 💎${ownedText}</div>
-</div>`;
-      
-      eventWallpaperGrid.innerHTML = html;
-      
-      document.querySelectorAll('.event-wallpaper-item').forEach((item) => {
-        item.addEventListener('click', () => {
-  if (canAfford) {
-    if (confirm(`Purchase this ${event.name} event wallpaper for ${event.gemsRequired.toLocaleString()} Diamonds?`)) {
-      playerDiamonds -= event.gemsRequired;
-      diamondsDisplay.textContent = playerDiamonds;
-      shopDiamonds.textContent = playerDiamonds;
-      localStorage.setItem(`brickBlaster_${playerId}_diamonds`, playerDiamonds.toString());
-      
-      // Add to owned event wallpapers (allow duplicates)
-      ownedEventWallpapers.push(currentEvent);
-      localStorage.setItem(`brickBlaster_${playerId}_ownedEventWallpapers`, JSON.stringify(ownedEventWallpapers));
-      
-      // Update database
-      if (database && playerId) {
-        database.ref('players/' + playerId).update({
-          diamonds: playerDiamonds,
-          ownedEventWallpapers: ownedEventWallpapers,
-          lastUpdated: Date.now()
-        });
-      }
-      
-      // Also set as selected
-      selectedWallpaper = eventWallpaper;
-      localStorage.setItem(`brickBlaster_${playerId}_wallpaper`, selectedWallpaper);
-      
-      if (database && playerId) {
-        database.ref('players/' + playerId).update({
-          selectedWallpaper: selectedWallpaper,
-          lastUpdated: Date.now()
-        });
-      }
-      
-      renderWallpaperGrid();
-      alert(`${event.name} event wallpaper purchased!`);
-    }
-  } else {
-    alert(`You need ${event.gemsRequired.toLocaleString()} Diamonds to purchase this ${event.name} event wallpaper!`);
+  if (!currentEvent) {
+    eventShopSection.style.display = 'none';
+    return;
   }
-});    
+  
+  eventShopSection.style.display = 'block';
+  
+  const event = events[currentEvent];
+  const eventWallpaper = eventWallpapers[currentEvent];
+  const isOwned = ownedEventWallpapers.includes(currentEvent);
+  const ownedCount = ownedEventWallpapers.filter(e => e === currentEvent).length;
+  const ownedText = isOwned ? ` (Owned: ${ownedCount})` : '';
+  const canAfford = playerDiamonds >= event.gemsRequired;
+  
+  let html = '';
+  html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background-image:url('${eventWallpaper}')">
+    <div class="price">${event.gemsRequired.toLocaleString()} 💎${ownedText}</div>
+  </div>`;
+  
+  eventWallpaperGrid.innerHTML = html;
+  
+  document.querySelectorAll('.event-wallpaper-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      if (canAfford) {
+        if (confirm(`Purchase this ${event.name} event wallpaper for ${event.gemsRequired.toLocaleString()} Diamonds?`)) {
+          playerDiamonds -= event.gemsRequired;
+          diamondsDisplay.textContent = playerDiamonds;
+          shopDiamonds.textContent = playerDiamonds;
+          localStorage.setItem(`brickBlaster_${playerId}_diamonds`, playerDiamonds.toString());
+          
+          // Add to owned event wallpapers (allow duplicates)
+          ownedEventWallpapers.push(currentEvent);
+          localStorage.setItem(`brickBlaster_${playerId}_ownedEventWallpapers`, JSON.stringify(ownedEventWallpapers));
+          
+          // Update database
+          if (database && playerId) {
+            database.ref('players/' + playerId).update({
+              diamonds: playerDiamonds,
+              ownedEventWallpapers: ownedEventWallpapers,
+              lastUpdated: Date.now()
+            });
+          }
+          
+          // Also set as selected
+          selectedWallpaper = eventWallpaper;
+          localStorage.setItem(`brickBlaster_${playerId}_wallpaper`, selectedWallpaper);
+          
+          if (database && playerId) {
+            database.ref('players/' + playerId).update({
+              selectedWallpaper: selectedWallpaper,
+              lastUpdated: Date.now()
+            });
+          }
+          
+          renderWallpaperGrid();
+          alert(`${event.name} event wallpaper purchased!`);
+        }
+      } else {
+        alert(`You need ${event.gemsRequired.toLocaleString()} Diamonds to purchase this ${event.name} event wallpaper!`);
+      }
+    });
+  }); // THIS CLOSING BRACKET WAS MISSING
+} // THIS CLOSING BRACKET WAS MISSING    
     // --- Developer Panel ---
     devBtn.addEventListener('click', () => {
       devPasswordOverlay.style.display = 'flex';
