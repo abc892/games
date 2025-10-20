@@ -189,7 +189,6 @@
   content: '🪙 Earn Coins';
 }
   </style>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧱</text></svg>">
 </head>
 <body>
   <div id="wrap">
@@ -659,141 +658,42 @@ const wallpaperUrls = [
     
     const rareIndices = [17, 18, 19]; // Last 3 are rare
 
-    const devExclusiveWallpapers = {
-  matrix: {
-    name: "Matrix Digital Rain",
-    wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/matrix.gif',
-    rarity: 'DEV EXCLUSIVE'
-  }
-  // You can add more dev-only wallpapers here later
-};
-
-   function preloadAllWallpapers() {
-  console.log('Preloading all wallpapers...');
-  
-  // Preload EVENT wallpapers
-  Object.values(events).forEach(event => {
-    const url = event.wallpaper;
-    const img = new Image();
-    img.onload = () => {
-      wallpaperImages[url] = img;
-      console.log('Preloaded:', url);
+    // Event Configuration - All events defined in one place
+    const events = {
+      summer: {
+        name: "Summer",
+        gemsRequired: 10000,
+        startMonth: 5, // June (0-indexed)
+        startDay: 15,
+        endMonth: 6, // July (0-indexed)
+        endDay: 15,
+        wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/summer.jpg',
+        displayName: "☀️ SUMMER EVENT ☀️",
+        background: 'linear-gradient(135deg, #ff7e5f, #feb47b)'
+      },
+      halloween: {
+        name: "Halloween",
+        gemsRequired: 10000,
+        startMonth: 9, // October (0-indexed)
+        startDay: 1,
+        endMonth: 10, // October (0-indexed)
+        endDay: 1,
+        wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/haloween.png',
+        displayName: "🎃 HALLOWEEN EVENT 🎃",
+        background: 'linear-gradient(135deg, #ff8c00, #8b0000)'
+      },
+      winter: {
+        name: "Winter",
+        gemsRequired: 10000,
+        startMonth: 11, // December (0-indexed)
+        startDay: 10,
+        endMonth: 0, // January (0-indexed)
+        endDay: 10,
+        wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/Background_winter.jpg',
+        displayName: "❄️ WINTER EVENT ❄️",
+        background: 'linear-gradient(135deg, #1e3c72, #e6f3ff)'
+      },
     };
-    img.onerror = () => {
-      console.warn('Failed to load event wallpaper:', url);
-      wallpaperImages[url] = null;
-    };
-    img.src = url;
-  });
-  
-  // Preload DEV EXCLUSIVE wallpapers
-  Object.values(devExclusiveWallpapers).forEach(devWall => {
-    const url = devWall.wallpaper;
-    const img = new Image();
-    img.onload = () => {
-      wallpaperImages[url] = img;
-      console.log('Preloaded dev exclusive:', url);
-    };
-    img.onerror = () => {
-      console.warn('Failed to load dev exclusive wallpaper:', url);
-      wallpaperImages[url] = null;
-    };
-    img.src = url;
-  });
-}
-
-// Initialize wallpaper preloading
-function initializeWallpaperPreloading() {
-  preloadAllWallpapers();
-} 
-
-    // ====================
-// EASY EVENT MANAGER
-// ====================
-
-// Set to false to completely disable an event
-const EVENT_TOGGLES = {
-  summer: true,     // Set to false to disable Summer event
-  halloween: true,  // Set to false to disable Halloween event  
-  winter: true,     // Set to false to disable Winter event
-  // Add new events here by copying the format below
-};
-
-// Event Configuration - Easy to modify!
-const events = {};
-
-// SUMMER EVENT - Edit values below
-if (EVENT_TOGGLES.summer) {
-  events.summer = {
-    name: "Summer",
-    gemsRequired: 10000,
-    startMonth: 5, // June (0-indexed: 0=Jan, 1=Feb, ..., 5=Jun, 6=Jul)
-    startDay: 15,
-    endMonth: 6, // July  
-    endDay: 15,
-    wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/summer.jpg',
-    displayName: "☀️ SUMMER EVENT ☀️",
-    background: 'linear-gradient(135deg, #ff7e5f, #feb47b)'
-  };
-}
-
-// HALLOWEEN EVENT - Edit values below  
-if (EVENT_TOGGLES.halloween) {
-  events.halloween = {
-    name: "Halloween",
-    gemsRequired: 10000,
-    startMonth: 9, // October (0-indexed: 9=Oct)
-    startDay: 1,
-    endMonth: 10, // October ends (10=Nov, but we use day 1)
-    endDay: 1,
-    wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/haloween.png',
-    displayName: "🎃 HALLOWEEN EVENT 🎃",
-    background: 'linear-gradient(135deg, #ff8c00, #8b0000)'
-  };
-}
-
-// WINTER EVENT - Edit values below
-if (EVENT_TOGGLES.winter) {
-  events.winter = {
-    name: "Winter", 
-    gemsRequired: 10000,
-    startMonth: 11, // December (0-indexed: 11=Dec)
-    startDay: 10,
-    endMonth: 0, // January next year (0=Jan)
-    endDay: 10,
-    wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/Background_winter.jpg',
-    displayName: "❄️ WINTER EVENT ❄️",
-    background: 'linear-gradient(135deg, #1e3c72, #e6f3ff)'
-  };
-}
-
-// ====================
-// HOW TO ADD NEW EVENT
-// ====================
-/*
-// 1. Add toggle first:
-const EVENT_TOGGLES = {
-  summer: true,
-  halloween: true, 
-  winter: true,
-  spring: true,    // ← ADD THIS LINE
-};
-
-// 2. Then add event template:
-if (EVENT_TOGGLES.spring) {
-  events.spring = {
-    name: "Spring",
-    gemsRequired: 10000,
-    startMonth: 2, // March (0-indexed: 2=Mar)
-    startDay: 20,
-    endMonth: 3, // April (3=Apr)
-    endDay: 20, 
-    wallpaper: 'https://example.com/spring.jpg',
-    displayName: "🌸 SPRING EVENT 🌸",
-    background: 'linear-gradient(135deg, #4CAF50, #81C784)'
-  };
-}
-*/
 
     // Event wallpapers - now using image URLs
     const eventWallpapers = {};
@@ -803,7 +703,7 @@ if (EVENT_TOGGLES.spring) {
 
     // Preload only event wallpapers (gradients don't need preloading)
 function preloadWallpaperImages() {
-  // Preload EVENT wallpapers (images)
+  // Only preload event wallpapers (images)
   Object.values(events).forEach(event => {
     const url = event.wallpaper;
     const img = new Image();
@@ -816,20 +716,20 @@ function preloadWallpaperImages() {
     };
     img.src = url;
   });
+}
+
+// Preload and cache - only event wallpapers need caching
+function preloadAndCacheWallpapers() {
+  console.log('Preloading and caching event wallpapers...');
   
-  // ✅ ADD THIS: Preload DEV EXCLUSIVE wallpapers too!
-  Object.values(devExclusiveWallpapers).forEach(devWall => {
-    const url = devWall.wallpaper;
+  // Only cache event wallpapers (gradients don't need caching)
+  Object.values(eventWallpapers).forEach(url => {
     const img = new Image();
-    img.onload = () => {
-      wallpaperImages[url] = img;
-    };
-    img.onerror = () => {
-      console.warn(`Failed to load dev exclusive wallpaper: ${url}`);
-      wallpaperImages[url] = null;
-    };
     img.src = url;
+    wallpaperImages[url] = img;
   });
+  
+  console.log('Event wallpapers preloaded for offline use');
 }
 
     // --- FIXED: Initialize Firebase Only Once ---
@@ -2280,22 +2180,13 @@ function resetUIAfterDeletion() {
     });
 
    function renderWallpaperGrid() {
-  // Combine regular wallpapers with owned event wallpapers AND dev exclusives
+  // Combine regular wallpapers with owned event wallpapers
   const allWallpapers = [...ownedWallpapers];
   
-  // Add ALL owned event wallpapers AND dev exclusives
-  ownedEventWallpapers.forEach(itemKey => {
-    if (itemKey.startsWith('dev_')) {
-      // It's a DEV EXCLUSIVE wallpaper
-      const devKey = itemKey.replace('dev_', '');
-      if (devExclusiveWallpapers[devKey]) {
-        allWallpapers.push(devExclusiveWallpapers[devKey].wallpaper);
-      }
-    } else {
-      // It's a regular event wallpaper
-      if (eventWallpapers[itemKey]) {
-        allWallpapers.push(eventWallpapers[itemKey]);
-      }
+  // Add ALL owned event wallpapers (not just the current event)
+  ownedEventWallpapers.forEach(eventKey => {
+    if (eventWallpapers[eventKey]) {
+      allWallpapers.push(eventWallpapers[eventKey]);
     }
   });
   
@@ -2311,23 +2202,13 @@ function resetUIAfterDeletion() {
     const rareClass = isRare ? 'rare' : '';
     const selectedClass = isSelected ? 'selected' : '';
     
-    // Check if it's a dev exclusive by looking at the URL
-    const isDevExclusive = Object.values(devExclusiveWallpapers).some(devWall => 
-      devWall.wallpaper === wp
-    );
-    const devClass = isDevExclusive ? 'dev-exclusive' : '';
-    
     // Check if it's a gradient or image URL
     if (wp.includes('gradient')) {
       // It's a gradient - use background
-      html += `<div class="wallpaper-item ${rareClass} ${selectedClass} ${devClass}" style="background:${wp}" data-index="${index}">
-        ${isDevExclusive ? '<div class="dev-badge">🔥 DEV</div>' : ''}
-      </div>`;
+      html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp}" data-index="${index}"></div>`;
     } else {
       // It's an image - use background-image
-      html += `<div class="wallpaper-item ${rareClass} ${selectedClass} ${devClass}" style="background-image:url('${wp}')" data-index="${index}">
-        ${isDevExclusive ? '<div class="dev-badge">🔥 DEV</div>' : ''}
-      </div>`;
+      html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background-image:url('${wp}')" data-index="${index}"></div>`;
     }
   });
   
@@ -2351,69 +2232,72 @@ function resetUIAfterDeletion() {
 }
     
     function renderEventWallpaperGrid() {
-  if (!currentEvent) {
-    eventShopSection.style.display = 'none';
-    return;
-  }
-  
-  eventShopSection.style.display = 'block';
-  
-  const event = events[currentEvent];
-  const eventWallpaper = eventWallpapers[currentEvent];
-  const isOwned = ownedEventWallpapers.includes(currentEvent);
-  const ownedCount = ownedEventWallpapers.filter(e => e === currentEvent).length;
-  const ownedText = isOwned ? ` (Owned: ${ownedCount})` : '';
-  const canAfford = playerDiamonds >= event.gemsRequired;
-  
-  let html = '';
-  html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background-image:url('${eventWallpaper}')">
-    <div class="price">${event.gemsRequired.toLocaleString()} 💎${ownedText}</div>
-  </div>`;
-  
-  eventWallpaperGrid.innerHTML = html;
-  
-  document.querySelectorAll('.event-wallpaper-item').forEach((item) => {
-    item.addEventListener('click', () => {
-      if (canAfford) {
-        if (confirm(`Purchase this ${event.name} event wallpaper for ${event.gemsRequired.toLocaleString()} Diamonds?`)) {
-          playerDiamonds -= event.gemsRequired;
-          diamondsDisplay.textContent = playerDiamonds;
-          shopDiamonds.textContent = playerDiamonds;
-          localStorage.setItem(`brickBlaster_${playerId}_diamonds`, playerDiamonds.toString());
-          
-          // Add to owned event wallpapers (allow duplicates)
-          ownedEventWallpapers.push(currentEvent);
-          localStorage.setItem(`brickBlaster_${playerId}_ownedEventWallpapers`, JSON.stringify(ownedEventWallpapers));
-          
-          // Update database
-          if (database && playerId) {
-            database.ref('players/' + playerId).update({
-              diamonds: playerDiamonds,
-              ownedEventWallpapers: ownedEventWallpapers,
-              lastUpdated: Date.now()
-            });
-          }
-          
-          // Also set as selected
-          selectedWallpaper = eventWallpaper;
-          localStorage.setItem(`brickBlaster_${playerId}_wallpaper`, selectedWallpaper);
-          
-          if (database && playerId) {
-            database.ref('players/' + playerId).update({
-              selectedWallpaper: selectedWallpaper,
-              lastUpdated: Date.now()
-            });
-          }
-          
-          renderWallpaperGrid();
-          alert(`${event.name} event wallpaper purchased!`);
-        }
-      } else {
-        alert(`You need ${event.gemsRequired.toLocaleString()} Diamonds to purchase this ${event.name} event wallpaper!`);
+      if (!currentEvent) {
+        eventShopSection.style.display = 'none';
+        return;
       }
-    });
-  }); // THIS CLOSING BRACKET WAS MISSING
-} // THIS CLOSING BRACKET WAS MISSING    
+      
+      
+      eventShopSection.style.display = 'block';
+      
+      eventShopSection.style.display = 'block';
+      
+      const event = events[currentEvent];
+      const eventWallpaper = eventWallpapers[currentEvent];
+      const isOwned = ownedEventWallpapers.includes(currentEvent);
+      const canAfford = playerDiamonds >= event.gemsRequired;
+      
+      let html = '';
+const isOwned = ownedEventWallpapers.includes(currentEvent);
+const ownedCount = ownedEventWallpapers.filter(e => e === currentEvent).length;
+const ownedText = isOwned ? ` (Owned: ${ownedCount})` : '';
+
+html += `<div class="event-wallpaper-item ${isOwned ? 'selected' : ''}" style="background-image:url('${eventWallpaper}')">
+  <div class="price">${event.gemsRequired.toLocaleString()} 💎${ownedText}</div>
+</div>`;
+      
+      eventWallpaperGrid.innerHTML = html;
+      
+      document.querySelectorAll('.event-wallpaper-item').forEach((item) => {
+        item.addEventListener('click', () => {
+  if (canAfford) {
+    if (confirm(`Purchase this ${event.name} event wallpaper for ${event.gemsRequired.toLocaleString()} Diamonds?`)) {
+      playerDiamonds -= event.gemsRequired;
+      diamondsDisplay.textContent = playerDiamonds;
+      shopDiamonds.textContent = playerDiamonds;
+      localStorage.setItem(`brickBlaster_${playerId}_diamonds`, playerDiamonds.toString());
+      
+      // Add to owned event wallpapers (allow duplicates)
+      ownedEventWallpapers.push(currentEvent);
+      localStorage.setItem(`brickBlaster_${playerId}_ownedEventWallpapers`, JSON.stringify(ownedEventWallpapers));
+      
+      // Update database
+      if (database && playerId) {
+        database.ref('players/' + playerId).update({
+          diamonds: playerDiamonds,
+          ownedEventWallpapers: ownedEventWallpapers,
+          lastUpdated: Date.now()
+        });
+      }
+      
+      // Also set as selected
+      selectedWallpaper = eventWallpaper;
+      localStorage.setItem(`brickBlaster_${playerId}_wallpaper`, selectedWallpaper);
+      
+      if (database && playerId) {
+        database.ref('players/' + playerId).update({
+          selectedWallpaper: selectedWallpaper,
+          lastUpdated: Date.now()
+        });
+      }
+      
+      renderWallpaperGrid();
+      alert(`${event.name} event wallpaper purchased!`);
+    }
+  } else {
+    alert(`You need ${event.gemsRequired.toLocaleString()} Diamonds to purchase this ${event.name} event wallpaper!`);
+  }
+});
     // --- Developer Panel ---
     devBtn.addEventListener('click', () => {
       devPasswordOverlay.style.display = 'flex';
@@ -2730,6 +2614,7 @@ function resetUIAfterDeletion() {
     window.giveEventWallpapers = function() {
   if (!devCurrentPlayerId || !database) return;
   
+  // Create a modal for selecting event wallpapers
   const selectedEvents = [];
   const modal = document.createElement('div');
   modal.style.cssText = `
@@ -2751,16 +2636,13 @@ function resetUIAfterDeletion() {
     padding: 30px;
     border-radius: 10px;
     border: 2px solid #ff0000;
-    max-width: 700px;
+    max-width: 600px;
     max-height: 80vh;
     overflow-y: auto;
   `;
   
   modalContent.innerHTML = `
-    <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Give Wallpapers to Player</h2>
-    
-    <!-- REGULAR EVENT WALLPAPERS -->
-    <h3 style="color:#ff6666; margin:20px 0 10px 0">Event Wallpapers</h3>
+    <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Select Event Wallpapers to Give</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
       ${Object.entries(events).map(([eventKey, event]) => `
         <div class="event-wallpaper-select-item" style="height: 100px; border-radius: 8px; background-image:url('${event.wallpaper}'); background-size:cover; background-position:center; border: 2px solid #333; cursor: pointer; position: relative;" data-event="${eventKey}">
@@ -2770,22 +2652,6 @@ function resetUIAfterDeletion() {
         </div>
       `).join('')}
     </div>
-    
-    <!-- DEV EXCLUSIVE WALLPAPERS -->
-    <h3 style="color:#00ff00; margin:20px 0 10px 0">🔥 DEV EXCLUSIVE WALLPAPERS</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
-      ${Object.entries(devExclusiveWallpapers).map(([wallKey, wall]) => `
-        <div class="dev-wallpaper-select-item" style="height: 100px; border-radius: 8px; background-image:url('${wall.wallpaper}'); background-size:cover; background-position:center; border: 2px solid #00ff00; cursor: pointer; position: relative;" data-wall="${wallKey}">
-          <div style="position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.7); color: #00ff00; padding: 2px 5px; border-radius: 3px; font-size: 10px; text-transform: uppercase;">
-            ${wall.name}
-          </div>
-          <div style="position: absolute; bottom: 5px; right: 5px; background: rgba(0,255,0,0.8); color: black; padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: bold;">
-            DEV ONLY
-          </div>
-        </div>
-      `).join('')}
-    </div>
-    
     <div style="display: flex; gap: 10px; justify-content: center;">
       <button id="confirmGiveEvent" style="background: #ff0000; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Give Selected</button>
       <button id="cancelGiveEvent" style="background: #555; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Cancel</button>
@@ -2795,35 +2661,19 @@ function resetUIAfterDeletion() {
   modal.appendChild(modalContent);
   document.body.appendChild(modal);
   
-  // Handle BOTH event wallpapers AND dev exclusive wallpapers
-  const eventItems = modalContent.querySelectorAll('.event-wallpaper-select-item');
-  const devItems = modalContent.querySelectorAll('.dev-wallpaper-select-item');
-  
-  // Event wallpaper selection
-  eventItems.forEach(item => {
+  // Handle event wallpaper selection
+  const eventWallpaperItems = modalContent.querySelectorAll('.event-wallpaper-select-item');
+  eventWallpaperItems.forEach(item => {
     item.addEventListener('click', () => {
       const eventName = item.dataset.event;
       if (selectedEvents.includes(eventName)) {
+        // Remove if already selected
         const eventIndex = selectedEvents.indexOf(eventName);
         selectedEvents.splice(eventIndex, 1);
         item.style.borderColor = '#333';
       } else {
+        // Add to selection
         selectedEvents.push(eventName);
-        item.style.borderColor = '#ffd700';
-      }
-    });
-  });
-  
-  // Dev exclusive wallpaper selection
-  devItems.forEach(item => {
-    item.addEventListener('click', () => {
-      const wallKey = item.dataset.wall;
-      if (selectedEvents.includes(wallKey)) {
-        const wallIndex = selectedEvents.indexOf(wallKey);
-        selectedEvents.splice(wallIndex, 1);
-        item.style.borderColor = '#00ff00';
-      } else {
-        selectedEvents.push(wallKey);
         item.style.borderColor = '#ffd700';
       }
     });
@@ -2832,7 +2682,7 @@ function resetUIAfterDeletion() {
   // Handle confirm button
   modalContent.querySelector('#confirmGiveEvent').addEventListener('click', () => {
     if (selectedEvents.length === 0) {
-      alert('Please select at least one wallpaper!');
+      alert('Please select at least one event wallpaper!');
       return;
     }
     
@@ -2840,20 +2690,11 @@ function resetUIAfterDeletion() {
       const data = snapshot.val();
       const currentEventWallpapers = data.ownedEventWallpapers || [];
       
-      // Add selected wallpapers (avoid duplicates)
+      // Add selected event wallpapers (avoid duplicates)
       const newEventWallpapers = [...currentEventWallpapers];
-      selectedEvents.forEach(itemKey => {
-        // Check if it's a dev exclusive or regular event
-        if (devExclusiveWallpapers[itemKey]) {
-          // It's a dev exclusive - add as special key
-          if (!newEventWallpapers.includes('dev_' + itemKey)) {
-            newEventWallpapers.push('dev_' + itemKey);
-          }
-        } else {
-          // It's a regular event wallpaper
-          if (!newEventWallpapers.includes(itemKey)) {
-            newEventWallpapers.push(itemKey);
-          }
+      selectedEvents.forEach(eventKey => {
+        if (!newEventWallpapers.includes(eventKey)) {
+          newEventWallpapers.push(eventKey);
         }
       });
       
@@ -2861,11 +2702,18 @@ function resetUIAfterDeletion() {
         ownedEventWallpapers: newEventWallpapers,
         lastUpdated: Date.now()
       }).then(() => {
+        // If updating current player, also update local storage
         if (devCurrentPlayerId === playerId) {
           ownedEventWallpapers = newEventWallpapers;
           localStorage.setItem(`brickBlaster_${playerId}_ownedEventWallpapers`, JSON.stringify(newEventWallpapers));
+          
+          // Update the shop display if it's open
+          if (shopOverlay.style.display === 'flex') {
+            renderEventWallpaperGrid();
+            renderWallpaperGrid();
+          }
         }
-        alert(`Successfully gave ${selectedEvents.length} wallpapers!`);
+        alert(`Successfully gave ${selectedEvents.length} event wallpapers!`);
         document.body.removeChild(modal);
         devCurrentPlayerData.ownedEventWallpapers = newEventWallpapers;
       });
