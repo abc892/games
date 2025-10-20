@@ -668,6 +668,45 @@ const wallpaperUrls = [
   // You can add more dev-only wallpapers here later
 };
 
+   function preloadAllWallpapers() {
+  console.log('Preloading all wallpapers...');
+  
+  // Preload EVENT wallpapers
+  Object.values(events).forEach(event => {
+    const url = event.wallpaper;
+    const img = new Image();
+    img.onload = () => {
+      wallpaperImages[url] = img;
+      console.log('Preloaded:', url);
+    };
+    img.onerror = () => {
+      console.warn('Failed to load event wallpaper:', url);
+      wallpaperImages[url] = null;
+    };
+    img.src = url;
+  });
+  
+  // Preload DEV EXCLUSIVE wallpapers
+  Object.values(devExclusiveWallpapers).forEach(devWall => {
+    const url = devWall.wallpaper;
+    const img = new Image();
+    img.onload = () => {
+      wallpaperImages[url] = img;
+      console.log('Preloaded dev exclusive:', url);
+    };
+    img.onerror = () => {
+      console.warn('Failed to load dev exclusive wallpaper:', url);
+      wallpaperImages[url] = null;
+    };
+    img.src = url;
+  });
+}
+
+// Initialize wallpaper preloading
+function initializeWallpaperPreloading() {
+  preloadAllWallpapers();
+} 
+
     // ====================
 // EASY EVENT MANAGER
 // ====================
@@ -764,7 +803,7 @@ if (EVENT_TOGGLES.spring) {
 
     // Preload only event wallpapers (gradients don't need preloading)
 function preloadWallpaperImages() {
-  // Only preload event wallpapers (images)
+  // Preload EVENT wallpapers (images)
   Object.values(events).forEach(event => {
     const url = event.wallpaper;
     const img = new Image();
@@ -777,20 +816,20 @@ function preloadWallpaperImages() {
     };
     img.src = url;
   });
-}
-
-// Preload and cache - only event wallpapers need caching
-function preloadAndCacheWallpapers() {
-  console.log('Preloading and caching event wallpapers...');
   
-  // Only cache event wallpapers (gradients don't need caching)
-  Object.values(eventWallpapers).forEach(url => {
+  // ✅ ADD THIS: Preload DEV EXCLUSIVE wallpapers too!
+  Object.values(devExclusiveWallpapers).forEach(devWall => {
+    const url = devWall.wallpaper;
     const img = new Image();
+    img.onload = () => {
+      wallpaperImages[url] = img;
+    };
+    img.onerror = () => {
+      console.warn(`Failed to load dev exclusive wallpaper: ${url}`);
+      wallpaperImages[url] = null;
+    };
     img.src = url;
-    wallpaperImages[url] = img;
   });
-  
-  console.log('Event wallpapers preloaded for offline use');
 }
 
     // --- FIXED: Initialize Firebase Only Once ---
