@@ -1043,36 +1043,42 @@ function preloadWallpaperImages() {
     }
 
     function draw(){
-  // Clear canvas first
-  ctx.fillStyle = '#111';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
   // Apply wallpaper background if selected
   if(selectedWallpaper){
-    const img = wallpaperImages[selectedWallpaper];
-    
-    // ✅ SIMPLE FIX: Always try to draw the image if it exists
-    if (img && img.complete) {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    } 
-    // If image not loaded but it's a URL, try to load it
-    else if (selectedWallpaper.includes('http')) {
-      const newImg = new Image();
-      newImg.onload = () => {
-        wallpaperImages[selectedWallpaper] = newImg;
-        if (running) requestAnimationFrame(draw); // Redraw with loaded image
-      };
-      newImg.src = selectedWallpaper;
-    }
-    // If it's a gradient, use the gradient parser
-    else if (selectedWallpaper.includes('gradient')) {
+    // Check if it's a gradient or image
+    if (selectedWallpaper.includes('gradient')) {
+      // It's a gradient - use parseGradient
       const gradient = parseGradient(selectedWallpaper);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+      // It's an image (JPG, PNG, or GIF)
+      const img = wallpaperImages[selectedWallpaper];
+      if (img && img.complete && img.naturalWidth > 0) {
+        // ✅ FIX: Draw the image directly - GIFs will animate!
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      } else {
+        // Fallback to default background
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // ✅ ADD: Try to load the image if not in cache
+        if (selectedWallpaper && !wallpaperImages[selectedWallpaper]) {
+          const newImg = new Image();
+          newImg.onload = () => {
+            wallpaperImages[selectedWallpaper] = newImg;
+            // Redraw on next frame to show the animated GIF
+            if (running) requestAnimationFrame(draw);
+          };
+          newImg.src = selectedWallpaper;
+        }
+      }
     }
+  } else {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
   
-  // Rest of your drawing code...
   drawBricks();
   
   // ball
@@ -1082,7 +1088,7 @@ function preloadWallpaperImages() {
   ctx.fill();
   ctx.closePath();
   
-  // paddle
+  // paddle - bright green to be visible on all wallpapers
   ctx.fillStyle = '#00ff00';
   ctx.fillRect(paddle.x, canvas.height - paddle.h - 10, paddle.w, paddle.h);
   
