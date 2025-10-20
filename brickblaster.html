@@ -984,8 +984,13 @@ function preloadAndCacheWallpapers() {
     const gradient = parseGradient(selectedWallpaper);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else if (selectedWallpaper.includes('.gif')) {
+    // It's a GIF - use CSS background on canvas element for animation
+    canvas.style.backgroundImage = `url('${selectedWallpaper}')`;
+    canvas.style.backgroundSize = 'cover';
+    canvas.style.backgroundPosition = 'center';
   } else {
-    // It's an image or GIF - check if loaded
+    // It's a regular image - use drawImage
     if (wallpaperImages[selectedWallpaper] && wallpaperImages[selectedWallpaper].complete && wallpaperImages[selectedWallpaper].naturalWidth > 0) {
       ctx.drawImage(wallpaperImages[selectedWallpaper], 0, 0, canvas.width, canvas.height);
     } else {
@@ -995,6 +1000,8 @@ function preloadAndCacheWallpapers() {
     }
   }
 } else {
+  // Reset canvas background when no wallpaper
+  canvas.style.backgroundImage = 'none';
   ctx.fillStyle = '#111';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
@@ -1149,6 +1156,15 @@ function preloadAndCacheWallpapers() {
       ball.dx = v.dx;
       ball.dy = v.dy;
     }
+    function resetCanvasBackground() {
+  if (selectedWallpaper && selectedWallpaper.includes('.gif')) {
+    canvas.style.backgroundImage = `url('${selectedWallpaper}')`;
+    canvas.style.backgroundSize = 'cover';
+    canvas.style.backgroundPosition = 'center';
+  } else {
+    canvas.style.backgroundImage = 'none';
+  }
+}
 
     function loop(){
       if(!running || paused) return;
@@ -1242,6 +1258,7 @@ function preloadAndCacheWallpapers() {
       settingsDiv.style.display = 'none';
       overlay.style.display = 'none';
       canvas.style.display = 'block';
+      resetCanvasBackground(); // ADD THIS LINE
       startCountdownThenStart();
     }
 
@@ -1280,6 +1297,7 @@ function preloadAndCacheWallpapers() {
       overlay.style.display='none';
       settingsDiv.style.display='flex';
       canvas.style.display='none';
+      resetCanvasBackground();
       leaderboardBtn.style.display = 'block';
       userSettingsBtn.style.display = 'block';
       shopBtn.style.display = 'block';
@@ -1316,6 +1334,7 @@ function preloadAndCacheWallpapers() {
       pauseOverlay.style.display = 'none';
       settingsDiv.style.display = 'flex';
       canvas.style.display = 'none';
+      resetCanvasBackground();
       clearInterval(timeIntervalId);
       clearInterval(spawnIntervalId);
       leaderboardBtn.style.display = 'block';
