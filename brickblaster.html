@@ -421,6 +421,11 @@
     </div>
   </div>
   <script>
+    const EVENT_TOGGLES = {
+  summer: true,
+  halloween: true,  
+  winter: true,
+};
     // --- Variables ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -660,13 +665,7 @@ const wallpaperUrls = [
     const rareIndices = [17, 18, 19]; // Last 3 are rare
 
     // Event Configuration - All events defined in one place
-    const events = {
-      const EVENT_TOGGLES = {
-  summer: true,     // Set to false to disable Summer event
-  halloween: true,  // Set to false to disable Halloween event  
-  winter: true,     // Set to false to disable Winter event
-  // Add new events here by copying the format below
-};
+    
 
 // Event Configuration - Easy to modify!
 const events = {};
