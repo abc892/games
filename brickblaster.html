@@ -659,6 +659,15 @@ const wallpaperUrls = [
     
     const rareIndices = [17, 18, 19]; // Last 3 are rare
 
+    const devExclusiveWallpapers = {
+  matrix: {
+    name: "Matrix Digital Rain",
+    wallpaper: 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/matrix.gif',
+    rarity: 'DEV EXCLUSIVE'
+  }
+  // You can add more dev-only wallpapers here later
+};
+
     // ====================
 // EASY EVENT MANAGER
 // ====================
@@ -2232,13 +2241,22 @@ function resetUIAfterDeletion() {
     });
 
    function renderWallpaperGrid() {
-  // Combine regular wallpapers with owned event wallpapers
+  // Combine regular wallpapers with owned event wallpapers AND dev exclusives
   const allWallpapers = [...ownedWallpapers];
   
-  // Add ALL owned event wallpapers (not just the current event)
-  ownedEventWallpapers.forEach(eventKey => {
-    if (eventWallpapers[eventKey]) {
-      allWallpapers.push(eventWallpapers[eventKey]);
+  // Add ALL owned event wallpapers AND dev exclusives
+  ownedEventWallpapers.forEach(itemKey => {
+    if (itemKey.startsWith('dev_')) {
+      // It's a DEV EXCLUSIVE wallpaper
+      const devKey = itemKey.replace('dev_', '');
+      if (devExclusiveWallpapers[devKey]) {
+        allWallpapers.push(devExclusiveWallpapers[devKey].wallpaper);
+      }
+    } else {
+      // It's a regular event wallpaper
+      if (eventWallpapers[itemKey]) {
+        allWallpapers.push(eventWallpapers[itemKey]);
+      }
     }
   });
   
@@ -2254,13 +2272,23 @@ function resetUIAfterDeletion() {
     const rareClass = isRare ? 'rare' : '';
     const selectedClass = isSelected ? 'selected' : '';
     
+    // Check if it's a dev exclusive by looking at the URL
+    const isDevExclusive = Object.values(devExclusiveWallpapers).some(devWall => 
+      devWall.wallpaper === wp
+    );
+    const devClass = isDevExclusive ? 'dev-exclusive' : '';
+    
     // Check if it's a gradient or image URL
     if (wp.includes('gradient')) {
       // It's a gradient - use background
-      html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp}" data-index="${index}"></div>`;
+      html += `<div class="wallpaper-item ${rareClass} ${selectedClass} ${devClass}" style="background:${wp}" data-index="${index}">
+        ${isDevExclusive ? '<div class="dev-badge">🔥 DEV</div>' : ''}
+      </div>`;
     } else {
       // It's an image - use background-image
-      html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background-image:url('${wp}')" data-index="${index}"></div>`;
+      html += `<div class="wallpaper-item ${rareClass} ${selectedClass} ${devClass}" style="background-image:url('${wp}')" data-index="${index}">
+        ${isDevExclusive ? '<div class="dev-badge">🔥 DEV</div>' : ''}
+      </div>`;
     }
   });
   
@@ -2663,7 +2691,6 @@ function resetUIAfterDeletion() {
     window.giveEventWallpapers = function() {
   if (!devCurrentPlayerId || !database) return;
   
-  // Create a modal for selecting event wallpapers
   const selectedEvents = [];
   const modal = document.createElement('div');
   modal.style.cssText = `
@@ -2685,13 +2712,16 @@ function resetUIAfterDeletion() {
     padding: 30px;
     border-radius: 10px;
     border: 2px solid #ff0000;
-    max-width: 600px;
+    max-width: 700px;
     max-height: 80vh;
     overflow-y: auto;
   `;
   
   modalContent.innerHTML = `
-    <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Select Event Wallpapers to Give</h2>
+    <h2 style="color:#ff0000; margin-bottom:20px; text-align:center">Give Wallpapers to Player</h2>
+    
+    <!-- REGULAR EVENT WALLPAPERS -->
+    <h3 style="color:#ff6666; margin:20px 0 10px 0">Event Wallpapers</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
       ${Object.entries(events).map(([eventKey, event]) => `
         <div class="event-wallpaper-select-item" style="height: 100px; border-radius: 8px; background-image:url('${event.wallpaper}'); background-size:cover; background-position:center; border: 2px solid #333; cursor: pointer; position: relative;" data-event="${eventKey}">
@@ -2701,6 +2731,22 @@ function resetUIAfterDeletion() {
         </div>
       `).join('')}
     </div>
+    
+    <!-- DEV EXCLUSIVE WALLPAPERS -->
+    <h3 style="color:#00ff00; margin:20px 0 10px 0">🔥 DEV EXCLUSIVE WALLPAPERS</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
+      ${Object.entries(devExclusiveWallpapers).map(([wallKey, wall]) => `
+        <div class="dev-wallpaper-select-item" style="height: 100px; border-radius: 8px; background-image:url('${wall.wallpaper}'); background-size:cover; background-position:center; border: 2px solid #00ff00; cursor: pointer; position: relative;" data-wall="${wallKey}">
+          <div style="position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.7); color: #00ff00; padding: 2px 5px; border-radius: 3px; font-size: 10px; text-transform: uppercase;">
+            ${wall.name}
+          </div>
+          <div style="position: absolute; bottom: 5px; right: 5px; background: rgba(0,255,0,0.8); color: black; padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: bold;">
+            DEV ONLY
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    
     <div style="display: flex; gap: 10px; justify-content: center;">
       <button id="confirmGiveEvent" style="background: #ff0000; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Give Selected</button>
       <button id="cancelGiveEvent" style="background: #555; color: white; border: 0; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Cancel</button>
@@ -2710,19 +2756,35 @@ function resetUIAfterDeletion() {
   modal.appendChild(modalContent);
   document.body.appendChild(modal);
   
-  // Handle event wallpaper selection
-  const eventWallpaperItems = modalContent.querySelectorAll('.event-wallpaper-select-item');
-  eventWallpaperItems.forEach(item => {
+  // Handle BOTH event wallpapers AND dev exclusive wallpapers
+  const eventItems = modalContent.querySelectorAll('.event-wallpaper-select-item');
+  const devItems = modalContent.querySelectorAll('.dev-wallpaper-select-item');
+  
+  // Event wallpaper selection
+  eventItems.forEach(item => {
     item.addEventListener('click', () => {
       const eventName = item.dataset.event;
       if (selectedEvents.includes(eventName)) {
-        // Remove if already selected
         const eventIndex = selectedEvents.indexOf(eventName);
         selectedEvents.splice(eventIndex, 1);
         item.style.borderColor = '#333';
       } else {
-        // Add to selection
         selectedEvents.push(eventName);
+        item.style.borderColor = '#ffd700';
+      }
+    });
+  });
+  
+  // Dev exclusive wallpaper selection
+  devItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const wallKey = item.dataset.wall;
+      if (selectedEvents.includes(wallKey)) {
+        const wallIndex = selectedEvents.indexOf(wallKey);
+        selectedEvents.splice(wallIndex, 1);
+        item.style.borderColor = '#00ff00';
+      } else {
+        selectedEvents.push(wallKey);
         item.style.borderColor = '#ffd700';
       }
     });
@@ -2731,7 +2793,7 @@ function resetUIAfterDeletion() {
   // Handle confirm button
   modalContent.querySelector('#confirmGiveEvent').addEventListener('click', () => {
     if (selectedEvents.length === 0) {
-      alert('Please select at least one event wallpaper!');
+      alert('Please select at least one wallpaper!');
       return;
     }
     
@@ -2739,11 +2801,20 @@ function resetUIAfterDeletion() {
       const data = snapshot.val();
       const currentEventWallpapers = data.ownedEventWallpapers || [];
       
-      // Add selected event wallpapers (avoid duplicates)
+      // Add selected wallpapers (avoid duplicates)
       const newEventWallpapers = [...currentEventWallpapers];
-      selectedEvents.forEach(eventKey => {
-        if (!newEventWallpapers.includes(eventKey)) {
-          newEventWallpapers.push(eventKey);
+      selectedEvents.forEach(itemKey => {
+        // Check if it's a dev exclusive or regular event
+        if (devExclusiveWallpapers[itemKey]) {
+          // It's a dev exclusive - add as special key
+          if (!newEventWallpapers.includes('dev_' + itemKey)) {
+            newEventWallpapers.push('dev_' + itemKey);
+          }
+        } else {
+          // It's a regular event wallpaper
+          if (!newEventWallpapers.includes(itemKey)) {
+            newEventWallpapers.push(itemKey);
+          }
         }
       });
       
@@ -2751,18 +2822,11 @@ function resetUIAfterDeletion() {
         ownedEventWallpapers: newEventWallpapers,
         lastUpdated: Date.now()
       }).then(() => {
-        // If updating current player, also update local storage
         if (devCurrentPlayerId === playerId) {
           ownedEventWallpapers = newEventWallpapers;
           localStorage.setItem(`brickBlaster_${playerId}_ownedEventWallpapers`, JSON.stringify(newEventWallpapers));
-          
-          // Update the shop display if it's open
-          if (shopOverlay.style.display === 'flex') {
-            renderEventWallpaperGrid();
-            renderWallpaperGrid();
-          }
         }
-        alert(`Successfully gave ${selectedEvents.length} event wallpapers!`);
+        alert(`Successfully gave ${selectedEvents.length} wallpapers!`);
         document.body.removeChild(modal);
         devCurrentPlayerData.ownedEventWallpapers = newEventWallpapers;
       });
