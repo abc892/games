@@ -1052,13 +1052,26 @@ function preloadWallpaperImages() {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
-      // It's an image - check if loaded
-      if (wallpaperImages[selectedWallpaper] && wallpaperImages[selectedWallpaper].complete && wallpaperImages[selectedWallpaper].naturalWidth > 0) {
-        ctx.drawImage(wallpaperImages[selectedWallpaper], 0, 0, canvas.width, canvas.height);
+      // It's an image (JPG, PNG, or GIF)
+      const img = wallpaperImages[selectedWallpaper];
+      if (img && img.complete && img.naturalWidth > 0) {
+        // ✅ FIX: Draw the image directly - GIFs will animate!
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       } else {
         // Fallback to default background
         ctx.fillStyle = '#111';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // ✅ ADD: Try to load the image if not in cache
+        if (selectedWallpaper && !wallpaperImages[selectedWallpaper]) {
+          const newImg = new Image();
+          newImg.onload = () => {
+            wallpaperImages[selectedWallpaper] = newImg;
+            // Redraw on next frame to show the animated GIF
+            if (running) requestAnimationFrame(draw);
+          };
+          newImg.src = selectedWallpaper;
+        }
       }
     }
   } else {
@@ -1110,6 +1123,10 @@ function preloadWallpaperImages() {
 }
     
     function parseGradient(cssGradient) {
+      if (cssGradient.includes('http') || cssGradient.includes('.gif') || 
+      cssGradient.includes('.jpg') || cssGradient.includes('.png')) {
+    return null; // This tells the draw function it's an image, not a gradient
+  }
       // Extract gradient type and content
       const isRadial = cssGradient.includes('radial-gradient');
       const match = cssGradient.match(/\((.*)\)/);
