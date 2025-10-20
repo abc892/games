@@ -267,6 +267,7 @@
               <button onclick="giveSelectedWallpapers()">Give Selected Wallpapers</button>
               <button onclick="showWallpaperManager()">Manage Wallpapers</button>
               <button onclick="giveEventWallpapers()">Give Event Wallpapers</button>
+              <button onclick="giveMatrixSkin()">Give Matrix Skin</button> <!-- ADD THIS LINE -->
               <button class="danger" onclick="deletePlayerAccount()">Delete Account</button>
             </div>
           </div>
@@ -661,6 +662,7 @@ const wallpaperUrls = [
   'radial-gradient(circle at 30% 30%, #00ffff, #0080ff 30%, #8000ff 60%, #2d0a4e)',
   'linear-gradient(45deg, #ff0000 0%, #ff7f00 12.5%, #ffff00 25%, #00ff00 37.5%, #0000ff 50%, #4b0082 62.5%, #9400d3 75%, #ff0844 87.5%, #ff0000 100%)'
 ];
+    const MATRIX_SKIN_URL = 'https://raw.githubusercontent.com/abc892/brick-blaster-images/main/matrix.gif';
     
     const rareIndices = [17, 18, 19]; // Last 3 are rare
 
@@ -736,7 +738,18 @@ function preloadWallpaperImages() {
     };
     img.src = url;
   });
-}
+  
+  // ADD THIS: Preload Matrix skin - RIGHT BEFORE THE CLOSING BRACE
+  const matrixImg = new Image();
+  matrixImg.onload = () => {
+    wallpaperImages[MATRIX_SKIN_URL] = matrixImg;
+  };
+  matrixImg.onerror = () => {
+    console.warn('Failed to load Matrix skin');
+    wallpaperImages[MATRIX_SKIN_URL] = null;
+  };
+  matrixImg.src = MATRIX_SKIN_URL;
+} // This is the closing brace of the function
 
 // Preload and cache - only event wallpapers need caching
 function preloadAndCacheWallpapers() {
@@ -965,26 +978,26 @@ function preloadAndCacheWallpapers() {
     function draw(){
   // Apply wallpaper background if selected
   if(selectedWallpaper){
-    // Check if it's a gradient or image
-    if (selectedWallpaper.includes('gradient')) {
-      // It's a gradient - use parseGradient
-      const gradient = parseGradient(selectedWallpaper);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    } else {
-      // It's an image - check if loaded
-      if (wallpaperImages[selectedWallpaper] && wallpaperImages[selectedWallpaper].complete && wallpaperImages[selectedWallpaper].naturalWidth > 0) {
-        ctx.drawImage(wallpaperImages[selectedWallpaper], 0, 0, canvas.width, canvas.height);
-      } else {
-        // Fallback to default background
-        ctx.fillStyle = '#111';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-  } else {
-    ctx.fillStyle = '#111';
+  // Check if it's a gradient, image, or GIF
+  if (selectedWallpaper.includes('gradient')) {
+    // It's a gradient - use parseGradient
+    const gradient = parseGradient(selectedWallpaper);
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    // It's an image or GIF - check if loaded
+    if (wallpaperImages[selectedWallpaper] && wallpaperImages[selectedWallpaper].complete && wallpaperImages[selectedWallpaper].naturalWidth > 0) {
+      ctx.drawImage(wallpaperImages[selectedWallpaper], 0, 0, canvas.width, canvas.height);
+    } else {
+      // Fallback to default background
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
   }
+} else {
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
   
   drawBricks();
   
@@ -2226,8 +2239,11 @@ function resetUIAfterDeletion() {
     if (wp.includes('gradient')) {
       // It's a gradient - use background
       html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background:${wp}" data-index="${index}"></div>`;
+    } else if (wp.includes('.gif')) {
+      // It's a GIF - use background-image with proper sizing
+      html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background-image:url('${wp}'); background-size: cover; background-position: center;" data-index="${index}"></div>`;
     } else {
-      // It's an image - use background-image
+      // It's a regular image - use background-image
       html += `<div class="wallpaper-item ${rareClass} ${selectedClass}" style="background-image:url('${wp}')" data-index="${index}"></div>`;
     }
   });
@@ -2742,6 +2758,35 @@ function resetUIAfterDeletion() {
     document.body.removeChild(modal);
   });
 };
+
+    window.giveEventWallpapers = function() {
+      // ... existing giveEventWallpapers code
+    };
+
+    // ADD THE MATRIX FUNCTION RIGHT HERE
+    window.giveMatrixSkin = function() {
+      if (!devCurrentPlayerId || !database) return;
+      
+      if (confirm('Give Matrix Skin to this player?')) {
+        // Add to regular wallpapers
+        const currentWallpapers = devCurrentPlayerData.ownedWallpapers || [];
+        const newWallpapers = [...currentWallpapers, MATRIX_SKIN_URL];
+        
+        database.ref('players/' + devCurrentPlayerId).update({
+          ownedWallpapers: newWallpapers,
+          lastUpdated: Date.now()
+        }).then(() => {
+          // If updating current player, update local storage too
+          if (devCurrentPlayerId === playerId) {
+            ownedWallpapers = newWallpapers;
+            localStorage.setItem(`brickBlaster_${playerId}_ownedWallpapers`, JSON.stringify(newWallpapers));
+          }
+          alert('Matrix Skin given successfully!');
+          devCurrentPlayerData.ownedWallpapers = newWallpapers;
+        });
+      }
+    };
+    
     window.removeWallpaperAtIndex = function(index) {
   if (!devCurrentPlayerId || !database) return;
   
