@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+        }
+
+        .home-btn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .calculator-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .calculator {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .display {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: #fff;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .expression {
+            color: #a0aec0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .result {
+            font-weight: 600;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .num-btn {
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        .op-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .func-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .equals-btn {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: #2d3748;
+        }
+
+        .clear-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+        }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="home-btn" id="homeBtn">🏠 Home</a>
+    
+    <div class="calculator-container">
+        <div class="calculator" id="calculator">
+            <div class="display" id="display">
+                <div class="expression" id="expression"></div>
+                <div class="result" id="result">0</div>
+            </div>
+            
+            <div class="buttons" id="buttons">
+                <button class="func-btn" onclick="addFunction('sin(')">sin</button>
+                <button class="func-btn" onclick="addFunction('cos(')">cos</button>
+                <button class="func-btn" onclick="addFunction('tan(')">tan</button>
+                <button class="func-btn" onclick="addFunction('log(')">log</button>
+                <button class="func-btn" onclick="addFunction('ln(')">ln</button>
+                
+                <button class="func-btn" onclick="addFunction('sqrt(')">√</button>
+                <button class="func-btn" onclick="addOperator('^')">x^y</button>
+                <button class="func-btn" onclick="addFunction('abs(')">|x|</button>
+                <button class="func-btn" onclick="addOperator('!')">x!</button>
+                <button class="clear-btn" onclick="clearAll()">AC</button>
+                
+                <button class="func-btn" onclick="addFunction('asin(')">asin</button>
+                <button class="func-btn" onclick="addFunction('acos(')">acos</button>
+                <button class="func-btn" onclick="addFunction('atan(')">atan</button>
+                <button class="func-btn" onclick="addFunction('exp(')">e^x</button>
+                <button class="clear-btn" onclick="backspace()">⌫</button>
+                
+                <button class="func-btn" onclick="addConstant('PI')">π</button>
+                <button class="func-btn" onclick="addConstant('E')">e</button>
+                <button class="op-btn" onclick="addOperator('(')">(</button>
+                <button class="op-btn" onclick="addOperator(')')">)</button>
+                <button class="op-btn" onclick="addOperator('/')">÷</button>
+                
+                <button class="num-btn" onclick="addNumber('7')">7</button>
+                <button class="num-btn" onclick="addNumber('8')">8</button>
+                <button class="num-btn" onclick="addNumber('9')">9</button>
+                <button class="op-btn" onclick="addOperator('*')">×</button>
+                <button class="func-btn" onclick="addFunction('floor(')">⌊x⌋</button>
+                
+                <button class="num-btn" onclick="addNumber('4')">4</button>
+                <button class="num-btn" onclick="addNumber('5')">5</button>
+                <button class="num-btn" onclick="addNumber('6')">6</button>
+                <button class="op-btn" onclick="addOperator('-')">−</button>
+                <button class="func-btn" onclick="addFunction('ceil(')">⌈x⌉</button>
+                
+                <button class="num-btn" onclick="addNumber('1')">1</button>
+                <button class="num-btn" onclick="addNumber('2')">2</button>
+                <button class="num-btn" onclick="addNumber('3')">3</button>
+                <button class="op-btn" onclick="addOperator('+')">+</button>
+                <button class="func-btn" onclick="addFunction('round(')">round</button>
+                
+                <button class="num-btn span-2" onclick="addNumber('0')">0</button>
+                <button class="num-btn" onclick="addNumber('.')">.</button>
+                <button class="func-btn" onclick="addOperator('%')">mod</button>
+                <button class="equals-btn" onclick="calculate()">=</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Firebase BEFORE using it -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <script>
+        let expression = '';
+        let result = '0';
+
+        // Firebase Setup
+        window.addEventListener('load', function() {
+            if (typeof firebase !== 'undefined') {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
+                    authDomain: "games-c3e27.firebaseapp.com",
+                    databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
+                    projectId: "games-c3e27",
+                    storageBucket: "games-c3e27.firebasestorage.app",
+                    messagingSenderId: "193027632069",
+                    appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
+                };
+
+                firebase.initializeApp(firebaseConfig);
+                const database = firebase.database();
+
+                const userId = generateUserId();
+                let userRef = null;
+                let isConnected = true;
+
+                function generateUserId() {
+                    let userId = localStorage.getItem('gameHubUserId');
+                    if (!userId) {
+                        userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+                        localStorage.setItem('gameHubUserId', userId);
+                    }
+                    return userId;
+                }
+
+                function setupUserPresence() {
+                    userRef = database.ref('onlineUsers/' + userId);
+                    userRef.set({ 
+                        id: userId, 
+                        connected: true, 
+                        lastSeen: Date.now(), 
+                        page: window.location.pathname,
+                        userAgent: navigator.userAgent.substring(0, 50) 
+                    });
+                    userRef.onDisconnect().remove();
+                    const heartbeat = setInterval(() => {
+                        if (isConnected && userRef) {
+                            userRef.update({ lastSeen: Date.now(), page: window.location.pathname });
+                        } else {
+                            clearInterval(heartbeat);
+                        }
+                    }, 10000);
+                    window.addEventListener('beforeunload', () => {
+                        isConnected = false;
+                        if (userRef) userRef.remove();
+                    });
+                }
+
+                setupUserPresence();
+            }
+        });
+
+        function updateDisplay() {
+            document.getElementById('expression').textContent = expression || '';
+            document.getElementById('result').textContent = result;
+        }
+
+        function addNumber(num) {
+            expression += num;
+            updateDisplay();
+        }
+
+        function addOperator(op) {
+            if (expression.length === 0 && op === '-') {
+                expression = '-';
+            } else if (expression.length > 0) {
+                expression += op;
+            }
+            updateDisplay();
+        }
+
+        function addFunction(func) {
+            expression += func;
+            updateDisplay();
+        }
+
+        function addConstant(constant) {
+            if (constant === 'PI') {
+                expression += Math.PI;
+            } else if (constant === 'E') {
+                expression += Math.E;
+            }
+            updateDisplay();
+        }
+
+        function clearAll() {
+            expression = '';
+            result = '0';
+            updateDisplay();
+        }
+
+        function backspace() {
+            expression = expression.slice(0, -1);
+            updateDisplay();
+        }
+
+        function factorial(n) {
+            if (n < 0) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+
+        function calculate() {
+            try {
+                let expr = expression;
+                
+                expr = expr.replace(/sin\(/g, 'Math.sin(');
+                expr = expr.replace(/cos\(/g, 'Math.cos(');
+                expr = expr.replace(/tan\(/g, 'Math.tan(');
+                expr = expr.replace(/asin\(/g, 'Math.asin(');
+                expr = expr.replace(/acos\(/g, 'Math.acos(');
+                expr = expr.replace(/atan\(/g, 'Math.atan(');
+                expr = expr.replace(/log\(/g, 'Math.log10(');
+                expr = expr.replace(/ln\(/g, 'Math.log(');
+                expr = expr.replace(/sqrt\(/g, 'Math.sqrt(');
+                expr = expr.replace(/abs\(/g, 'Math.abs(');
+                expr = expr.replace(/exp\(/g, 'Math.exp(');
+                expr = expr.replace(/floor\(/g, 'Math.floor(');
+                expr = expr.replace(/ceil\(/g, 'Math.ceil(');
+                expr = expr.replace(/round\(/g, 'Math.round(');
+                
+                expr = expr.replace(/(\d+\.?\d*)!/g, (match, num) => {
+                    return factorial(parseFloat(num));
+                });
+                
+                expr = expr.replace(/\^/g, '**');
+                expr = expr.replace(/%/g, '%');
+                
+                result = eval(expr).toString();
+                
+                if (result.includes('.')) {
+                    result = parseFloat(result).toFixed(10).replace(/\.?0+$/, '');
+                }
+                
+                updateDisplay();
+            } catch (error) {
+                result = 'Error';
+                updateDisplay();
+            }
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9' || e.key === '.') {
+                addNumber(e.key);
+            } else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
+                addOperator(e.key);
+            } else if (e.key === 'Enter') {
+                calculate();
+            } else if (e.key === 'Escape') {
+                clearAll();
+            } else if (e.key === 'Backspace') {
+                backspace();
+            }
+        });
+
+        // UNIFORM PROPORTIONAL SCALING - Everything scales by the SAME ratio
+        function resizeToFitScreen() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            // BASE SIZES (at scale = 1.0) - MATCHING ORIGINAL PROPORTIONS
+            const BASE = {
+                calcWidth: 450,
+                calcHeight: 750,
+                calcPadding: 30,
+                calcBorderRadius: 24,
+                
+                displayHeight: 130,  // MUCH BIGGER - proper proportion like original
+                displayPadding: 25,
+                displayBorderRadius: 16,
+                displayMarginBottom: 20,
+                
+                resultFontSize: 48,  // MUCH BIGGER
+                expressionFontSize: 22,  // MUCH BIGGER
+                expressionMarginBottom: 8,
+                expressionMinHeight: 24,
+                
+                buttonHeight: 58,  // Fits 8 rows perfectly
+                buttonFontSize: 20,
+                funcButtonFontSize: 15,
+                buttonBorderRadius: 12,
+                buttonGap: 10,
+                
+                homeBtnSize: 55,
+                homeBtnFontSize: 20,
+                homeBtnPosition: 15
+            };
+            
+            // Calculate scale to fit screen (with margins)
+            const margin = 15;
+            const availableWidth = screenWidth - (margin * 2);
+            const availableHeight = screenHeight - (margin * 2);
+            
+            const scaleX = availableWidth / BASE.calcWidth;
+            const scaleY = availableHeight / BASE.calcHeight;
+            
+            // Use the smaller scale to ensure everything fits
+            const SCALE = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1
+            
+            // Apply SCALE to get elements
+            const homeBtn = document.getElementById('homeBtn');
+            const calculator = document.getElementById('calculator');
+            const display = document.getElementById('display');
+            const buttonsContainer = document.getElementById('buttons');
+            const allButtons = document.querySelectorAll('button');
+            const resultEl = document.getElementById('result');
+            const expressionEl = document.getElementById('expression');
+            
+            // HOME BUTTON - scaled
+            const homeBtnSize = BASE.homeBtnSize * SCALE;
+            homeBtn.style.width = homeBtnSize + 'px';
+            homeBtn.style.height = homeBtnSize + 'px';
+            homeBtn.style.top = (BASE.homeBtnPosition * SCALE) + 'px';
+            homeBtn.style.left = (BASE.homeBtnPosition * SCALE) + 'px';
+            homeBtn.style.fontSize = (BASE.homeBtnFontSize * SCALE) + 'px';
+            homeBtn.style.borderRadius = (10 * SCALE) + 'px';
+            
+            // CALCULATOR - scaled
+            calculator.style.width = (BASE.calcWidth * SCALE) + 'px';
+            calculator.style.height = (BASE.calcHeight * SCALE) + 'px';
+            calculator.style.padding = (BASE.calcPadding * SCALE) + 'px';
+            calculator.style.borderRadius = (BASE.calcBorderRadius * SCALE) + 'px';
+            
+            // DISPLAY - MUCH BIGGER NOW
+            display.style.height = (BASE.displayHeight * SCALE) + 'px';
+            display.style.minHeight = (BASE.displayHeight * SCALE) + 'px';
+            display.style.padding = (BASE.displayPadding * SCALE) + 'px';
+            display.style.marginBottom = (BASE.displayMarginBottom * SCALE) + 'px';
+            display.style.borderRadius = (BASE.displayBorderRadius * SCALE) + 'px';
+            
+            // DISPLAY TEXT - MUCH BIGGER
+            resultEl.style.fontSize = (BASE.resultFontSize * SCALE) + 'px';
+            resultEl.style.lineHeight = (BASE.resultFontSize * SCALE * 1.2) + 'px';
+            expressionEl.style.fontSize = (BASE.expressionFontSize * SCALE) + 'px';
+            expressionEl.style.lineHeight = (BASE.expressionFontSize * SCALE * 1.2) + 'px';
+            expressionEl.style.marginBottom = (BASE.expressionMarginBottom * SCALE) + 'px';
+            expressionEl.style.minHeight = (BASE.expressionMinHeight * SCALE) + 'px';
+            
+            // BUTTONS CONTAINER - scaled gap
+            buttonsContainer.style.gap = (BASE.buttonGap * SCALE) + 'px';
+            
+            // BUTTONS - scaled
+            allButtons.forEach(btn => {
+                btn.style.height = (BASE.buttonHeight * SCALE) + 'px';
+                btn.style.minHeight = (BASE.buttonHeight * SCALE) + 'px';
+                btn.style.fontSize = (BASE.buttonFontSize * SCALE) + 'px';
+                btn.style.borderRadius = (BASE.buttonBorderRadius * SCALE) + 'px';
+            });
+            
+            // FUNCTION BUTTONS - scaled smaller text
+            const funcBtns = document.querySelectorAll('.func-btn');
+            funcBtns.forEach(btn => {
+                btn.style.fontSize = (BASE.funcButtonFontSize * SCALE) + 'px';
+            });
+            
+            console.log('Scale:', SCALE);
+            console.log('Display height:', (BASE.displayHeight * SCALE));
+            console.log('Result font:', (BASE.resultFontSize * SCALE));
+        }
+
+        // Resize on load and window resize ONLY
+        window.addEventListener('load', () => {
+            setTimeout(resizeToFitScreen, 50);
+        });
+        
+        window.addEventListener('resize', resizeToFitScreen);
+        
+        // Handle orientation change
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resizeToFitScreen, 100);
+        });
+    </script>
+</body>
+</html>
