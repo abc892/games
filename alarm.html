@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alarm Clock</title>
   <style>
     * {
@@ -43,10 +43,21 @@
     }
 
     @keyframes float {
-      0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+      0%,
+      100% {
+        transform: translateY(0) translateX(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100vh) translateX(50px);
+        opacity: 0;
+      }
     }
 
     .home-btn {
@@ -346,9 +357,16 @@
     }
 
     @keyframes ring {
-      0%, 100% { transform: rotate(0deg) scale(1); }
-      25% { transform: rotate(-12deg) scale(1.15); }
-      75% { transform: rotate(12deg) scale(1.15); }
+      0%,
+      100% {
+        transform: rotate(0deg) scale(1);
+      }
+      25% {
+        transform: rotate(-12deg) scale(1.15);
+      }
+      75% {
+        transform: rotate(12deg) scale(1.15);
+      }
     }
 
     .pulse {
@@ -356,44 +374,21 @@
     }
 
     @keyframes pulse-glow {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.7; transform: scale(1.05); }
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+      }
     }
 
-    /* Online Users Counter */
-    .online-users {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(10px);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 25px;
-      font-size: 13px;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-      font-weight: 600;
+    .loading {
+      color: #aaa;
+      font-style: italic;
     }
-
-    .online-indicator {
-      width: 10px;
-      height: 10px;
-      background: #4CAF50;
-      border-radius: 50%;
-      margin-right: 10px;
-      animation: pulse-dot 2s infinite;
-      box-shadow: 0 0 10px #4CAF50;
-    }
-
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.9); }
-    }
-
-    .loading { color: #aaa; font-style: italic; }
 
     @media (max-width: 768px) {
       .container {
@@ -434,27 +429,33 @@
   <!-- Background Particles -->
   <div class="particles" id="particles"></div>
 
-  <a href="index.html" class="home-btn">
+  <a href="index.html" class="home-btn" id="homeBtn">
     <span>🏠</span>
     <span>Home</span>
   </a>
 
-  <div class="container">
+  <div class="container" id="container">
     <h1>⏰ Alarm Clock</h1>
-    
-    <div class="main-content">
+
+    <div class="main-content" id="mainContent">
       <div class="timer-section">
-        <div class="circular-progress">
-          <svg class="progress-ring" width="320" height="320">
+        <div class="circular-progress" id="circularProgress">
+          <svg class="progress-ring" id="progressSvg" width="320" height="320">
             <defs>
               <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+                <stop offset="0%" style="stop-color:#ff0000;stop-opacity:1" />
+                <stop offset="12%" style="stop-color:#ff7a00;stop-opacity:1" />
+                <stop offset="25%" style="stop-color:#ffee00;stop-opacity:1" />
+                <stop offset="38%" style="stop-color:#00ff00;stop-opacity:1" />
+                <stop offset="50%" style="stop-color:#00ffff;stop-opacity:1" />
+                <stop offset="63%" style="stop-color:#0000ff;stop-opacity:1" />
+<stop offset="75%" style="stop-color:#8f00ff;stop-opacity:1" />
+<stop offset="88%" style="stop-color:#ff00aa;stop-opacity:1" />
+<stop offset="100%" style="stop-color:#ff0000;stop-opacity:1" />
               </linearGradient>
             </defs>
-            <circle class="progress-ring-bg" cx="160" cy="160" r="140"></circle>
-            <circle class="progress-ring-fill" cx="160" cy="160" r="140" 
+            <circle class="progress-ring-bg" id="progressBg" cx="160" cy="160" r="140"></circle>
+            <circle class="progress-ring-fill" id="progressFill" cx="160" cy="160" r="140"
                     stroke-dasharray="879.65" stroke-dashoffset="879.65"></circle>
           </svg>
           <div class="progress-text">
@@ -472,15 +473,15 @@
           <div class="input-row">
             <div class="input-wrapper">
               <span class="input-label">Hours</span>
-              <input type="number" id="hours" min="0" max="23" value="0">
+              <input type="number" id="hours" min="0" max="23" value="0" />
             </div>
             <div class="input-wrapper">
               <span class="input-label">Minutes</span>
-              <input type="number" id="minutes" min="0" max="59" value="1">
+              <input type="number" id="minutes" min="0" max="59" value="1" />
             </div>
             <div class="input-wrapper">
               <span class="input-label">Seconds</span>
-              <input type="number" id="seconds" min="0" max="59" value="0">
+              <input type="number" id="seconds" min="0" max="59" value="0" />
             </div>
           </div>
         </div>
@@ -495,12 +496,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Online Users Counter -->
-  <div class="online-users">
-    <div class="online-indicator"></div>
-    Online: <span id="onlineCount" class="loading">...</span>
   </div>
 
   <!-- Import Firebase -->
@@ -525,11 +520,10 @@
     }
     createParticles();
 
-    // Firebase Setup for Online Users
-    window.addEventListener('load', function() {
+    // Firebase Setup for Online Users (presence only — no visible counter on this page)
+    window.addEventListener('load', function () {
       if (typeof firebase === 'undefined') {
         console.error('Firebase failed to load');
-        document.getElementById('onlineCount').textContent = 'Error';
         return;
       }
 
@@ -560,13 +554,15 @@
       }
 
       function setupUserPresence() {
+        // NOTE: We keep presence tracking so this page contributes to the global 'onlineUsers' node
+        // used by the index (homepage) counter. We DO NOT show any online users UI here.
         userRef = database.ref('onlineUsers/' + userId);
-        userRef.set({ 
-          id: userId, 
-          connected: true, 
-          lastSeen: Date.now(), 
+        userRef.set({
+          id: userId,
+          connected: true,
+          lastSeen: Date.now(),
           page: window.location.pathname,
-          userAgent: navigator.userAgent.substring(0, 50) 
+          userAgent: navigator.userAgent.substring(0, 50)
         });
         userRef.onDisconnect().remove();
         const heartbeat = setInterval(() => {
@@ -582,20 +578,10 @@
         });
       }
 
-      function initOnlineTracking() {
-        setupUserPresence();
-        database.ref('onlineUsers').on('value', (snapshot) => {
-          const onlineUsers = snapshot.val();
-          let userCount = 0;
-          if (onlineUsers) userCount = Object.keys(onlineUsers).length;
-          document.getElementById('onlineCount').textContent = userCount;
-          document.getElementById('onlineCount').className = '';
-        });
-      }
-      initOnlineTracking();
+      setupUserPresence();
     });
 
-    // Alarm Functionality
+    // --- Alarm Functionality (unchanged behavior) ---
     let countdown = null;
     let totalSeconds = 0;
     let remainingSeconds = 0;
@@ -607,8 +593,10 @@
     const statusMessage = document.getElementById('statusMessage');
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
-    const progressFill = document.querySelector('.progress-ring-fill');
-    const circleCircumference = 879.65;
+    const progressFill = document.getElementById('progressFill');
+
+    // NOTE: make this variable mutable so the resizer can update circumference
+    let circleCircumference = 879.65; // default for r=140
 
     function startAlarm() {
       const hours = parseInt(document.getElementById('hours').value) || 0;
@@ -667,6 +655,7 @@
       statusMessage.classList.remove('pulse');
       document.querySelector('.circular-progress').classList.remove('alarm-ringing');
 
+      // reset progress to full offset (no progress)
       progressFill.style.strokeDashoffset = circleCircumference;
       timeDisplay.textContent = '00:00:00';
     }
@@ -676,11 +665,16 @@
       const m = Math.floor((remainingSeconds % 3600) / 60);
       const s = remainingSeconds % 60;
 
-      timeDisplay.textContent = 
+      timeDisplay.textContent =
         `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
     function updateProgress() {
+      // avoid division by zero
+      if (!totalSeconds || totalSeconds <= 0) {
+        progressFill.style.strokeDashoffset = circleCircumference;
+        return;
+      }
       const progress = (totalSeconds - remainingSeconds) / totalSeconds;
       const offset = circleCircumference - (progress * circleCircumference);
       progressFill.style.strokeDashoffset = offset;
@@ -690,7 +684,7 @@
       clearInterval(countdown);
       statusMessage.textContent = '🔔 ALARM RINGING! 🔔';
       document.querySelector('.circular-progress').classList.add('alarm-ringing');
-      
+
       playAlarmSound();
 
       setTimeout(() => {
@@ -701,7 +695,7 @@
 
     function playAlarmSound() {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
+
       let beepCount = 0;
       const maxBeeps = 20;
 
@@ -710,19 +704,19 @@
 
         oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
+
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
         oscillator.frequency.value = 800;
         oscillator.type = 'sine';
-        
+
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
+
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
-        
+
         beepCount++;
         if (beepCount < maxBeeps) {
           setTimeout(beep, 500);
@@ -732,19 +726,208 @@
       beep();
     }
 
-    document.getElementById('hours').addEventListener('input', function(e) {
+    document.getElementById('hours').addEventListener('input', function (e) {
       if (this.value > 23) this.value = 23;
       if (this.value < 0) this.value = 0;
     });
 
-    document.getElementById('minutes').addEventListener('input', function(e) {
+    document.getElementById('minutes').addEventListener('input', function (e) {
       if (this.value > 59) this.value = 59;
       if (this.value < 0) this.value = 0;
     });
 
-    document.getElementById('seconds').addEventListener('input', function(e) {
+    document.getElementById('seconds').addEventListener('input', function (e) {
       if (this.value > 59) this.value = 59;
       if (this.value < 0) this.value = 0;
+    });
+
+    // -------------------------------------------
+    // UNIFORM PROPORTIONAL SCALING (calculator-style)
+    // This will scale every visual element proportionally
+    // without changing the page's original layout or styles.
+    // -------------------------------------------
+
+    function resizeToFitScreen() {
+      // Screen
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+
+      // BASE values (match original CSS defaults exactly)
+      const BASE = {
+        // container (matches .container max-width)
+        calcWidth: 1000,
+        calcHeight: 720, // approximate height of the full design at scale 1
+        containerPaddingTop: 60,
+        containerPaddingLeft: 50,
+        containerBorderRadius: 40,
+
+        // heading
+        h1FontSize: 42,
+        h1MarginBottom: 50,
+
+        // main layout
+        mainContentGap: 80,
+
+        // circular progress
+        circularSize: 320,
+        svgViewBoxSize: 320, // corresponds to SVG width/height
+        circleR: 140, // original r in SVG
+        circleStrokeWidth: 14,
+
+        // text inside progress
+        timeDisplayFontSize: 52,
+        timeLabelFontSize: 13,
+
+        // status
+        statusFontSize: 18,
+        statusMinHeight: 35,
+
+        // inputs
+        inputWidth: 90,
+        inputHeight: 70,
+        inputFontSize: 32,
+        inputBorderRadius: 18,
+        inputPadding: 0, // not used but kept for parity
+
+        // buttons
+        buttonPaddingY: 18,
+        buttonPaddingX: 50,
+        buttonFontSize: 19,
+        buttonBorderRadius: 50,
+
+        // home button
+        homeTop: 20,
+        homeLeft: 20,
+        homePaddingY: 14,
+        homePaddingX: 28,
+        homeFontSize: 17,
+        homeBorderRadius: 50,
+
+        // particles scale factor (not mandatory)
+        particlesScale: 1,
+
+        // margins
+        margin: 15
+      };
+
+      const margin = BASE.margin;
+      const availableWidth = screenWidth - (margin * 2);
+      const availableHeight = screenHeight - (margin * 2);
+
+      const scaleX = availableWidth / BASE.calcWidth;
+      const scaleY = availableHeight / BASE.calcHeight;
+      const SCALE = Math.min(scaleX, scaleY, 1); // never scale above 1 to keep original fidelity
+
+      // Elements to scale
+      const container = document.getElementById('container');
+      const h1 = container.querySelector('h1');
+      const mainContent = document.getElementById('mainContent');
+      const circularProgress = document.getElementById('circularProgress');
+      const progressSvg = document.getElementById('progressSvg');
+      const progressBg = document.getElementById('progressBg');
+      const progressFillEl = document.getElementById('progressFill');
+      const timeDisplayEl = document.getElementById('timeDisplay');
+      const timeLabelEl = container.querySelector('.time-label');
+      const statusMsg = document.getElementById('statusMessage');
+      const inputNumbers = container.querySelectorAll('input[type="number"]');
+      const buttons = container.querySelectorAll('button');
+      const homeBtn = document.getElementById('homeBtn');
+
+      // Container
+      container.style.width = (BASE.calcWidth * SCALE) + 'px';
+      container.style.padding = (BASE.containerPaddingTop * SCALE) + 'px ' + (BASE.containerPaddingLeft * SCALE) + 'px';
+      container.style.borderRadius = (BASE.containerBorderRadius * SCALE) + 'px';
+
+      // Heading
+      h1.style.fontSize = (BASE.h1FontSize * SCALE) + 'px';
+      h1.style.marginBottom = (BASE.h1MarginBottom * SCALE) + 'px';
+
+      // Main content gap
+      mainContent.style.gap = (BASE.mainContentGap * SCALE) + 'px';
+
+      // Circular progress sizing (outer wrapper)
+      circularProgress.style.width = (BASE.circularSize * SCALE) + 'px';
+      circularProgress.style.height = (BASE.circularSize * SCALE) + 'px';
+
+      // SVG sizing
+      progressSvg.setAttribute('width', (BASE.svgViewBoxSize * SCALE));
+      progressSvg.setAttribute('height', (BASE.svgViewBoxSize * SCALE));
+      progressSvg.style.width = (BASE.svgViewBoxSize * SCALE) + 'px';
+      progressSvg.style.height = (BASE.svgViewBoxSize * SCALE) + 'px';
+
+      // Circle radius scaled
+      const scaledR = BASE.circleR * SCALE;
+      const scaledCx = (BASE.svgViewBoxSize * SCALE) / 2;
+      const scaledCy = (BASE.svgViewBoxSize * SCALE) / 2;
+
+      // Update the circles' attributes
+      progressBg.setAttribute('cx', scaledCx);
+      progressBg.setAttribute('cy', scaledCy);
+      progressBg.setAttribute('r', scaledR);
+      progressFillEl.setAttribute('cx', scaledCx);
+      progressFillEl.setAttribute('cy', scaledCy);
+      progressFillEl.setAttribute('r', scaledR);
+
+      // Stroke width scaled
+      const scaledStroke = BASE.circleStrokeWidth * SCALE;
+      progressBg.style.strokeWidth = scaledStroke + 'px';
+      progressFillEl.style.strokeWidth = scaledStroke + 'px';
+
+      // Recompute circumference and apply to stroke-dasharray/offset
+      circleCircumference = 2 * Math.PI * scaledR;
+      progressFillEl.style.strokeDasharray = circleCircumference;
+      // if timer not running set to full offset (no progress), else keep current value computed normally
+      if (!isRunning) {
+        progressFillEl.style.strokeDashoffset = circleCircumference;
+      } else {
+        // compute current progress offset consistent with updateProgress
+        const progress = (totalSeconds - remainingSeconds) / (totalSeconds || 1);
+        const offset = circleCircumference - (progress * circleCircumference);
+        progressFillEl.style.strokeDashoffset = offset;
+      }
+
+      // Time display and label sizing
+      timeDisplayEl.style.fontSize = (BASE.timeDisplayFontSize * SCALE) + 'px';
+      timeLabelEl.style.fontSize = (BASE.timeLabelFontSize * SCALE) + 'px';
+      statusMsg.style.fontSize = (BASE.statusFontSize * SCALE) + 'px';
+      statusMsg.style.minHeight = (BASE.statusMinHeight * SCALE) + 'px';
+      statusMsg.style.padding = (8 * SCALE) + 'px ' + (20 * SCALE) + 'px';
+      statusMsg.style.borderRadius = (20 * SCALE) + 'px';
+
+      // Inputs scaling
+      inputNumbers.forEach((inp) => {
+        inp.style.width = (BASE.inputWidth * SCALE) + 'px';
+        inp.style.height = (BASE.inputHeight * SCALE) + 'px';
+        inp.style.fontSize = (BASE.inputFontSize * SCALE) + 'px';
+        inp.style.borderRadius = (BASE.inputBorderRadius * SCALE) + 'px';
+      });
+
+      // Buttons scaling (padding and font-size and border-radius)
+      buttons.forEach(btn => {
+        btn.style.padding = (BASE.buttonPaddingY * SCALE) + 'px ' + (BASE.buttonPaddingX * SCALE) + 'px';
+        btn.style.fontSize = (BASE.buttonFontSize * SCALE) + 'px';
+        btn.style.borderRadius = (BASE.buttonBorderRadius * SCALE) + 'px';
+      });
+
+      // Home button scaling & positioning
+      homeBtn.style.top = (BASE.homeTop * SCALE) + 'px';
+      homeBtn.style.left = (BASE.homeLeft * SCALE) + 'px';
+      homeBtn.style.padding = (BASE.homePaddingY * SCALE) + 'px ' + (BASE.homePaddingX * SCALE) + 'px';
+      homeBtn.style.fontSize = (BASE.homeFontSize * SCALE) + 'px';
+      homeBtn.style.borderRadius = (BASE.homeBorderRadius * SCALE) + 'px';
+
+      // Particles can be left unchanged; if desired, scale their size slightly (not required).
+      // Console logging (helpful for debugging)
+      // console.log('Resize SCALE:', SCALE, 'Circumference:', circleCircumference);
+    }
+
+    // Run on load & resize (same behavior as calculator system)
+    window.addEventListener('load', () => {
+      setTimeout(resizeToFitScreen, 50);
+    });
+    window.addEventListener('resize', resizeToFitScreen);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(resizeToFitScreen, 100);
     });
   </script>
 </body>
