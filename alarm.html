@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alarm Clock</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Animated Background Particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      animation: float 15s infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+    }
+
+    .home-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      padding: 14px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 17px;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .home-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 40px;
+      padding: 60px 50px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+      max-width: 1000px;
+      width: 100%;
+      z-index: 1;
+      position: relative;
+      backdrop-filter: blur(20px);
+    }
+
+    h1 {
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 50px;
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      text-shadow: 0 4px 10px rgba(102, 126, 234, 0.2);
+    }
+
+    .main-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 80px;
+      flex-wrap: wrap;
+    }
+
+    .timer-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 35px;
+    }
+
+    .circular-progress {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .progress-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: rotate(-90deg);
+      filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.6));
+    }
+
+    .progress-ring-bg {
+      fill: none;
+      stroke: #e8e8e8;
+      stroke-width: 14;
+    }
+
+    .progress-ring-fill {
+      fill: none;
+      stroke: url(#gradient);
+      stroke-width: 14;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .time-display {
+      font-size: 52px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .time-label {
+      font-size: 13px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+
+    .status-container {
+      min-height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .status-message {
+      text-align: center;
+      font-size: 18px;
+      color: #666;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 20px;
+      background: rgba(102, 126, 234, 0.08);
+    }
+
+    .controls-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .time-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 35px 30px;
+      border-radius: 25px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      border: 2px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .input-label {
+      font-size: 13px;
+      color: #555;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    input[type="number"] {
+      width: 90px;
+      height: 70px;
+      font-size: 32px;
+      font-weight: 800;
+      text-align: center;
+      border: 3px solid #667eea;
+      border-radius: 18px;
+      background: white;
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+      color: #667eea;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #764ba2;
+      box-shadow: 0 0 0 5px rgba(102, 126, 234, 0.25);
+      transform: scale(1.08);
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      opacity: 1;
+      height: 50px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 20px;
+    }
+
+    button {
+      padding: 18px 50px;
+      font-size: 19px;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .start-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      position: relative;
+    }
+
+    .start-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+    }
+
+    .start-btn:active {
+      transform: translateY(0);
+    }
+
+    .stop-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      position: relative;
+    }
+
+    .stop-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(245, 87, 108, 0.5);
+    }
+
+    .stop-btn:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    button:disabled::before {
+      display: none;
+    }
+
+    .alarm-ringing {
+      animation: ring 0.4s infinite;
+    }
+
+    @keyframes ring {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      25% { transform: rotate(-12deg) scale(1.15); }
+      75% { transform: rotate(12deg) scale(1.15); }
+    }
+
+    .pulse {
+      animation: pulse-glow 1.5s infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+
+    /* Online Users Counter */
+    .online-users {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 25px;
+      font-size: 13px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      font-weight: 600;
+    }
+
+    .online-indicator {
+      width: 10px;
+      height: 10px;
+      background: #4CAF50;
+      border-radius: 50%;
+      margin-right: 10px;
+      animation: pulse-dot 2s infinite;
+      box-shadow: 0 0 10px #4CAF50;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
+    }
+
+    .loading { color: #aaa; font-style: italic; }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 40px 25px;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+
+      .main-content {
+        gap: 50px;
+      }
+
+      .circular-progress {
+        width: 260px;
+        height: 260px;
+      }
+
+      .time-display {
+        font-size: 40px;
+      }
+
+      input[type="number"] {
+        width: 75px;
+        height: 60px;
+        font-size: 28px;
+      }
+
+      button {
+        padding: 15px 35px;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Particles -->
+  <div class="particles" id="particles"></div>
+
+  <a href="index.html" class="home-btn">
+    <span>🏠</span>
+    <span>Home</span>
+  </a>
+
+  <div class="container">
+    <h1>⏰ Alarm Clock</h1>
+    
+    <div class="main-content">
+      <div class="timer-section">
+        <div class="circular-progress">
+          <svg class="progress-ring" width="320" height="320">
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <circle class="progress-ring-bg" cx="160" cy="160" r="140"></circle>
+            <circle class="progress-ring-fill" cx="160" cy="160" r="140" 
+                    stroke-dasharray="879.65" stroke-dashoffset="879.65"></circle>
+          </svg>
+          <div class="progress-text">
+            <div class="time-display" id="timeDisplay">00:00:00</div>
+            <div class="time-label">TIME LEFT</div>
+          </div>
+        </div>
+        <div class="status-container">
+          <div class="status-message" id="statusMessage">Set your alarm time</div>
+        </div>
+      </div>
+
+      <div class="controls-section">
+        <div class="time-input-group">
+          <div class="input-row">
+            <div class="input-wrapper">
+              <span class="input-label">Hours</span>
+              <input type="number" id="hours" min="0" max="23" value="0">
+            </div>
+            <div class="input-wrapper">
+              <span class="input-label">Minutes</span>
+              <input type="number" id="minutes" min="0" max="59" value="1">
+            </div>
+            <div class="input-wrapper">
+              <span class="input-label">Seconds</span>
+              <input type="number" id="seconds" min="0" max="59" value="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button class="start-btn" id="startBtn" onclick="startAlarm()">
+            <span style="position: relative; z-index: 1;">▶ Start</span>
+          </button>
+          <button class="stop-btn" id="stopBtn" onclick="stopAlarm()" disabled>
+            <span style="position: relative; z-index: 1;">■ Stop</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Online Users Counter -->
+  <div class="online-users">
+    <div class="online-indicator"></div>
+    Online: <span id="onlineCount" class="loading">...</span>
+  </div>
+
+  <!-- Import Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+  <script>
+    // Create animated particles
+    function createParticles() {
+      const particlesContainer = document.getElementById('particles');
+      for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const size = Math.random() * 60 + 20;
+        particle.style.width = size + 'px';
+        particle.style.height = size + 'px';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 15 + 's';
+        particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        particlesContainer.appendChild(particle);
+      }
+    }
+    createParticles();
+
+    // Firebase Setup for Online Users
+    window.addEventListener('load', function() {
+      if (typeof firebase === 'undefined') {
+        console.error('Firebase failed to load');
+        document.getElementById('onlineCount').textContent = 'Error';
+        return;
+      }
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
+        authDomain: "games-c3e27.firebaseapp.com",
+        databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "games-c3e27",
+        storageBucket: "games-c3e27.firebasestorage.app",
+        messagingSenderId: "193027632069",
+        appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+
+      const userId = generateUserId();
+      let userRef = null;
+      let isConnected = true;
+
+      function generateUserId() {
+        let userId = localStorage.getItem('gameHubUserId');
+        if (!userId) {
+          userId = 'user_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now();
+          localStorage.setItem('gameHubUserId', userId);
+        }
+        return userId;
+      }
+
+      function setupUserPresence() {
+        userRef = database.ref('onlineUsers/' + userId);
+        userRef.set({ 
+          id: userId, 
+          connected: true, 
+          lastSeen: Date.now(), 
+          page: window.location.pathname,
+          userAgent: navigator.userAgent.substring(0, 50) 
+        });
+        userRef.onDisconnect().remove();
+        const heartbeat = setInterval(() => {
+          if (isConnected && userRef) {
+            userRef.update({ lastSeen: Date.now(), page: window.location.pathname });
+          } else {
+            clearInterval(heartbeat);
+          }
+        }, 10000);
+        window.addEventListener('beforeunload', () => {
+          isConnected = false;
+          if (userRef) userRef.remove();
+        });
+      }
+
+      function initOnlineTracking() {
+        setupUserPresence();
+        database.ref('onlineUsers').on('value', (snapshot) => {
+          const onlineUsers = snapshot.val();
+          let userCount = 0;
+          if (onlineUsers) userCount = Object.keys(onlineUsers).length;
+          document.getElementById('onlineCount').textContent = userCount;
+          document.getElementById('onlineCount').className = '';
+        });
+      }
+      initOnlineTracking();
+    });
+
+    // Alarm Functionality
+    let countdown = null;
+    let totalSeconds = 0;
+    let remainingSeconds = 0;
+    let isRunning = false;
+    let audioContext = null;
+    let oscillator = null;
+
+    const timeDisplay = document.getElementById('timeDisplay');
+    const statusMessage = document.getElementById('statusMessage');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const progressFill = document.querySelector('.progress-ring-fill');
+    const circleCircumference = 879.65;
+
+    function startAlarm() {
+      const hours = parseInt(document.getElementById('hours').value) || 0;
+      const minutes = parseInt(document.getElementById('minutes').value) || 0;
+      const seconds = parseInt(document.getElementById('seconds').value) || 0;
+
+      totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+      if (totalSeconds <= 0) {
+        alert('⚠️ Please set a valid time!');
+        return;
+      }
+
+      remainingSeconds = totalSeconds;
+      isRunning = true;
+
+      document.getElementById('hours').disabled = true;
+      document.getElementById('minutes').disabled = true;
+      document.getElementById('seconds').disabled = true;
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      statusMessage.textContent = '⏱️ Timer Running...';
+      statusMessage.classList.add('pulse');
+
+      updateDisplay();
+      updateProgress();
+
+      countdown = setInterval(() => {
+        remainingSeconds--;
+        updateDisplay();
+        updateProgress();
+
+        if (remainingSeconds <= 0) {
+          triggerAlarm();
+        }
+      }, 1000);
+    }
+
+    function stopAlarm() {
+      clearInterval(countdown);
+      isRunning = false;
+
+      if (oscillator) {
+        oscillator.stop();
+        oscillator = null;
+      }
+
+      document.getElementById('hours').disabled = false;
+      document.getElementById('minutes').disabled = false;
+      document.getElementById('seconds').disabled = false;
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+
+      statusMessage.textContent = '⏹️ Timer Stopped';
+      statusMessage.classList.remove('pulse');
+      document.querySelector('.circular-progress').classList.remove('alarm-ringing');
+
+      progressFill.style.strokeDashoffset = circleCircumference;
+      timeDisplay.textContent = '00:00:00';
+    }
+
+    function updateDisplay() {
+      const h = Math.floor(remainingSeconds / 3600);
+      const m = Math.floor((remainingSeconds % 3600) / 60);
+      const s = remainingSeconds % 60;
+
+      timeDisplay.textContent = 
+        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateProgress() {
+      const progress = (totalSeconds - remainingSeconds) / totalSeconds;
+      const offset = circleCircumference - (progress * circleCircumference);
+      progressFill.style.strokeDashoffset = offset;
+    }
+
+    function triggerAlarm() {
+      clearInterval(countdown);
+      statusMessage.textContent = '🔔 ALARM RINGING! 🔔';
+      document.querySelector('.circular-progress').classList.add('alarm-ringing');
+      
+      playAlarmSound();
+
+      setTimeout(() => {
+        stopAlarm();
+        statusMessage.textContent = '✅ Alarm Finished!';
+      }, 10000);
+    }
+
+    function playAlarmSound() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      let beepCount = 0;
+      const maxBeeps = 20;
+
+      function beep() {
+        if (beepCount >= maxBeeps || !isRunning) return;
+
+        oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+        
+        beepCount++;
+        if (beepCount < maxBeeps) {
+          setTimeout(beep, 500);
+        }
+      }
+
+      beep();
+    }
+
+    document.getElementById('hours').addEventListener('input', function(e) {
+      if (this.value > 23) this.value = 23;
+      if (this.value < 0) this.value = 0;
+    });
+
+    document.getElementById('minutes').addEventListener('input', function(e) {
+      if (this.value > 59) this.value = 59;
+      if (this.value < 0) this.value = 0;
+    });
+
+    document.getElementById('seconds').addEventListener('input', function(e) {
+      if (this.value > 59) this.value = 59;
+      if (this.value < 0) this.value = 0;
+    });
+  </script>
+</body>
+</html>
