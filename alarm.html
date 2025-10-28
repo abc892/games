@@ -612,6 +612,23 @@
 
       remainingSeconds = totalSeconds;
       isRunning = true;
+      try {
+  const audio = document.getElementById('alarmSound');
+  if (audio) {
+    // attempt a short play then pause to satisfy autoplay policy
+    const prime = audio.play();
+    if (prime !== undefined) {
+      prime.then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }).catch(() => {
+        // ignore; user interaction might not allow immediate play in some browsers
+      });
+    }
+  }
+} catch (e) {
+  console.warn('Audio priming failed', e);
+}
 
       document.getElementById('hours').disabled = true;
       document.getElementById('minutes').disabled = true;
@@ -639,6 +656,12 @@
     function stopAlarm() {
       clearInterval(countdown);
       isRunning = false;
+      const audio = document.getElementById('alarmSound');
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.loop = false;
+  }
 
       if (oscillator) {
         oscillator.stop();
@@ -694,37 +717,27 @@
     }
 
     function playAlarmSound() {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  // Use the <audio> element instead of oscillator beeps
+  const audio = document.getElementById('alarmSound');
+  if (!audio) return;
 
-      let beepCount = 0;
-      const maxBeeps = 20;
+  // Ensure it will loop while alarm state is active
+  audio.loop = true;
 
-      function beep() {
-        if (beepCount >= maxBeeps || !isRunning) return;
-
-        oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
-
-        beepCount++;
-        if (beepCount < maxBeeps) {
-          setTimeout(beep, 500);
-        }
-      }
-
-      beep();
-    }
+  // Try to play — returns a Promise in modern browsers
+  const playPromise = audio.play();
+  if (playPromise !== undefined) {
+    playPromise
+      .then(() => {
+        // playback started — nothing else needed
+      })
+      .catch((err) => {
+        // Playback may be blocked if the user hasn't interacted yet.
+        // We'll quietly log it — user can press Start again to prime audio.
+        console.warn('Audio play was blocked:', err);
+      });
+  }
+}
 
     document.getElementById('hours').addEventListener('input', function (e) {
       if (this.value > 23) this.value = 23;
@@ -930,5 +943,8 @@
       setTimeout(resizeToFitScreen, 100);
     });
   </script>
+  <audio id="alarmSound" preload="auto">
+  <source src="https://raw.githubusercontent.com/abc892/brick-blaster-images/main/sounds/a.mp3" type="audio/mpeg">
+</audio>
 </body>
 </html>
