@@ -1,41 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Gravity Ball Multiplayer</title>
+<title>Gravity Multiplayer</title>
 <style>
-  body { margin:0; background:black; overflow:hidden; }
-  canvas { display:block; }
-  #overlay {
-    position:fixed;
-    inset:0;
-    background:black;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:10;
-  }
-  #overlay input {
-    font-size:20px;
-    padding:10px;
-  }
+body { margin:0; background:black; overflow:hidden; }
+canvas { display:block; }
+#overlay {
+  position:fixed; inset:0;
+  background:black;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:10;
+}
+#overlay input {
+  font-size:20px;
+  padding:10px;
+}
 </style>
 </head>
 <body>
 
 <div id="overlay">
-  <input id="nameInput" placeholder="Enter your name" />
+  <input id="nameInput" placeholder="Enter name and press Enter">
 </div>
 
 <canvas id="game"></canvas>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
 /* ================= FIREBASE ================= */
-const firebaseConfig = {
+firebase.initializeApp({
   apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
   authDomain: "games-c3e27.firebaseapp.com",
   databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
@@ -43,9 +41,7 @@ const firebaseConfig = {
   storageBucket: "games-c3e27.firebasestorage.app",
   messagingSenderId: "193027632069",
   appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
-};
-
-firebase.initializeApp(firebaseConfig);
+});
 const db = firebase.database();
 
 /* ================= CANVAS ================= */
@@ -57,204 +53,168 @@ canvas.height = innerHeight;
 /* ================= CONSTANTS ================= */
 const G = 0.15;
 const thrust = 0.1;
-const keys = {};
-const playerRadius = 8;
+const R = 8;
 
 /* ================= STATE ================= */
-let myId = null;
-let myName = "";
-let me = null;
+let myId, me;
 let players = {};
 let planets = [];
 let blackHole = null;
-let worldLoaded = false;
+let ready = false;
+const keys = {};
 
 /* ================= INPUT ================= */
-addEventListener("keydown", e => keys[e.key] = true);
-addEventListener("keyup", e => keys[e.key] = false);
+addEventListener("keydown", e => keys[e.key]=true);
+addEventListener("keyup", e => keys[e.key]=false);
 
 /* ================= JOIN ================= */
-document.getElementById("nameInput").addEventListener("keydown", e => {
-  if (e.key === "Enter" && e.target.value.trim()) {
-    myName = e.target.value.trim();
+nameInput.onkeydown = e => {
+  if (e.key === "Enter" && nameInput.value.trim()) {
     document.getElementById("overlay").remove();
-    startGame();
+    joinGame(nameInput.value.trim());
   }
-});
+};
 
-/* ================= START ================= */
-function startGame() {
-  const playerRef = db.ref("players").push();
-  myId = playerRef.key;
+/* ================= JOIN GAME ================= */
+function joinGame(name){
+  const ref = db.ref("players").push();
+  myId = ref.key;
 
   me = {
     id: myId,
-    name: myName,
-    x: 0, y: 0,
-    vx: 0, vy: 0,
-    angle: 0
+    name,
+    x: Math.random()*100 - 50,
+    y: Math.random()*100 - 50,
+    vx: 0, vy: 0, angle: 0
   };
 
-  playerRef.set(me);
-  playerRef.onDisconnect().remove();
+  ref.set(me);
+  ref.onDisconnect().remove();
 
+  db.ref("players").on("value", s => players = s.val() || {});
   loadWorld();
-  listenPlayers();
-  loop();
 }
 
 /* ================= WORLD ================= */
-function loadWorld() {
-  const worldRef = db.ref("world");
+function loadWorld(){
+  const w = db.ref("world");
 
-  worldRef.once("value", snap => {
+  w.once("value", snap => {
     if (!snap.exists()) {
-      // FIRST PLAYER CREATES WORLD
-      planets = generatePlanets();
-      blackHole = generateBlackHole();
-
-      worldRef.set({ planets, blackHole });
-      worldLoaded = true;
+      planets = makePlanets();
+      blackHole = makeBlackHole();
+      w.set({ planets, blackHole });
     }
   });
 
-  worldRef.on("value", snap => {
-    if (snap.exists()) {
-      planets = snap.val().planets;
-      blackHole = snap.val().blackHole;
-      worldLoaded = true;
+  w.on("value", snap => {
+    if (!snap.exists()) return;
+    planets = snap.val().planets;
+    blackHole = snap.val().blackHole;
+    if (!ready) {
+      ready = true;
+      requestAnimationFrame(loop);
     }
-  });
-}
-
-/* ================= PLAYERS ================= */
-function listenPlayers() {
-  db.ref("players").on("value", snap => {
-    players = snap.val() || {};
   });
 }
 
 /* ================= PHYSICS ================= */
-function applyGravity(p) {
+function gravity(p){
   for (let b of [...planets, blackHole]) {
     let dx = b.x - p.x;
     let dy = b.y - p.y;
-    let dist = Math.hypot(dx, dy) || 0.01;
-    let accel = G * b.mass / (dist * dist);
-    p.vx += accel * dx / dist;
-    p.vy += accel * dy / dist;
+    let d = Math.hypot(dx,dy) || 1;
+    let a = G * b.mass / (d*d);
+    p.vx += a * dx/d;
+    p.vy += a * dy/d;
   }
 }
 
-/* ================= PLAYER UPDATE ================= */
-function updateMe() {
-  if (!worldLoaded) return;
+/* ================= UPDATE ================= */
+function update(){
+  if (!ready) return;
 
-  if (keys["ArrowLeft"]) me.angle -= 0.05;
-  if (keys["ArrowRight"]) me.angle += 0.05;
-  if (keys["ArrowUp"]) {
-    me.vx += Math.cos(me.angle) * thrust;
-    me.vy += Math.sin(me.angle) * thrust;
+  if (keys.ArrowLeft) me.angle -= 0.05;
+  if (keys.ArrowRight) me.angle += 0.05;
+  if (keys.ArrowUp) {
+    me.vx += Math.cos(me.angle)*thrust;
+    me.vy += Math.sin(me.angle)*thrust;
   }
 
-  applyGravity(me);
-
+  gravity(me);
   me.x += me.vx;
   me.y += me.vy;
 
-  db.ref("players/" + myId).update(me);
-}
-
-/* ================= COLLISION ================= */
-function playerCollision() {
-  for (let id in players) {
-    if (id === myId) continue;
-    let p = players[id];
-    let dx = me.x - p.x;
-    let dy = me.y - p.y;
-    let dist = Math.hypot(dx, dy);
-    if (dist < playerRadius * 2) {
-      let nx = dx / dist;
-      me.x = p.x + nx * playerRadius * 2;
-      me.vx *= 0.9;
-      me.vy *= 0.9;
-    }
-  }
+  db.ref("players/"+myId).update(me);
 }
 
 /* ================= DRAW ================= */
-function draw() {
-  ctx.fillStyle = "black";
+function draw(){
+  ctx.fillStyle="black";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  const cx = canvas.width/2;
-  const cy = canvas.height/2;
+  const cx=canvas.width/2, cy=canvas.height/2;
 
-  // Planets
-  for (let p of planets) {
-    ctx.fillStyle = p.color;
+  // stars
+  for(let i=0;i<300;i++){
+    ctx.fillStyle="white";
+    ctx.fillRect(Math.random()*canvas.width,Math.random()*canvas.height,1,1);
+  }
+
+  // planets
+  for(let p of planets){
+    ctx.fillStyle=p.color;
     ctx.beginPath();
-    ctx.arc(p.x-me.x+cx, p.y-me.y+cy, p.radius, 0, Math.PI*2);
+    ctx.arc(p.x-me.x+cx,p.y-me.y+cy,p.radius,0,Math.PI*2);
     ctx.fill();
   }
 
-  // Black hole
-  ctx.fillStyle = "purple";
+  // black hole
+  ctx.fillStyle="purple";
   ctx.beginPath();
-  ctx.arc(blackHole.x-me.x+cx, blackHole.y-me.y+cy, blackHole.radius, 0, Math.PI*2);
+  ctx.arc(blackHole.x-me.x+cx,blackHole.y-me.y+cy,blackHole.radius,0,Math.PI*2);
   ctx.fill();
 
-  // Players
-  for (let id in players) {
-    let p = players[id];
-    let sx = p.x - me.x + cx;
-    let sy = p.y - me.y + cy;
-
-    ctx.fillStyle = "white";
+  // players
+  for(let id in players){
+    let p=players[id];
+    let sx=p.x-me.x+cx, sy=p.y-me.y+cy;
+    ctx.fillStyle="white";
     ctx.beginPath();
-    ctx.arc(sx, sy, playerRadius, 0, Math.PI*2);
+    ctx.arc(sx,sy,R,0,Math.PI*2);
     ctx.fill();
-
-    ctx.fillStyle = "cyan";
-    ctx.font = "12px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(p.name, sx, sy - 12);
+    ctx.fillStyle="cyan";
+    ctx.textAlign="center";
+    ctx.fillText(p.name,sx,sy-12);
   }
 }
 
 /* ================= LOOP ================= */
-function loop() {
-  updateMe();
-  playerCollision();
+function loop(){
+  update();
   draw();
   requestAnimationFrame(loop);
 }
 
 /* ================= GENERATORS ================= */
-function generatePlanets() {
-  const colors = ["red","blue","green","orange","purple","yellow"];
-  let arr = [];
-  while (arr.length < 10) {
-    let r = 30 + Math.random()*80;
-    let x = Math.random()*3000-1500;
-    let y = Math.random()*3000-1500;
-    arr.push({
-      x, y,
-      radius: r,
-      mass: r*r*r*0.1,
-      color: colors[Math.floor(Math.random()*colors.length)]
+function makePlanets(){
+  const c=["red","blue","green","orange","yellow"];
+  let a=[];
+  for(let i=0;i<10;i++){
+    let r=30+Math.random()*80;
+    a.push({
+      x:Math.random()*2000-1000,
+      y:Math.random()*2000-1000,
+      radius:r,
+      mass:r*r*r*0.1,
+      color:c[i%5]
     });
   }
-  return arr;
+  return a;
 }
 
-function generateBlackHole() {
-  return {
-    x: 5000,
-    y: 5000,
-    radius: 120,
-    mass: 100000
-  };
+function makeBlackHole(){
+  return { x:3000,y:3000,radius:120,mass:100000 };
 }
 </script>
 </body>
