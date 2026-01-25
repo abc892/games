@@ -6,19 +6,19 @@
 <style>
   body { margin:0; background:black; overflow:hidden; }
   canvas { display:block; }
-
-  #nameOverlay{
-    position:fixed; inset:0;
+  #nameOverlay {
+    position:fixed;
+    inset:0;
     background:black;
     display:flex;
     align-items:center;
     justify-content:center;
     z-index:10;
   }
-  #nameInput{
-    font-size:22px;
-    padding:12px 18px;
-    border-radius:10px;
+  #nameInput {
+    font-size:20px;
+    padding:10px;
+    border-radius:8px;
     border:none;
     outline:none;
   }
@@ -26,18 +26,19 @@
 </head>
 <body>
 
+<!-- Name entry -->
 <div id="nameOverlay">
   <input id="nameInput" placeholder="Enter your name & press Enter">
 </div>
 
 <canvas id="game"></canvas>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
-// ---------------- FIREBASE ----------------
-firebase.initializeApp({
+const firebaseConfig = {
   apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
   authDomain: "games-c3e27.firebaseapp.com",
   databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
@@ -45,219 +46,324 @@ firebase.initializeApp({
   storageBucket: "games-c3e27.firebasestorage.app",
   messagingSenderId: "193027632069",
   appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
-});
-const db = firebase.database();
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-// ---------------- CANVAS ----------------
+// --- Variables ---
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-// ---------------- CONSTANTS ----------------
-const G = 0.15;
-const thrust = 0.12;
-const keys = {};
-const starSectorSize = 400;
+const G = 0.15, thrust = 0.1, keys = {};
 const miniMap = { width:200, height:150, padding:10 };
+const starSectorSize = 400;
 
-// ---------------- PLAYER ----------------
-const playerId = "p_" + Math.random().toString(36).slice(2);
-let playerName = "";
-const player = { x:0,y:0,vx:0,vy:0,angle:0,radius:8 };
+let playerName = null;
+let playerId = 'player_' + Math.random().toString(36).substr(2,8) + Date.now();
+let playersData = {};
+let planets = [], blackHole = null;
 
-// ---------------- WORLD ----------------
-let planets = [];
-let blackHole = null;
-let players = {};
-
-// ---------------- NAME INPUT ----------------
-const overlay = document.getElementById("nameOverlay");
+// --- Name entry ---
+const nameOverlay = document.getElementById("nameOverlay");
 const nameInput = document.getElementById("nameInput");
 nameInput.focus();
 
-nameInput.onkeydown = e=>{
-  if(e.key==="Enter" && nameInput.value.trim()){
+nameInput.addEventListener("keydown", e => {
+  if(e.key === "Enter" && nameInput.value.trim()){
     playerName = nameInput.value.trim();
-    overlay.remove();
-    init();
+    nameOverlay.remove();
+    startGame();
   }
-};
+});
 
-// ---------------- RANDOM ----------------
-function mulberry32(a){
-  return function(){
-    a|=0;a=a+0x6D2B79F5|0;
-    let t=Math.imul(a^a>>>15,1|a);
-    t=t+Math.imul(t^t>>>7,61|t)^t;
-    return ((t^t>>>14)>>>0)/4294967296;
-  }
-}
+// --- Utility ---
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;}}
 
-// ---------------- WORLD GEN ----------------
+// --- Generate world if first player ---
 function generateWorld(){
-  const colors=["orange","red","green","blue","purple","yellow","pink","cyan","lime"];
-  planets=[];
-  while(planets.length<10){
-    const r=30+Math.random()*90;
-    const x=Math.random()*3000-1500;
-    const y=Math.random()*3000-1500;
-    if(Math.hypot(x,y)<200) continue;
-    let ok=true;
+  // --- Planets ---
+  const colors = ["orange","red","green","blue","purple","yellow","pink","cyan","lime","magenta"];
+  planets = [];
+  let attempts = 0;
+  while(planets.length < 10 && attempts < 5000){
+    attempts++;
+    const radius = 30 + Math.random()*90;
+    const x = Math.random()*3000 - 1500;
+    const y = Math.random()*3000 - 1500;
+    const color = colors[Math.floor(Math.random()*colors.length)];
+    let ok = true;
     for(let p of planets){
-      if(Math.hypot(x-p.x,y-p.y)<r+p.radius+50){ok=false;break;}
+      const dx=x-p.x, dy=y-p.y, dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist < radius+p.radius+50){ ok=false; break; }
     }
-    if(ok) planets.push({x,y,radius:r,mass:r*r*r*0.07,color:colors[Math.random()*colors.length|0]});
+    if(Math.sqrt(x*x+y*y)<200) ok=false;
+    if(ok) planets.push({x,y,radius,mass:Math.pow(radius,3)*0.07,color});
   }
 
-  blackHole={x:5000,y:5000,radius:100,mass:800000,angle:0,particles:[]};
-  for(let i=0;i<120;i++){
-    blackHole.particles.push({
-      r:blackHole.radius+Math.random()*180,
-      angle:Math.random()*Math.PI*2,
-      speed:0.002+Math.random()*0.004,
-      size:1+Math.random()*2
+  // --- Black Hole ---
+  let ok=false;
+  while(!ok){
+    const x = Math.random()*6000 - 3000;
+    const y = Math.random()*6000 - 3000;
+    if(Math.sqrt(x*x+y*y) > 4000){
+      blackHole = {x,y,radius:100,mass:800000,color:"black",angle:0,particles:[]};
+      for(let i=0;i<100;i++){
+        blackHole.particles.push({r:blackHole.radius+Math.random()*150,angle:Math.random()*Math.PI*2,speed:0.002+Math.random()*0.004,size:1+Math.random()*2});
+      }
+      ok=true;
+    }
+  }
+
+  // Save world in Firebase
+  database.ref('gravity/world').set({planets,blackHole});
+}
+
+// --- Load world ---
+function loadWorld(callback){
+  database.ref('gravity/world').once('value', snapshot => {
+    const data = snapshot.val();
+    if(data){ planets=data.planets; blackHole=data.blackHole; callback(); }
+    else{ generateWorld(); callback(); }
+  });
+}
+
+// --- Player ---
+const player = {x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:""};
+
+function startGame(){
+  // Set initial player data
+  player.x = 0; player.y = 0;
+  player.name = playerName;
+
+  // Load world first
+  loadWorld(()=>{
+
+    // --- Firebase player presence ---
+    const myRef = database.ref('gravity/players/' + playerId);
+    myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name});
+    myRef.onDisconnect().remove();
+
+    // Update loop to sync
+    setInterval(()=>{
+      myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle});
+    },1);
+
+    // Listen for other players
+    database.ref('gravity/players').on('value', snapshot=>{
+      playersData = snapshot.val() || {};
     });
-  }
-  db.ref("gravity/world").set({planets,blackHole});
+
+    // Start game loop
+    requestAnimationFrame(loop);
+  });
 }
 
-// ---------------- INIT ----------------
-function init(){
-  const worldRef=db.ref("gravity/world");
-  const playersRef=db.ref("gravity/players");
+// --- Input ---
+window.addEventListener("keydown", e=>keys[e.key]=true);
+window.addEventListener("keyup", e=>keys[e.key]=false);
 
-  worldRef.once("value",snap=>{
-    if(!snap.exists()) generateWorld();
-    else{
-      planets=snap.val().planets;
-      blackHole=snap.val().blackHole;
-    }
-  });
-
-  const myRef=playersRef.child(playerId);
-  myRef.set({x:0,y:0,vx:0,vy:0,angle:0,name:playerName});
-  myRef.onDisconnect().remove();
-
-  playersRef.on("value",snap=>{
-    players=snap.val()||{};
-    if(Object.keys(players).length===0){
-      db.ref("gravity/world").remove();
-    }
-  });
-
-  window.addEventListener("keydown",e=>keys[e.key]=true);
-  window.addEventListener("keyup",e=>keys[e.key]=false);
-
-  lastTime=performance.now();
-  requestAnimationFrame(loop);
-}
-
-// ---------------- PHYSICS ----------------
-function applyGravity(dt){
+// --- Physics ---
+function applyGravity(){
   for(let p of planets.concat([blackHole])){
-    let dx=p.x-player.x,dy=p.y-player.y;
-    let d=Math.hypot(dx,dy)||0.1;
-    let R=p.radius+player.radius;
-    let a=d>R?G*p.mass/(d*d):G*p.mass*d/(R*R*R);
-    player.vx+=a*(dx/d)*dt;
-    player.vy+=a*(dy/d)*dt;
+    let dx = p.x - player.x;
+    let dy = p.y - player.y;
+    let dist = Math.sqrt(dx*dx + dy*dy); if(dist<0.1) dist=0.1;
+    const R=p.radius+player.radius;
+    const nx=dx/dist, ny=dy/dist;
+    const accel=dist>R? G*p.mass/(dist*dist) : G*p.mass*dist/(R*R*R);
+    player.vx += accel*nx; player.vy += accel*ny;
+    if(dist<R && p!==blackHole){
+      player.x = p.x - nx*R; player.y = p.y - ny*R;
+      const vDotN = player.vx*nx + player.vy*ny;
+      if(vDotN>0){ player.vx-=vDotN*nx; player.vy-=vDotN*ny; }
+    }
   }
 
-  for(let id in players){
+  // --- Player collision ---
+  for(let id in playersData){
     if(id===playerId) continue;
-    const o=players[id];
-    let dx=o.x-player.x,dy=o.y-player.y;
-    let d=Math.hypot(dx,dy);
-    let min=player.radius*2;
-    if(d<min&&d>0){
-      let nx=dx/d,ny=dy/d;
-      player.x-=nx*(min-d)/2;
-      player.y-=ny*(min-d)/2;
+    const op=playersData[id];
+    let dx=op.x-player.x, dy=op.y-player.y;
+    let dist=Math.sqrt(dx*dx+dy*dy);
+    let minDist=player.radius+8;
+    if(dist<minDist && dist>0){
+      let nx=dx/dist, ny=dy/dist, overlap=minDist-dist;
+      player.x-=nx*overlap*0.5;
+      player.y-=ny*overlap*0.5;
     }
   }
 }
 
-// ---------------- UPDATE ----------------
-function update(dt){
-  if(keys.ArrowLeft) player.angle-=0.05*dt*60;
-  if(keys.ArrowRight) player.angle+=0.05*dt*60;
-  if(keys.ArrowUp){
-    player.vx+=Math.cos(player.angle)*thrust*dt*60;
-    player.vy+=Math.sin(player.angle)*thrust*dt*60;
-  }
-  applyGravity(dt);
-  player.x+=player.vx*dt*60;
-  player.y+=player.vy*dt*60;
-
-  db.ref("gravity/players/"+playerId).update({
-    x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle
-  });
+function updatePlayer(){
+  if(keys["ArrowLeft"]) player.angle-=0.05;
+  if(keys["ArrowRight"]) player.angle+=0.05;
+  if(keys["ArrowUp"]){ player.vx+=Math.cos(player.angle)*thrust; player.vy+=Math.sin(player.angle)*thrust; }
+  if(keys["m"]){ player.vx*=0.98; player.vy*=0.98; }
+  applyGravity();
+  player.x+=player.vx; player.y+=player.vy;
 }
 
-// ---------------- DRAW ----------------
+// --- Infinite stars ---
 function drawStars(){
-  const cx=canvas.width/2,cy=canvas.height/2;
-  const sx=Math.floor((player.x-cx)/starSectorSize)*starSectorSize;
-  const sy=Math.floor((player.y-cy)/starSectorSize)*starSectorSize;
-  for(let x=sx;x<sx+canvas.width+starSectorSize;x+=starSectorSize){
-    for(let y=sy;y<sy+canvas.height+starSectorSize;y+=starSectorSize){
-      const r=mulberry32(x*73856093^y*19349663);
-      for(let i=0;i<12;i++){
-        let px=x+r()*starSectorSize-player.x+cx;
-        let py=y+r()*starSectorSize-player.y+cy;
-        ctx.fillStyle="rgba(255,255,255,0.5)";
-        ctx.fillRect(px,py,1,1);
+  const centerX=canvas.width/2, centerY=canvas.height/2;
+  const startX=Math.floor((player.x-centerX)/starSectorSize)*starSectorSize;
+  const startY=Math.floor((player.y-centerY)/starSectorSize)*starSectorSize;
+  const endX=Math.floor((player.x+centerX)/starSectorSize)*starSectorSize;
+  const endY=Math.floor((player.y+centerY)/starSectorSize)*starSectorSize;
+  for(let sx=startX;sx<=endX;sx+=starSectorSize){
+    for(let sy=startY;sy<=endY;sy+=starSectorSize){
+      const seed = sx*73856093 ^ sy*19349663;
+      const rand = mulberry32(seed);
+      const starsInSector = 10 + Math.floor(rand()*15);
+      for(let i=0;i<starsInSector;i++){
+        const starX = sx + rand()*starSectorSize;
+        const starY = sy + rand()*starSectorSize;
+        const radius = 0.5 + rand()*1.5;
+        const brightness = 0.2 + rand()*0.5;
+        const screenX = starX - player.x + centerX;
+        const screenY = starY - player.y + centerY;
+        if(screenX>=0 && screenX<=canvas.width && screenY>=0 && screenY<=canvas.height){
+          ctx.fillStyle=`rgba(255,255,255,${brightness})`;
+          ctx.beginPath();
+          ctx.arc(screenX,screenY,radius,0,Math.PI*2);
+          ctx.fill();
+        }
       }
     }
   }
 }
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawStars();
+// --- Draw ---
+function drawPlayer(pl){
+  const centerX=canvas.width/2, centerY=canvas.height/2;
+  const px = (pl===player)? centerX : pl.x-player.x+centerX;
+  const py = (pl===player)? centerY : pl.y-player.y+centerY;
+  ctx.save();
+  ctx.translate(px,py);
+  ctx.rotate(pl.angle);
+  ctx.fillStyle="white";
+  ctx.beginPath();
+  ctx.arc(0,0,player.radius,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle="cyan";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(15,0); ctx.stroke();
+  ctx.restore();
 
-  const cx=canvas.width/2,cy=canvas.height/2;
+  // Name
+  ctx.fillStyle="white";
+  ctx.font="14px Arial";
+  ctx.textAlign="center";
+  ctx.fillText(pl.name,px,py-player.radius-10);
+}
 
+function drawPlanets(){
+  const centerX=canvas.width/2, centerY=canvas.height/2;
   for(let p of planets){
+    const screenX=p.x-player.x+centerX;
+    const screenY=p.y-player.y+centerY;
     ctx.fillStyle=p.color;
     ctx.beginPath();
-    ctx.arc(p.x-player.x+cx,p.y-player.y+cy,p.radius,0,Math.PI*2);
+    ctx.arc(screenX,screenY,p.radius,0,Math.PI*2);
     ctx.fill();
   }
 
-  let bx=blackHole.x-player.x+cx,by=blackHole.y-player.y+cy;
-  blackHole.angle+=0.01;
-  for(let pt of blackHole.particles){
-    pt.angle+=pt.speed;
-    ctx.fillStyle="rgba(200,50,250,0.4)";
+  // Black Hole visuals
+  const bhX = blackHole.x - player.x + centerX;
+  const bhY = blackHole.y - player.y + centerY;
+  blackHole.angle += 0.005;
+  for(let i=0;i<5;i++){
+    ctx.strokeStyle = `rgba(150,0,200,${0.1-i*0.015})`;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(bx+Math.cos(pt.angle)*pt.r,by+Math.sin(pt.angle)*pt.r,pt.size,0,Math.PI*2);
-    ctx.fill();
+    ctx.arc(bhX,bhY,blackHole.radius*(1.2+i*0.3),blackHole.angle,blackHole.angle+Math.PI*1.5);
+    ctx.stroke();
   }
-  ctx.fillStyle="black";
+  const gradient = ctx.createRadialGradient(bhX,bhY,blackHole.radius*0.5,bhX,bhY,blackHole.radius*3);
+  gradient.addColorStop(0,"rgba(0,0,0,1)");
+  gradient.addColorStop(0.3,"rgba(50,0,50,0.3)");
+  gradient.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle = gradient;
   ctx.beginPath();
-  ctx.arc(bx,by,blackHole.radius,0,Math.PI*2);
+  ctx.arc(bhX,bhY,blackHole.radius*3,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = blackHole.color;
+  ctx.beginPath();
+  ctx.arc(bhX,bhY,blackHole.radius,0,Math.PI*2);
   ctx.fill();
 
-  for(let id in players){
-    const p=players[id];
-    const px=p.x-player.x+cx,py=p.y-player.y+cy;
-    ctx.fillStyle="white";
+  // Black hole particles
+  for(let p of blackHole.particles){
+    p.angle += p.speed;
+    const px = bhX + Math.cos(p.angle)*p.r;
+    const py = bhY + Math.sin(p.angle)*p.r;
+    ctx.fillStyle = `rgba(200,50,250,0.3)`;
     ctx.beginPath();
-    ctx.arc(px,py,player.radius,0,Math.PI*2);
+    ctx.arc(px,py,p.size,0,Math.PI*2);
     ctx.fill();
-    ctx.fillText(p.name,px,py-14);
   }
 }
 
-// ---------------- LOOP ----------------
-let lastTime=0;
-function loop(t){
-  let dt=Math.min((t-lastTime)/1000,0.05);
-  lastTime=t;
-  update(dt);
-  draw();
+// --- Mini-map ---
+function drawMiniMap(){
+  const mapX=canvas.width-miniMap.width-miniMap.padding;
+  const mapY=miniMap.padding;
+  ctx.fillStyle="rgba(0,0,0,0.5)";
+  ctx.fillRect(mapX,mapY,miniMap.width,miniMap.height);
+  ctx.strokeStyle="white";
+  ctx.strokeRect(mapX,mapY,miniMap.width,miniMap.height);
+
+  let maxDist=0;
+  for(let p of planets.concat([blackHole])){
+    const d=Math.sqrt((p.x-player.x)**2+(p.y-player.y)**2)+p.radius;
+    if(d>maxDist) maxDist=d;
+  }
+  if(maxDist<200) maxDist=200;
+  const scale=(miniMap.width/2)/maxDist;
+
+  for(let p of planets){
+    const dx=p.x-player.x, dy=p.y-player.y;
+    const px=mapX+miniMap.width/2+dx*scale;
+    const py=mapY+miniMap.height/2+dy*scale;
+    const r=Math.max(2,p.radius*scale);
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(px,py,r,0,Math.PI*2);
+    ctx.fill();
+  }
+  // Black hole
+  const dx=blackHole.x-player.x, dy=blackHole.y-player.y;
+  const px=mapX+miniMap.width/2+dx*scale, py=mapY+miniMap.height/2+dy*scale;
+  const r=Math.max(2,blackHole.radius*scale);
+  ctx.fillStyle="rgba(180,180,180,0.3)";
+  ctx.beginPath();
+  ctx.arc(px,py,r,0,Math.PI*2);
+  ctx.fill();
+
+  // Player
+  ctx.fillStyle="white";
+  ctx.beginPath();
+  ctx.arc(mapX+miniMap.width/2,mapY+miniMap.height/2,4,0,Math.PI*2);
+  ctx.fill();
+}
+
+// --- Game Loop ---
+function loop(){
+  ctx.fillStyle="black";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawStars();
+  updatePlayer();
+  drawPlanets();
+
+  // Draw all players
+  for(let id in playersData){
+    const pl=playersData[id];
+    drawPlayer(pl);
+  }
+  drawPlayer(player);
+  drawMiniMap();
   requestAnimationFrame(loop);
 }
 </script>
