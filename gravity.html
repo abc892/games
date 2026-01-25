@@ -53,7 +53,7 @@
   #timer {
     position:fixed;
     top:20px;
-    center:0;
+    left:50%;
     transform:translateX(-50%);
     font-size:32px;
     color:white;
@@ -64,7 +64,7 @@
   #score {
     position:fixed;
     top:60px;
-    center:0;
+    left:50%;
     transform:translateX(-50%);
     font-size:24px;
     color:#4CAF50;
@@ -120,6 +120,16 @@
     padding:10px;
     border-radius:5px;
   }
+  #debugInfo {
+    position:fixed;
+    bottom:20px;
+    left:20px;
+    color:white;
+    font-size:12px;
+    background:rgba(0,0,0,0.5);
+    padding:5px;
+    border-radius:3px;
+  }
 </style>
 </head>
 <body>
@@ -142,6 +152,9 @@
   <div id="leaderboardList"></div>
   <button id="replayButton" onclick="resetGame()">Play Again</button>
 </div>
+
+<!-- Debug info -->
+<div id="debugInfo"></div>
 
 <canvas id="game"></canvas>
 
@@ -189,7 +202,7 @@ let countdownValue = 0;
 let matchTime = MATCH_DURATION;
 let myScore = 0;
 let amIReady = false;
-let allPlayersReady = false;
+let matchStarted = false;
 
 // --- DOM Elements ---
 const nameOverlay = document.getElementById("nameOverlay");
@@ -201,6 +214,7 @@ const score = document.getElementById("score");
 const leaderboardOverlay = document.getElementById("leaderboardOverlay");
 const leaderboardList = document.getElementById("leaderboardList");
 const matchStatus = document.getElementById("matchStatus");
+const debugInfo = document.getElementById("debugInfo");
 
 // --- Name entry ---
 nameInput.focus();
@@ -403,21 +417,39 @@ function toggleReady() {
 }
 
 function checkAllPlayersReady() {
-  if(!playersData || Object.keys(playersData).length < 2) return false;
+  const playerIds = Object.keys(playersData);
+  if(playerIds.length < 1) return false;
+  
+  let allReady = true;
+  let readyCount = 0;
+  let totalCount = 0;
   
   for(let id in playersData) {
-    if(!playersData[id].ready) {
-      return false;
+    totalCount++;
+    if(playersData[id].ready === true) {
+      readyCount++;
+    } else {
+      allReady = false;
     }
   }
-  return true;
+  
+  // Debug output
+  debugInfo.textContent = `Players: ${totalCount}, Ready: ${readyCount}, All Ready: ${allReady}`;
+  
+  return allReady && totalCount >= 1;
 }
 
 function startMatch() {
+  if(matchStarted) return; // Prevent multiple starts
+  matchStarted = true;
+  
   matchState = 'countdown';
   countdownValue = 3;
   countdownOverlay.style.display = 'flex';
   countdownOverlay.textContent = countdownValue;
+  
+  // Set match state in Firebase so other players know
+  database.ref('gravity/matchState').set('countdown');
   
   // Start countdown
   const countdownInterval = setInterval(() => {
@@ -435,7 +467,10 @@ function startMatch() {
       player.score = 0;
       score.textContent = "Score: 0";
       
-      // Reset all players' scores
+      // Update match state in Firebase
+      database.ref('gravity/matchState').set('running');
+      
+      // Reset all players' scores in Firebase
       for(let id in playersData) {
         database.ref('gravity/players/' + id).update({score: 0});
       }
@@ -504,6 +539,7 @@ function endMatch() {
 function resetGame() {
   leaderboardOverlay.style.display = 'none';
   matchState = 'waiting';
+  matchStarted = false;
   player.ready = false;
   amIReady = false;
   readyButton.textContent = "Ready";
@@ -519,6 +555,9 @@ function resetGame() {
   
   // Clear orbs
   database.ref('gravity/orbs').remove();
+  
+  // Reset match state
+  database.ref('gravity/matchState').set('waiting');
 }
 
 function startGame(){
@@ -533,17 +572,36 @@ function startGame(){
     myRef.set(player);
     myRef.onDisconnect().remove();
     
+    // Listen for match state changes FIRST
+    database.ref('gravity/matchState').on('value', snapshot=>{
+      const state = snapshot.val();
+      if(state === 'countdown' && matchState === 'waiting') {
+        matchState = 'countdown';
+        startMatch();
+      } else if(state === 'running' && matchState !== 'running') {
+        matchState = 'running';
+        countdownOverlay.style.display = 'none';
+      }
+    });
+    
     // Listen for other players
     database.ref('gravity/players').on('value', snapshot=>{
       playersData = snapshot.val() || {};
       
       // Update match status
       const playerCount = Object.keys(playersData).length;
-      matchStatus.textContent = `Players: ${playerCount} | Ready: ${Object.values(playersData).filter(p => p.ready).length}`;
+      const readyCount = Object.values(playersData).filter(p => p.ready).length;
+      matchStatus.textContent = `Players: ${playerCount} | Ready: ${readyCount}`;
       
-      // Check if all players are ready
-      if(playerCount >= 2 && checkAllPlayersReady() && matchState === 'waiting') {
-        startMatch();
+      // Check if all players are ready AND match hasn't started yet
+      if(playerCount >= 1 && checkAllPlayersReady() && matchState === 'waiting' && !matchStarted) {
+        // First player to detect all ready starts the match
+        database.ref('gravity/matchState').once('value', snapshot => {
+          const currentState = snapshot.val();
+          if(currentState !== 'countdown' && currentState !== 'running') {
+            startMatch();
+          }
+        });
       }
     });
     
@@ -551,19 +609,13 @@ function startGame(){
     database.ref('gravity/orbs').on('value', snapshot=>{
       const orbsData = snapshot.val();
       if(orbsData) {
-        orbs = Object.values(orbsData);
+        // Convert object to array
+        orbs = [];
+        for(let id in orbsData) {
+          orbs.push({id: id, ...orbsData[id]});
+        }
       } else {
         orbs = [];
-      }
-    });
-    
-    // Listen for match state
-    database.ref('gravity/matchState').on('value', snapshot=>{
-      const state = snapshot.val();
-      if(state === 'running' && matchState !== 'running') {
-        // Another player started the match
-        matchState = 'running';
-        countdownOverlay.style.display = 'none';
       }
     });
 
@@ -634,7 +686,7 @@ function applyGravity(){
   // Orb collection (only during match)
   if(matchState === 'running') {
     for(let orb of orbs) {
-      if(orb.active) {
+      if(orb && orb.active) {
         const dx = orb.x - player.x;
         const dy = orb.y - player.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
@@ -708,7 +760,7 @@ function drawOrbs() {
   const centerY = canvas.height/2;
   
   for(let orb of orbs) {
-    if(orb.active) {
+    if(orb && orb.active) {
       const screenX = orb.x - player.x + centerX;
       const screenY = orb.y - player.y + centerY;
       
@@ -772,11 +824,11 @@ function drawPlayer(pl){
   ctx.fillStyle="white";
   ctx.font="14px Arial";
   ctx.textAlign="center";
-  const displayText = `${pl.name}${pl.score !== undefined ? ` (${pl.score})` : ''}`;
+  const displayText = `${pl.name}${pl.score !== undefined && matchState === 'running' ? ` (${pl.score})` : ''}`;
   ctx.fillText(displayText, px, py - player.radius - 10);
   
-  // Draw ready indicator
-  if(pl.ready) {
+  // Draw ready indicator (only when waiting)
+  if(matchState === 'waiting' && pl.ready) {
     ctx.fillStyle = "#4CAF50";
     ctx.beginPath();
     ctx.arc(px + 15, py - 15, 5, 0, Math.PI*2);
@@ -871,7 +923,7 @@ function drawMiniMap(){
   // Orbs on minimap
   if(matchState === 'running') {
     for(let orb of orbs) {
-      if(orb.active) {
+      if(orb && orb.active) {
         const dx=orb.x-player.x, dy=orb.y-player.y;
         const orbX=mapX+miniMap.width/2+dx*scale;
         const orbY=mapY+miniMap.height/2+dy*scale;
