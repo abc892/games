@@ -166,6 +166,15 @@ function startGame(){
     const myRef = database.ref('gravity/players/' + playerId);
     myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name});
     myRef.onDisconnect().remove();
+    
+    // Check if this is the last player and clear world when they disconnect
+    database.ref('gravity/players').on('value', snapshot => {
+      const players = snapshot.val();
+      if(!players || Object.keys(players).length === 0){
+        // No players left, clear the world
+        database.ref('gravity/world').remove();
+      }
+    });
 
     // Update loop to sync (50ms interval to reduce lag)
     setInterval(()=>{
