@@ -124,24 +124,30 @@ function generateWorld(){
 
 // --- Load world ---
 function loadWorld(callback){
-  database.ref('gravity/world').once('value', snapshot => {
-    const data = snapshot.val();
-    // Check if world exists and if there are any active players
-    database.ref('gravity/players').once('value', playersSnapshot => {
-      const activePlayers = playersSnapshot.val();
-      const hasActivePlayers = activePlayers && Object.keys(activePlayers).length > 0;
-      
-      // Generate new world if no data exists OR if no active players (everyone left)
-      if(!data || !hasActivePlayers){ 
-        generateWorld(); 
-        callback(); 
-      }
-      else{ 
-        planets=data.planets; 
-        blackHole=data.blackHole; 
-        callback(); 
-      }
-    });
+  // First check if there are any active players
+  database.ref('gravity/players').once('value', playersSnapshot => {
+    const activePlayers = playersSnapshot.val();
+    const hasActivePlayers = activePlayers && Object.keys(activePlayers).length > 0;
+    
+    // If no active players, always generate a new world
+    if(!hasActivePlayers){
+      generateWorld();
+      callback();
+    } else {
+      // If there are active players, load existing world
+      database.ref('gravity/world').once('value', snapshot => {
+        const data = snapshot.val();
+        if(data){
+          planets = data.planets;
+          blackHole = data.blackHole;
+          callback();
+        } else {
+          // Shouldn't happen, but generate if missing
+          generateWorld();
+          callback();
+        }
+      });
+    }
   });
 }
 
@@ -166,7 +172,7 @@ function startGame(){
       if(isTabActive){
         myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,lastUpdate:Date.now()});
       }
-    },10);
+    },50);
 
     // Listen for other players
     database.ref('gravity/players').on('value', snapshot=>{
