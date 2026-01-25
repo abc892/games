@@ -445,7 +445,16 @@ function startGame(){
   loadWorld(()=>{
     const myRef = database.ref('gravity/players/' + playerId);
     myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name,ready:false,score:0});
-    myRef.onDisconnect().remove();
+    myRef.onDisconnect().remove(() => {
+  // After this player disconnects, check if any players remain
+  database.ref('gravity/players').once('value', snapshot => {
+    const players = snapshot.val();
+    if (!players || Object.keys(players).length === 0) {
+      // Delete entire gravity thread
+      database.ref('gravity').remove();
+    }
+  });
+});
     
     database.ref('gravity/players').on('value', snapshot => {
       const players = snapshot.val();
@@ -482,25 +491,32 @@ function startGame(){
       }
       
       // Check if all players are ready (only in waiting state)
-      if(gameState === 'waiting'){
-        const playerIds = Object.keys(playersData);
-        if(playerIds.length > 0){
-          // Only consider CURRENT players (those still connected)
-          // Don't wait for players who were in last game but have now disconnected
-          const allCurrentPlayersReady = playerIds.every(id => playersData[id].ready === true);
-          
-          if(allCurrentPlayersReady){
-            // Start countdown
-            database.ref('gravity/gameState').once('value', stateSnap => {
-              const state = stateSnap.val();
-              if(!state || state.state !== 'countdown'){
-                database.ref('gravity/gameState').set({state: 'countdown', startTime: Date.now()});
-              }
-            });
-          }
-        }
+if(gameState === 'waiting'){
+  const playerIds = Object.keys(playersData);
+  if(playerIds.length > 0){
+    // Count how many current players are ready
+    let readyCount = 0;
+    let totalCurrentPlayers = 0;
+    
+    for(let id in playersData){
+      totalCurrentPlayers++;
+      if(playersData[id].ready === true){
+        readyCount++;
       }
-    });
+    }
+    
+    // Only start countdown if ALL current players are ready
+    if(totalCurrentPlayers > 0 && readyCount === totalCurrentPlayers){
+      // Start countdown
+      database.ref('gravity/gameState').once('value', stateSnap => {
+        const state = stateSnap.val();
+        if(!state || state.state !== 'countdown'){
+          database.ref('gravity/gameState').set({state: 'countdown', startTime: Date.now()});
+        }
+      });
+    }
+  }
+}
     
     // Listen to game state
     database.ref('gravity/gameState').on('value', snapshot => {
