@@ -395,10 +395,12 @@ function loop(){
   updatePlayer();
   drawPlanets();
 
-  // Draw all players
+  // Draw all players (excluding self to avoid duplicate)
   for(let id in playersData){
-    const pl=playersData[id];
-    drawPlayer(pl);
+    if(id !== playerId){
+      const pl=playersData[id];
+      drawPlayer(pl);
+    }
   }
   drawPlayer(player);
   drawMiniMap();
