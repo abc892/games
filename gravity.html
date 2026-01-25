@@ -270,23 +270,12 @@ replayBtn.addEventListener("click", () => {
   // Check if all players have left end screen
   database.ref('gravity/players').once('value', snap => {
     const players = snap.val() || {};
-    const currentPlayerIds = Object.keys(players);
+    const playersInGame = Object.keys(players).filter(id => players[id].wasInLastGame === true);
+    const allLeftEndScreen = playersInGame.every(id => players[id].leftEndScreen === true);
     
-    // Find players who left the end screen
-    const playersWhoLeft = currentPlayerIds.filter(id => players[id].leftEndScreen === true);
-    
-    // Check if all CURRENT players have left end screen (ignoring disconnected players)
-    const allCurrentPlayersLeft = currentPlayerIds.length > 0 && 
-                                   currentPlayerIds.every(id => players[id].leftEndScreen === true);
-    
-    if(allCurrentPlayersLeft){
-      // All current players left end screen, reset game state
+    if(allLeftEndScreen){
+      // All players left end screen, reset game state
       database.ref('gravity/gameState').set({state: 'waiting', startTime: null, gameStartTime: null});
-      
-      // Reset wasInLastGame for all current players for the next match
-      currentPlayerIds.forEach(id => {
-        database.ref('gravity/players/' + id).update({wasInLastGame: false, leftEndScreen: false});
-      });
     }
   });
 });
@@ -450,7 +439,6 @@ function startGame(){
     database.ref('gravity/players').on('value', snapshot => {
       const players = snapshot.val();
       if(!players || Object.keys(players).length === 0){
-        // No players left - reset everything
         database.ref('gravity/world').remove();
         database.ref('gravity/gameState').remove();
         database.ref('gravity/orbs').remove();
@@ -486,11 +474,17 @@ function startGame(){
       if(gameState === 'waiting'){
         const playerIds = Object.keys(playersData);
         if(playerIds.length > 0){
-          // Only consider CURRENT players (those still connected)
-          // Don't wait for players who were in last game but have now disconnected
-          const allCurrentPlayersReady = playerIds.every(id => playersData[id].ready === true);
+          // Get players who were in the last game (have leftEndScreen flag or don't have it at all for new players)
+          const playersInLastGame = playerIds.filter(id => {
+            const p = playersData[id];
+            return p.wasInLastGame === true || p.wasInLastGame === undefined;
+          });
           
-          if(allCurrentPlayersReady){
+          // Check if all players from last game have clicked ready
+          const allReady = playersInLastGame.length > 0 && 
+                          playersInLastGame.every(id => playersData[id].ready === true);
+          
+          if(allReady){
             // Start countdown
             database.ref('gravity/gameState').once('value', stateSnap => {
               const state = stateSnap.val();
@@ -514,16 +508,6 @@ function startGame(){
           countdownDiv.style.display = 'block';
           startCountdown(state.startTime);
         } else if(state.state === 'playing' && (gameState === 'countdown' || gameState === 'waiting')){
-          // Check if game already ended based on time
-          const elapsed = Math.floor((Date.now() - state.gameStartTime) / 1000);
-          if(elapsed >= 120){
-            // Game already ended, don't join
-            gameState = 'waiting';
-            readyBtn.style.display = 'block';
-            gameUI.style.display = 'none';
-            return;
-          }
-          
           gameState = 'playing';
           countdownDiv.style.display = 'none';
           timerDiv.style.display = 'block';
