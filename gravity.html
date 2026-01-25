@@ -64,6 +64,8 @@ let playerName = null;
 let playerId = 'player_' + Math.random().toString(36).substr(2,8) + Date.now();
 let playersData = {};
 let planets = [], blackHole = null;
+let isTabActive = true;
+let lastUpdateTime = Date.now();
 
 // --- Name entry ---
 const nameOverlay = document.getElementById("nameOverlay");
@@ -116,16 +118,30 @@ function generateWorld(){
     }
   }
 
-  // Save world in Firebase
-  database.ref('gravity/world').set({planets,blackHole});
+  // Save world in Firebase with timestamp
+  database.ref('gravity/world').set({planets,blackHole,created:Date.now()});
 }
 
 // --- Load world ---
 function loadWorld(callback){
   database.ref('gravity/world').once('value', snapshot => {
     const data = snapshot.val();
-    if(data){ planets=data.planets; blackHole=data.blackHole; callback(); }
-    else{ generateWorld(); callback(); }
+    // Check if world exists and if there are any active players
+    database.ref('gravity/players').once('value', playersSnapshot => {
+      const activePlayers = playersSnapshot.val();
+      const hasActivePlayers = activePlayers && Object.keys(activePlayers).length > 0;
+      
+      // Generate new world if no data exists OR if no active players (everyone left)
+      if(!data || !hasActivePlayers){ 
+        generateWorld(); 
+        callback(); 
+      }
+      else{ 
+        planets=data.planets; 
+        blackHole=data.blackHole; 
+        callback(); 
+      }
+    });
   });
 }
 
@@ -145,10 +161,12 @@ function startGame(){
     myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name});
     myRef.onDisconnect().remove();
 
-    // Update loop to sync
+    // Update loop to sync (50ms interval to reduce lag)
     setInterval(()=>{
-      myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle});
-    },1);
+      if(isTabActive){
+        myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,lastUpdate:Date.now()});
+      }
+    },50);
 
     // Listen for other players
     database.ref('gravity/players').on('value', snapshot=>{
@@ -163,6 +181,23 @@ function startGame(){
 // --- Input ---
 window.addEventListener("keydown", e=>keys[e.key]=true);
 window.addEventListener("keyup", e=>keys[e.key]=false);
+
+// --- Tab visibility handling ---
+document.addEventListener("visibilitychange", () => {
+  isTabActive = !document.hidden;
+  if(isTabActive){
+    lastUpdateTime = Date.now(); // Reset time when returning to tab
+  }
+});
+
+window.addEventListener("blur", () => {
+  isTabActive = false;
+});
+
+window.addEventListener("focus", () => {
+  isTabActive = true;
+  lastUpdateTime = Date.now();
+});
 
 // --- Physics ---
 function applyGravity(){
@@ -197,6 +232,9 @@ function applyGravity(){
 }
 
 function updatePlayer(){
+  // Only update if tab is active
+  if(!isTabActive) return;
+  
   if(keys["ArrowLeft"]) player.angle-=0.05;
   if(keys["ArrowRight"]) player.angle+=0.05;
   if(keys["ArrowUp"]){ player.vx+=Math.cos(player.angle)*thrust; player.vy+=Math.sin(player.angle)*thrust; }
