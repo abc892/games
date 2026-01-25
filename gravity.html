@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Gravity Ball Multiplayer - Match Mode</title>
+<title>Gravity Ball Multiplayer</title>
 <style>
-  body { margin:0; background:black; overflow:hidden; }
+  body { margin:0; background:black; overflow:hidden; font-family:Arial,sans-serif; }
   canvas { display:block; }
   #nameOverlay {
     position:fixed;
@@ -22,113 +22,118 @@
     border:none;
     outline:none;
   }
-  #readyButton {
+  #readyBtn {
     position:fixed;
     top:20px;
     right:20px;
-    padding:10px 20px;
+    padding:15px 30px;
+    font-size:18px;
+    font-weight:bold;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    z-index:5;
+    transition:all 0.3s;
+  }
+  #readyBtn.not-ready {
+    background:#444;
+    color:white;
+  }
+  #readyBtn.ready {
     background:#4CAF50;
     color:white;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    font-size:16px;
-    z-index:5;
   }
-  #readyButton.unready {
-    background:#f44336;
-  }
-  #countdownOverlay {
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.8);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:15;
-    font-size:100px;
-    color:white;
-    font-weight:bold;
-  }
-  #timer {
+  #gameUI {
     position:fixed;
     top:20px;
     left:50%;
     transform:translateX(-50%);
-    font-size:32px;
     color:white;
-    font-weight:bold;
-    z-index:5;
     text-align:center;
-  }
-  #score {
-    position:fixed;
-    top:60px;
-    left:50%;
-    transform:translateX(-50%);
+    z-index:5;
     font-size:24px;
+    font-weight:bold;
+  }
+  #countdown {
+    font-size:80px;
+    color:#FFD700;
+    text-shadow:0 0 20px #FFD700;
+  }
+  #liveScores {
+    position:fixed;
+    top:100px;
+    right:20px;
+    background:rgba(0,0,0,0.7);
+    padding:15px;
+    border-radius:8px;
+    color:white;
+    min-width:200px;
+    z-index:5;
+    display:none;
+  }
+  #liveScores h3 {
+    margin:0 0 10px 0;
+    font-size:18px;
+    border-bottom:2px solid #FFD700;
+    padding-bottom:5px;
+  }
+  .live-score-item {
+    display:flex;
+    justify-content:space-between;
+    padding:5px 0;
+    font-size:16px;
+  }
+  .live-score-item.current-player {
     color:#4CAF50;
     font-weight:bold;
-    z-index:5;
-    text-align:center;
   }
-  #leaderboardOverlay {
+  #endScreen {
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,0.9);
+    background:rgba(0,0,0,0.95);
     display:none;
     align-items:center;
     justify-content:center;
     z-index:20;
     flex-direction:column;
     color:white;
-    font-family:Arial, sans-serif;
   }
-  #leaderboardTitle {
+  #endScreen h1 {
     font-size:48px;
-    margin-bottom:40px;
-    color:#4CAF50;
+    margin-bottom:30px;
+    color:#FFD700;
   }
-  #leaderboardList {
-    font-size:24px;
-    margin-bottom:40px;
-    text-align:center;
-  }
-  .leaderboardEntry {
-    margin:10px 0;
-    padding:10px 20px;
+  #leaderboard {
     background:rgba(255,255,255,0.1);
-    border-radius:5px;
+    padding:30px;
+    border-radius:10px;
+    margin-bottom:30px;
+    min-width:400px;
   }
-  #replayButton {
-    padding:15px 30px;
+  .rank-item {
+    display:flex;
+    justify-content:space-between;
+    padding:10px;
+    margin:5px 0;
+    background:rgba(255,255,255,0.05);
+    border-radius:5px;
     font-size:20px;
-    background:#2196F3;
+  }
+  .rank-item.first { background:rgba(255,215,0,0.3); }
+  .rank-item.second { background:rgba(192,192,192,0.3); }
+  .rank-item.third { background:rgba(205,127,50,0.3); }
+  #replayBtn {
+    padding:15px 40px;
+    font-size:22px;
+    background:#4CAF50;
     color:white;
     border:none;
     border-radius:8px;
     cursor:pointer;
+    font-weight:bold;
   }
-  #matchStatus {
-    position:fixed;
-    top:20px;
-    left:20px;
-    color:white;
-    font-size:18px;
-    z-index:5;
-    background:rgba(0,0,0,0.5);
-    padding:10px;
-    border-radius:5px;
-  }
-  #debugInfo {
-    position:fixed;
-    bottom:20px;
-    left:20px;
-    color:white;
-    font-size:12px;
-    background:rgba(0,0,0,0.5);
-    padding:5px;
-    border-radius:3px;
+  #replayBtn:hover {
+    background:#45a049;
   }
 </style>
 </head>
@@ -139,22 +144,28 @@
   <input id="nameInput" placeholder="Enter your name & press Enter">
 </div>
 
-<!-- Match UI -->
-<button id="readyButton" onclick="toggleReady()">Ready</button>
-<div id="matchStatus">Waiting for players...</div>
-<div id="countdownOverlay"></div>
-<div id="timer"></div>
-<div id="score"></div>
+<!-- Ready button -->
+<button id="readyBtn" class="not-ready" style="display:none;">Ready</button>
 
-<!-- Leaderboard -->
-<div id="leaderboardOverlay">
-  <div id="leaderboardTitle">MATCH RESULTS</div>
-  <div id="leaderboardList"></div>
-  <button id="replayButton" onclick="resetGame()">Play Again</button>
+<!-- Game UI -->
+<div id="gameUI" style="display:none;">
+  <div id="countdown"></div>
+  <div id="timer" style="display:none;">Time: <span id="timeLeft">120</span>s</div>
+  <div id="score" style="display:none;">Score: <span id="scoreValue">0</span></div>
 </div>
 
-<!-- Debug info -->
-<div id="debugInfo"></div>
+<!-- Live Scores -->
+<div id="liveScores">
+  <h3>Live Scores</h3>
+  <div id="liveScoresList"></div>
+</div>
+
+<!-- End screen -->
+<div id="endScreen">
+  <h1>Game Over!</h1>
+  <div id="leaderboard"></div>
+  <button id="replayBtn">Play Again</button>
+</div>
 
 <canvas id="game"></canvas>
 
@@ -184,9 +195,6 @@ canvas.height = window.innerHeight;
 const G = 0.15, thrust = 0.1, keys = {};
 const miniMap = { width:200, height:150, padding:10 };
 const starSectorSize = 400;
-const ORB_COUNT = 20;
-const MATCH_DURATION = 120; // 2 minutes in seconds
-const ORB_RESPAWN_TIME = 3000; // 3 seconds
 
 let playerName = null;
 let playerId = 'player_' + Math.random().toString(36).substr(2,8) + Date.now();
@@ -195,29 +203,33 @@ let planets = [], blackHole = null;
 let isTabActive = true;
 let lastUpdateTime = Date.now();
 
-// Match state variables
-let orbs = [];
-let matchState = 'waiting'; // waiting, countdown, running, ended
-let countdownValue = 0;
-let matchTime = MATCH_DURATION;
-let myScore = 0;
-let amIReady = false;
-let matchStarted = false;
+// Game state
+let gameState = 'waiting'; // waiting, countdown, playing, ended
+let isReady = false;
+let countdownValue = 3;
+let gameTimer = 120;
+let playerScore = 0;
+let orbs = {};
+let orbRespawnTimers = {};
 
-// --- DOM Elements ---
+// --- UI Elements ---
 const nameOverlay = document.getElementById("nameOverlay");
 const nameInput = document.getElementById("nameInput");
-const readyButton = document.getElementById("readyButton");
-const countdownOverlay = document.getElementById("countdownOverlay");
-const timer = document.getElementById("timer");
-const score = document.getElementById("score");
-const leaderboardOverlay = document.getElementById("leaderboardOverlay");
-const leaderboardList = document.getElementById("leaderboardList");
-const matchStatus = document.getElementById("matchStatus");
-const debugInfo = document.getElementById("debugInfo");
+const readyBtn = document.getElementById("readyBtn");
+const gameUI = document.getElementById("gameUI");
+const countdownDiv = document.getElementById("countdown");
+const timerDiv = document.getElementById("timer");
+const scoreDiv = document.getElementById("score");
+const scoreValue = document.getElementById("scoreValue");
+const timeLeft = document.getElementById("timeLeft");
+const endScreen = document.getElementById("endScreen");
+const leaderboard = document.getElementById("leaderboard");
+const replayBtn = document.getElementById("replayBtn");
+const liveScores = document.getElementById("liveScores");
+const liveScoresList = document.getElementById("liveScoresList");
 
-// --- Name entry ---
 nameInput.focus();
+
 nameInput.addEventListener("keydown", e => {
   if(e.key === "Enter" && nameInput.value.trim()){
     playerName = nameInput.value.trim();
@@ -226,19 +238,66 @@ nameInput.addEventListener("keydown", e => {
   }
 });
 
+// Ready button
+readyBtn.addEventListener("click", () => {
+  isReady = !isReady;
+  readyBtn.textContent = isReady ? "Unready" : "Ready";
+  readyBtn.className = isReady ? "ready" : "not-ready";
+  database.ref('gravity/players/' + playerId).update({ready: isReady});
+});
+
+// Replay button
+replayBtn.addEventListener("click", () => {
+  endScreen.style.display = 'none';
+  gameState = 'waiting';
+  playerScore = 0;
+  scoreValue.textContent = '0';
+  isReady = false;
+  readyBtn.textContent = "Ready";
+  readyBtn.className = "not-ready";
+  readyBtn.style.display = 'block';
+  gameUI.style.display = 'none';
+  countdownDiv.style.display = 'block';
+  countdownDiv.textContent = '';
+  
+  // Update player status
+  database.ref('gravity/players/' + playerId).update({
+    ready: false, 
+    score: 0,
+    leftEndScreen: true
+  });
+  
+  // Check if all players have left end screen
+  database.ref('gravity/players').once('value', snap => {
+    const players = snap.val() || {};
+    const currentPlayerIds = Object.keys(players);
+    
+    // Find players who left the end screen
+    const playersWhoLeft = currentPlayerIds.filter(id => players[id].leftEndScreen === true);
+    
+    // Check if all CURRENT players have left end screen (ignoring disconnected players)
+    const allCurrentPlayersLeft = currentPlayerIds.length > 0 && 
+                                   currentPlayerIds.every(id => players[id].leftEndScreen === true);
+    
+    if(allCurrentPlayersLeft){
+      // All current players left end screen, reset game state
+      database.ref('gravity/gameState').set({state: 'waiting', startTime: null, gameStartTime: null});
+      
+      // Reset wasInLastGame for all current players for the next match
+      currentPlayerIds.forEach(id => {
+        database.ref('gravity/players/' + id).update({wasInLastGame: false, leftEndScreen: false});
+      });
+    }
+  });
+});
+
 // --- Utility ---
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;}}
 
-function getDistance(x1, y1, x2, y2) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
 // --- Generate world if first player ---
 function generateWorld(){
-  planets = [];
   const colors = ["orange","red","green","blue","purple","yellow","pink","cyan","lime","magenta"];
+  planets = [];
   let attempts = 0;
   while(planets.length < 10 && attempts < 5000){
     attempts++;
@@ -272,104 +331,82 @@ function generateWorld(){
 }
 
 // --- Generate Orbs ---
-function generateOrbs() {
-  orbs = [];
-  const orbArea = 2000; // Area within which orbs spawn
-  const minDistance = 50; // Minimum distance between orbs and other objects
-  
-  for(let i = 0; i < ORB_COUNT; i++) {
+function generateOrbs(){
+  const newOrbs = {};
+  for(let i = 0; i < 20; i++){
+    let valid = false;
+    let x, y;
     let attempts = 0;
-    let orbPlaced = false;
-    
-    while(!orbPlaced && attempts < 1000) {
+    while(!valid && attempts < 1000){
       attempts++;
-      const x = Math.random() * orbArea - orbArea/2;
-      const y = Math.random() * orbArea - orbArea/2;
+      x = Math.random() * 4000 - 2000;
+      y = Math.random() * 4000 - 2000;
+      valid = true;
       
       // Check distance from planets
-      let tooClose = false;
-      for(let planet of planets) {
-        if(getDistance(x, y, planet.x, planet.y) < planet.radius + minDistance) {
-          tooClose = true;
-          break;
-        }
+      for(let p of planets){
+        const dist = Math.sqrt((x-p.x)**2 + (y-p.y)**2);
+        if(dist < p.radius + 50){ valid = false; break; }
       }
       
       // Check distance from black hole
-      if(getDistance(x, y, blackHole.x, blackHole.y) < blackHole.radius + minDistance) {
-        tooClose = true;
+      if(valid){
+        const dist = Math.sqrt((x-blackHole.x)**2 + (y-blackHole.y)**2);
+        if(dist < blackHole.radius + 100) valid = false;
       }
       
       // Check distance from other orbs
-      for(let orb of orbs) {
-        if(getDistance(x, y, orb.x, orb.y) < minDistance) {
-          tooClose = true;
-          break;
+      if(valid){
+        for(let id in newOrbs){
+          const orb = newOrbs[id];
+          const dist = Math.sqrt((x-orb.x)**2 + (y-orb.y)**2);
+          if(dist < 100){ valid = false; break; }
         }
       }
-      
-      if(!tooClose) {
-        orbs.push({
-          id: 'orb_' + i + '_' + Date.now(),
-          x: x,
-          y: y,
-          radius: 18,
-          color: '#4CAF50',
-          active: true,
-          collectedBy: null
-        });
-        orbPlaced = true;
+    }
+    
+    if(valid){
+      newOrbs['orb_'+i] = {x, y, radius: 18};
+    }
+  }
+  
+  database.ref('gravity/orbs').set(newOrbs);
+}
+
+// --- Respawn single orb ---
+function respawnOrb(orbId){
+  let valid = false;
+  let x, y;
+  let attempts = 0;
+  
+  while(!valid && attempts < 1000){
+    attempts++;
+    x = Math.random() * 4000 - 2000;
+    y = Math.random() * 4000 - 2000;
+    valid = true;
+    
+    for(let p of planets){
+      const dist = Math.sqrt((x-p.x)**2 + (y-p.y)**2);
+      if(dist < p.radius + 50){ valid = false; break; }
+    }
+    
+    if(valid){
+      const dist = Math.sqrt((x-blackHole.x)**2 + (y-blackHole.y)**2);
+      if(dist < blackHole.radius + 100) valid = false;
+    }
+    
+    if(valid){
+      for(let id in orbs){
+        const orb = orbs[id];
+        const dist = Math.sqrt((x-orb.x)**2 + (y-orb.y)**2);
+        if(dist < 100){ valid = false; break; }
       }
     }
   }
   
-  // Save orbs to Firebase
-  database.ref('gravity/orbs').set(orbs);
-}
-
-// --- Respawn Orb ---
-function respawnOrb(orbId) {
-  setTimeout(() => {
-    const orbArea = 2000;
-    const minDistance = 50;
-    let attempts = 0;
-    let orbPlaced = false;
-    
-    while(!orbPlaced && attempts < 1000) {
-      attempts++;
-      const x = Math.random() * orbArea - orbArea/2;
-      const y = Math.random() * orbArea - orbArea/2;
-      
-      let tooClose = false;
-      for(let planet of planets) {
-        if(getDistance(x, y, planet.x, planet.y) < planet.radius + minDistance) {
-          tooClose = true;
-          break;
-        }
-      }
-      
-      if(getDistance(x, y, blackHole.x, blackHole.y) < blackHole.radius + minDistance) {
-        tooClose = true;
-      }
-      
-      for(let orb of orbs) {
-        if(orb.active && getDistance(x, y, orb.x, orb.y) < minDistance) {
-          tooClose = true;
-          break;
-        }
-      }
-      
-      if(!tooClose) {
-        database.ref('gravity/orbs/' + orbId).update({
-          x: x,
-          y: y,
-          active: true,
-          collectedBy: null
-        });
-        orbPlaced = true;
-      }
-    }
-  }, ORB_RESPAWN_TIME);
+  if(valid){
+    database.ref('gravity/orbs/' + orbId).set({x, y, radius: 18});
+  }
 }
 
 // --- Load world ---
@@ -398,245 +435,238 @@ function loadWorld(callback){
 }
 
 // --- Player ---
-const player = {x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",score:0,ready:false};
-
-function toggleReady() {
-  amIReady = !amIReady;
-  player.ready = amIReady;
-  
-  if(amIReady) {
-    readyButton.textContent = "Unready";
-    readyButton.classList.add("unready");
-  } else {
-    readyButton.textContent = "Ready";
-    readyButton.classList.remove("unready");
-  }
-  
-  // Update Firebase
-  database.ref('gravity/players/' + playerId).update({ready: player.ready});
-}
-
-function checkAllPlayersReady() {
-  const playerIds = Object.keys(playersData);
-  if(playerIds.length < 1) return false;
-  
-  let allReady = true;
-  let readyCount = 0;
-  let totalCount = 0;
-  
-  for(let id in playersData) {
-    totalCount++;
-    if(playersData[id].ready === true) {
-      readyCount++;
-    } else {
-      allReady = false;
-    }
-  }
-  
-  // Debug output
-  debugInfo.textContent = `Players: ${totalCount}, Ready: ${readyCount}, All Ready: ${allReady}`;
-  
-  return allReady && totalCount >= 1;
-}
-
-function startMatch() {
-  if(matchStarted) return; // Prevent multiple starts
-  matchStarted = true;
-  
-  matchState = 'countdown';
-  countdownValue = 3;
-  countdownOverlay.style.display = 'flex';
-  countdownOverlay.textContent = countdownValue;
-  
-  // Set match state in Firebase so other players know
-  database.ref('gravity/matchState').set('countdown');
-  
-  // Start countdown
-  const countdownInterval = setInterval(() => {
-    countdownValue--;
-    if(countdownValue > 0) {
-      countdownOverlay.textContent = countdownValue;
-    } else if(countdownValue === 0) {
-      countdownOverlay.textContent = "GO!";
-    } else {
-      clearInterval(countdownInterval);
-      countdownOverlay.style.display = 'none';
-      matchState = 'running';
-      matchTime = MATCH_DURATION;
-      myScore = 0;
-      player.score = 0;
-      score.textContent = "Score: 0";
-      
-      // Update match state in Firebase
-      database.ref('gravity/matchState').set('running');
-      
-      // Reset all players' scores in Firebase
-      for(let id in playersData) {
-        database.ref('gravity/players/' + id).update({score: 0});
-      }
-      
-      // Generate orbs
-      generateOrbs();
-      
-      // Start match timer
-      startMatchTimer();
-    }
-  }, 1000);
-}
-
-function startMatchTimer() {
-  const timerInterval = setInterval(() => {
-    if(matchState !== 'running') {
-      clearInterval(timerInterval);
-      return;
-    }
-    
-    matchTime--;
-    const minutes = Math.floor(matchTime / 60);
-    const seconds = matchTime % 60;
-    timer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    
-    if(matchTime <= 0) {
-      clearInterval(timerInterval);
-      endMatch();
-    }
-  }, 1000);
-}
-
-function endMatch() {
-  matchState = 'ended';
-  
-  // Calculate rankings
-  const playersArray = [];
-  for(let id in playersData) {
-    if(playersData[id].name) {
-      playersArray.push({
-        id: id,
-        name: playersData[id].name,
-        score: playersData[id].score || 0
-      });
-    }
-  }
-  
-  // Sort by score (descending)
-  playersArray.sort((a, b) => b.score - a.score);
-  
-  // Display leaderboard
-  leaderboardList.innerHTML = '';
-  playersArray.forEach((playerData, index) => {
-    const entry = document.createElement('div');
-    entry.className = 'leaderboardEntry';
-    entry.innerHTML = `${index + 1}. ${playerData.name} - ${playerData.score} points`;
-    if(playerData.id === playerId) {
-      entry.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
-    }
-    leaderboardList.appendChild(entry);
-  });
-  
-  leaderboardOverlay.style.display = 'flex';
-}
-
-function resetGame() {
-  leaderboardOverlay.style.display = 'none';
-  matchState = 'waiting';
-  matchStarted = false;
-  player.ready = false;
-  amIReady = false;
-  readyButton.textContent = "Ready";
-  readyButton.classList.remove("unready");
-  myScore = 0;
-  player.score = 0;
-  score.textContent = "";
-  timer.textContent = "";
-  matchStatus.textContent = "Waiting for players...";
-  
-  // Update Firebase
-  database.ref('gravity/players/' + playerId).update({ready: false, score: 0});
-  
-  // Clear orbs
-  database.ref('gravity/orbs').remove();
-  
-  // Reset match state
-  database.ref('gravity/matchState').set('waiting');
-}
+const player = {x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",score:0};
 
 function startGame(){
-  player.x = 0;
-  player.y = 0;
+  player.x = 0; player.y = 0;
   player.name = playerName;
-  player.ready = false;
   player.score = 0;
 
   loadWorld(()=>{
     const myRef = database.ref('gravity/players/' + playerId);
-    myRef.set(player);
+    myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name,ready:false,score:0});
     myRef.onDisconnect().remove();
     
-    // Listen for match state changes FIRST
-    database.ref('gravity/matchState').on('value', snapshot=>{
-      const state = snapshot.val();
-      if(state === 'countdown' && matchState === 'waiting') {
-        matchState = 'countdown';
-        startMatch();
-      } else if(state === 'running' && matchState !== 'running') {
-        matchState = 'running';
-        countdownOverlay.style.display = 'none';
-      }
-    });
-    
-    // Listen for other players
-    database.ref('gravity/players').on('value', snapshot=>{
-      playersData = snapshot.val() || {};
-      
-      // Update match status
-      const playerCount = Object.keys(playersData).length;
-      const readyCount = Object.values(playersData).filter(p => p.ready).length;
-      matchStatus.textContent = `Players: ${playerCount} | Ready: ${readyCount}`;
-      
-      // Check if all players are ready AND match hasn't started yet
-      if(playerCount >= 1 && checkAllPlayersReady() && matchState === 'waiting' && !matchStarted) {
-        // First player to detect all ready starts the match
-        database.ref('gravity/matchState').once('value', snapshot => {
-          const currentState = snapshot.val();
-          if(currentState !== 'countdown' && currentState !== 'running') {
-            startMatch();
-          }
-        });
-      }
-    });
-    
-    // Listen for orbs
-    database.ref('gravity/orbs').on('value', snapshot=>{
-      const orbsData = snapshot.val();
-      if(orbsData) {
-        // Convert object to array
-        orbs = [];
-        for(let id in orbsData) {
-          orbs.push({id: id, ...orbsData[id]});
-        }
+    database.ref('gravity/players').on('value', snapshot => {
+      const players = snapshot.val();
+      if(!players || Object.keys(players).length === 0){
+        database.ref('gravity/world').remove();
+        database.ref('gravity/gameState').remove();
+        database.ref('gravity/orbs').remove();
       } else {
-        orbs = [];
+        // Check if all players have left the ended state
+        const allLeftEndScreen = Object.values(players).every(p => p.leftEndScreen === true);
+        if(allLeftEndScreen){
+          // Reset all players' leftEndScreen flag
+          Object.keys(players).forEach(id => {
+            database.ref('gravity/players/' + id).update({leftEndScreen: false});
+          });
+        }
       }
     });
 
-    // Update loop
     setInterval(()=>{
-      if(isTabActive){
-        myRef.update({
-          x:player.x,
-          y:player.y,
-          vx:player.vx,
-          vy:player.vy,
-          angle:player.angle,
-          score:player.score,
-          ready:player.ready,
-          lastUpdate:Date.now()
-        });
+      if(isTabActive && gameState === 'playing'){
+        myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,score:playerScore});
+      } else if(isTabActive && gameState === 'waiting'){
+        myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle});
       }
     },50);
 
-    // Start game loop
+    database.ref('gravity/players').on('value', snapshot=>{
+      playersData = snapshot.val() || {};
+      
+      // Update live scores during gameplay
+      if(gameState === 'playing'){
+        updateLiveScores();
+      }
+      
+      // Check if all players are ready (only in waiting state)
+      if(gameState === 'waiting'){
+        const playerIds = Object.keys(playersData);
+        if(playerIds.length > 0){
+          // Only consider CURRENT players (those still connected)
+          // Don't wait for players who were in last game but have now disconnected
+          const allCurrentPlayersReady = playerIds.every(id => playersData[id].ready === true);
+          
+          if(allCurrentPlayersReady){
+            // Start countdown
+            database.ref('gravity/gameState').once('value', stateSnap => {
+              const state = stateSnap.val();
+              if(!state || state.state !== 'countdown'){
+                database.ref('gravity/gameState').set({state: 'countdown', startTime: Date.now()});
+              }
+            });
+          }
+        }
+      }
+    });
+    
+    // Listen to game state
+    database.ref('gravity/gameState').on('value', snapshot => {
+      const state = snapshot.val();
+      if(state){
+        if(state.state === 'countdown' && gameState === 'waiting'){
+          gameState = 'countdown';
+          readyBtn.style.display = 'none';
+          gameUI.style.display = 'block';
+          countdownDiv.style.display = 'block';
+          startCountdown(state.startTime);
+        } else if(state.state === 'playing' && (gameState === 'countdown' || gameState === 'waiting')){
+          gameState = 'playing';
+          countdownDiv.style.display = 'none';
+          timerDiv.style.display = 'block';
+          scoreDiv.style.display = 'block';
+          liveScores.style.display = 'block';
+          readyBtn.style.display = 'none';
+          gameUI.style.display = 'block';
+          startGameTimer(state.gameStartTime);
+          // Mark player as being in this game
+          database.ref('gravity/players/' + playerId).update({wasInLastGame: true});
+        } else if(state.state === 'ended' && gameState === 'playing'){
+          gameState = 'ended';
+          liveScores.style.display = 'none';
+          showEndScreen();
+        } else if(state.state === 'waiting'){
+          // Game was reset, go back to waiting
+          gameState = 'waiting';
+          readyBtn.style.display = 'block';
+          gameUI.style.display = 'none';
+          endScreen.style.display = 'none';
+          isReady = false;
+          readyBtn.textContent = "Ready";
+          readyBtn.className = "not-ready";
+          playerScore = 0;
+          scoreValue.textContent = '0';
+          database.ref('gravity/players/' + playerId).update({ready: false, score: 0});
+        }
+      } else {
+        // No game state, reset to waiting
+        gameState = 'waiting';
+        readyBtn.style.display = 'block';
+        gameUI.style.display = 'none';
+        endScreen.style.display = 'none';
+      }
+    });
+    
+    // Listen to orbs
+    database.ref('gravity/orbs').on('value', snapshot => {
+      orbs = snapshot.val() || {};
+    });
+
+    readyBtn.style.display = 'block';
     requestAnimationFrame(loop);
+  });
+}
+
+// --- Countdown ---
+let countdownInterval = null;
+
+function startCountdown(startTime){
+  if(countdownInterval) clearInterval(countdownInterval);
+  
+  countdownInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const remaining = 3 - elapsed;
+    
+    if(remaining > 0){
+      countdownDiv.textContent = remaining;
+    } else {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+      countdownDiv.textContent = 'GO!';
+      
+      // Only the first player generates orbs
+      setTimeout(() => {
+        database.ref('gravity/players').once('value', snap => {
+          const players = snap.val();
+          const playerIds = Object.keys(players || {});
+          const sortedIds = playerIds.sort();
+          
+          // Check if I'm the first player (alphabetically)
+          if(sortedIds[0] === playerId){
+            database.ref('gravity/gameState').set({state: 'playing', gameStartTime: Date.now()});
+            generateOrbs();
+          }
+        });
+      }, 500);
+    }
+  }, 100);
+}
+
+// --- Game Timer ---
+let timerInterval = null;
+
+function startGameTimer(gameStartTime){
+  if(timerInterval) clearInterval(timerInterval);
+  
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+    const remaining = 120 - elapsed;
+    
+    if(remaining > 0){
+      gameTimer = remaining;
+      timeLeft.textContent = remaining;
+    } else {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      
+      // Only first player sets game to ended
+      database.ref('gravity/players').once('value', snap => {
+        const players = snap.val();
+        const playerIds = Object.keys(players || {});
+        const sortedIds = playerIds.sort();
+        
+        if(sortedIds[0] === playerId){
+          database.ref('gravity/gameState').set({state: 'ended'});
+        }
+      });
+    }
+  }, 100);
+}
+
+// --- End Screen ---
+function showEndScreen(){
+  timerDiv.style.display = 'none';
+  scoreDiv.style.display = 'none';
+  
+  const rankings = Object.keys(playersData).map(id => ({
+    name: playersData[id].name,
+    score: playersData[id].score || 0
+  })).sort((a, b) => b.score - a.score);
+  
+  leaderboard.innerHTML = '';
+  rankings.forEach((player, index) => {
+    const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : '';
+    const rankItem = document.createElement('div');
+    rankItem.className = 'rank-item ' + rankClass;
+    rankItem.innerHTML = `
+      <span>#${index + 1} ${player.name}</span>
+      <span>${player.score} points</span>
+    `;
+    leaderboard.appendChild(rankItem);
+  });
+  
+  endScreen.style.display = 'flex';
+}
+
+// --- Update Live Scores ---
+function updateLiveScores(){
+  const scores = Object.keys(playersData).map(id => ({
+    id: id,
+    name: playersData[id].name,
+    score: playersData[id].score || 0
+  })).sort((a, b) => b.score - a.score);
+  
+  liveScoresList.innerHTML = '';
+  scores.forEach(player => {
+    const item = document.createElement('div');
+    item.className = 'live-score-item' + (player.id === playerId ? ' current-player' : '');
+    item.innerHTML = `
+      <span>${player.name}</span>
+      <span>${player.score}</span>
+    `;
+    liveScoresList.appendChild(item);
   });
 }
 
@@ -644,12 +674,20 @@ function startGame(){
 window.addEventListener("keydown", e=>keys[e.key]=true);
 window.addEventListener("keyup", e=>keys[e.key]=false);
 
-// --- Tab visibility handling ---
 document.addEventListener("visibilitychange", () => {
   isTabActive = !document.hidden;
   if(isTabActive){
     lastUpdateTime = Date.now();
   }
+});
+
+window.addEventListener("blur", () => {
+  isTabActive = false;
+});
+
+window.addEventListener("focus", () => {
+  isTabActive = true;
+  lastUpdateTime = Date.now();
 });
 
 // --- Physics ---
@@ -669,7 +707,6 @@ function applyGravity(){
     }
   }
 
-  // Player collision
   for(let id in playersData){
     if(id===playerId) continue;
     const op=playersData[id];
@@ -682,34 +719,30 @@ function applyGravity(){
       player.y-=ny*overlap*0.5;
     }
   }
+}
+
+// --- Check orb collision ---
+function checkOrbCollision(){
+  if(gameState !== 'playing') return;
   
-  // Orb collection (only during match)
-  if(matchState === 'running') {
-    for(let orb of orbs) {
-      if(orb && orb.active) {
-        const dx = orb.x - player.x;
-        const dy = orb.y - player.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        
-        if(dist < player.radius + orb.radius) {
-          // Collect orb
-          myScore++;
-          player.score = myScore;
-          score.textContent = `Score: ${myScore}`;
-          
-          // Update orb in Firebase
-          database.ref('gravity/orbs/' + orb.id).update({
-            active: false,
-            collectedBy: playerId
-          });
-          
-          // Respawn orb after delay
-          respawnOrb(orb.id);
-          
-          // Update player score in Firebase
-          database.ref('gravity/players/' + playerId).update({score: player.score});
-        }
-      }
+  for(let orbId in orbs){
+    const orb = orbs[orbId];
+    const dx = orb.x - player.x;
+    const dy = orb.y - player.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    
+    if(dist < player.radius + orb.radius){
+      playerScore++;
+      scoreValue.textContent = playerScore;
+      database.ref('gravity/players/' + playerId).update({score: playerScore});
+      database.ref('gravity/orbs/' + orbId).remove();
+      
+      // Respawn after 3 seconds
+      setTimeout(() => {
+        respawnOrb(orbId);
+      }, 3000);
+      
+      break;
     }
   }
 }
@@ -723,9 +756,10 @@ function updatePlayer(){
   if(keys["m"]){ player.vx*=0.98; player.vy*=0.98; }
   applyGravity();
   player.x+=player.vx; player.y+=player.vy;
+  checkOrbCollision();
 }
 
-// --- Draw ---
+// --- Infinite stars ---
 function drawStars(){
   const centerX=canvas.width/2, centerY=canvas.height/2;
   const startX=Math.floor((player.x-centerX)/starSectorSize)*starSectorSize;
@@ -755,59 +789,11 @@ function drawStars(){
   }
 }
 
-function drawOrbs() {
-  const centerX = canvas.width/2;
-  const centerY = canvas.height/2;
-  
-  for(let orb of orbs) {
-    if(orb && orb.active) {
-      const screenX = orb.x - player.x + centerX;
-      const screenY = orb.y - player.y + centerY;
-      
-      // Draw glowing effect
-      const gradient = ctx.createRadialGradient(
-        screenX, screenY, 0,
-        screenX, screenY, orb.radius * 1.5
-      );
-      gradient.addColorStop(0, 'rgba(76, 175, 80, 0.8)');
-      gradient.addColorStop(1, 'rgba(76, 175, 80, 0)');
-      
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(screenX, screenY, orb.radius * 1.5, 0, Math.PI*2);
-      ctx.fill();
-      
-      // Draw orb
-      ctx.fillStyle = orb.color;
-      ctx.beginPath();
-      ctx.arc(screenX, screenY, orb.radius, 0, Math.PI*2);
-      ctx.fill();
-      
-      // Draw inner glow
-      const innerGradient = ctx.createRadialGradient(
-        screenX, screenY, 0,
-        screenX, screenY, orb.radius
-      );
-      innerGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-      innerGradient.addColorStop(0.7, 'rgba(76, 175, 80, 0.5)');
-      innerGradient.addColorStop(1, 'rgba(76, 175, 80, 0)');
-      
-      ctx.fillStyle = innerGradient;
-      ctx.beginPath();
-      ctx.arc(screenX, screenY, orb.radius, 0, Math.PI*2);
-      ctx.fill();
-    }
-  }
-}
-
+// --- Draw ---
 function drawPlayer(pl){
   const centerX=canvas.width/2, centerY=canvas.height/2;
   const px = (pl===player)? centerX : pl.x-player.x+centerX;
   const py = (pl===player)? centerY : pl.y-player.y+centerY;
-  
-  // Skip if player is off screen
-  if(px < -50 || px > canvas.width + 50 || py < -50 || py > canvas.height + 50) return;
-  
   ctx.save();
   ctx.translate(px,py);
   ctx.rotate(pl.angle);
@@ -820,20 +806,10 @@ function drawPlayer(pl){
   ctx.moveTo(0,0); ctx.lineTo(15,0); ctx.stroke();
   ctx.restore();
 
-  // Name and score
   ctx.fillStyle="white";
   ctx.font="14px Arial";
   ctx.textAlign="center";
-  const displayText = `${pl.name}${pl.score !== undefined && matchState === 'running' ? ` (${pl.score})` : ''}`;
-  ctx.fillText(displayText, px, py - player.radius - 10);
-  
-  // Draw ready indicator (only when waiting)
-  if(matchState === 'waiting' && pl.ready) {
-    ctx.fillStyle = "#4CAF50";
-    ctx.beginPath();
-    ctx.arc(px + 15, py - 15, 5, 0, Math.PI*2);
-    ctx.fill();
-  }
+  ctx.fillText(pl.name,px,py-player.radius-10);
 }
 
 function drawPlanets(){
@@ -847,7 +823,6 @@ function drawPlanets(){
     ctx.fill();
   }
 
-  // Black Hole
   const bhX = blackHole.x - player.x + centerX;
   const bhY = blackHole.y - player.y + centerY;
   blackHole.angle += 0.005;
@@ -871,7 +846,6 @@ function drawPlanets(){
   ctx.arc(bhX,bhY,blackHole.radius,0,Math.PI*2);
   ctx.fill();
 
-  // Black hole particles
   for(let p of blackHole.particles){
     p.angle += p.speed;
     const px = bhX + Math.cos(p.angle)*p.r;
@@ -880,6 +854,32 @@ function drawPlanets(){
     ctx.beginPath();
     ctx.arc(px,py,p.size,0,Math.PI*2);
     ctx.fill();
+  }
+}
+
+// --- Draw Orbs ---
+function drawOrbs(){
+  if(gameState !== 'playing') return;
+  
+  const centerX = canvas.width/2, centerY = canvas.height/2;
+  for(let orbId in orbs){
+    const orb = orbs[orbId];
+    const screenX = orb.x - player.x + centerX;
+    const screenY = orb.y - player.y + centerY;
+    
+    ctx.fillStyle = 'rgba(0,255,0,0.3)';
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, orb.radius + 5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#00ff00';
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, orb.radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#00aa00';
+    ctx.lineWidth = 2;
+    ctx.stroke();
   }
 }
 
@@ -911,7 +911,6 @@ function drawMiniMap(){
     ctx.fill();
   }
   
-  // Black hole
   const dx=blackHole.x-player.x, dy=blackHole.y-player.y;
   const px=mapX+miniMap.width/2+dx*scale, py=mapY+miniMap.height/2+dy*scale;
   const r=Math.max(2,blackHole.radius*scale);
@@ -919,23 +918,7 @@ function drawMiniMap(){
   ctx.beginPath();
   ctx.arc(px,py,r,0,Math.PI*2);
   ctx.fill();
-  
-  // Orbs on minimap
-  if(matchState === 'running') {
-    for(let orb of orbs) {
-      if(orb && orb.active) {
-        const dx=orb.x-player.x, dy=orb.y-player.y;
-        const orbX=mapX+miniMap.width/2+dx*scale;
-        const orbY=mapY+miniMap.height/2+dy*scale;
-        ctx.fillStyle="#4CAF50";
-        ctx.beginPath();
-        ctx.arc(orbX, orbY, 3, 0, Math.PI*2);
-        ctx.fill();
-      }
-    }
-  }
 
-  // Player
   ctx.fillStyle="white";
   ctx.beginPath();
   ctx.arc(mapX+miniMap.width/2,mapY+miniMap.height/2,4,0,Math.PI*2);
@@ -949,16 +932,12 @@ function loop(){
   drawStars();
   updatePlayer();
   drawPlanets();
-  
-  // Draw orbs only during match
-  if(matchState === 'running') {
-    drawOrbs();
-  }
-  
-  // Draw all players
+  drawOrbs();
+
   for(let id in playersData){
     if(id !== playerId){
-      drawPlayer(playersData[id]);
+      const pl=playersData[id];
+      drawPlayer(pl);
     }
   }
   drawPlayer(player);
