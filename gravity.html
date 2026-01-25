@@ -507,50 +507,69 @@ function startGame(){
     database.ref('gravity/gameState').on('value', snapshot => {
       const state = snapshot.val();
       if(state){
-        if(state.state === 'countdown' && gameState === 'waiting'){
-          gameState = 'countdown';
-          readyBtn.style.display = 'none';
-          gameUI.style.display = 'block';
-          countdownDiv.style.display = 'block';
-          startCountdown(state.startTime);
-        } else if(state.state === 'playing' && (gameState === 'countdown' || gameState === 'waiting')){
-          // Check if game already ended based on time
-          const elapsed = Math.floor((Date.now() - state.gameStartTime) / 1000);
-          if(elapsed >= 120){
-            // Game already ended, don't join
+        // CRITICAL CHECK: If there's a game state but NO other players, it's a ghost game - delete it
+        database.ref('gravity/players').once('value', playerSnap => {
+          const currentPlayers = playerSnap.val() || {};
+          const playerCount = Object.keys(currentPlayers).length;
+          
+          // If I'm the only player and there's an active game, it's a leftover - reset it
+          if(playerCount <= 1 && (state.state === 'playing' || state.state === 'countdown')){
+            database.ref('gravity/gameState').remove();
+            database.ref('gravity/orbs').remove();
             gameState = 'waiting';
             readyBtn.style.display = 'block';
             gameUI.style.display = 'none';
+            endScreen.style.display = 'none';
             return;
           }
           
-          gameState = 'playing';
-          countdownDiv.style.display = 'none';
-          timerDiv.style.display = 'block';
-          scoreDiv.style.display = 'block';
-          liveScores.style.display = 'block';
-          readyBtn.style.display = 'none';
-          gameUI.style.display = 'block';
-          startGameTimer(state.gameStartTime);
-          // Mark player as being in this game
-          database.ref('gravity/players/' + playerId).update({wasInLastGame: true});
-        } else if(state.state === 'ended' && gameState === 'playing'){
-          gameState = 'ended';
-          liveScores.style.display = 'none';
-          showEndScreen();
-        } else if(state.state === 'waiting'){
-          // Game was reset, go back to waiting
-          gameState = 'waiting';
-          readyBtn.style.display = 'block';
-          gameUI.style.display = 'none';
-          endScreen.style.display = 'none';
-          isReady = false;
-          readyBtn.textContent = "Ready";
-          readyBtn.className = "not-ready";
-          playerScore = 0;
-          scoreValue.textContent = '0';
-          database.ref('gravity/players/' + playerId).update({ready: false, score: 0});
-        }
+          if(state.state === 'countdown' && gameState === 'waiting'){
+            gameState = 'countdown';
+            readyBtn.style.display = 'none';
+            gameUI.style.display = 'block';
+            countdownDiv.style.display = 'block';
+            startCountdown(state.startTime);
+          } else if(state.state === 'playing' && (gameState === 'countdown' || gameState === 'waiting')){
+            // Check if game already ended based on time
+            const elapsed = Math.floor((Date.now() - state.gameStartTime) / 1000);
+            if(elapsed >= 120){
+              // Game already ended, delete the state
+              database.ref('gravity/gameState').remove();
+              database.ref('gravity/orbs').remove();
+              gameState = 'waiting';
+              readyBtn.style.display = 'block';
+              gameUI.style.display = 'none';
+              return;
+            }
+            
+            gameState = 'playing';
+            countdownDiv.style.display = 'none';
+            timerDiv.style.display = 'block';
+            scoreDiv.style.display = 'block';
+            liveScores.style.display = 'block';
+            readyBtn.style.display = 'none';
+            gameUI.style.display = 'block';
+            startGameTimer(state.gameStartTime);
+            // Mark player as being in this game
+            database.ref('gravity/players/' + playerId).update({wasInLastGame: true});
+          } else if(state.state === 'ended' && gameState === 'playing'){
+            gameState = 'ended';
+            liveScores.style.display = 'none';
+            showEndScreen();
+          } else if(state.state === 'waiting'){
+            // Game was reset, go back to waiting
+            gameState = 'waiting';
+            readyBtn.style.display = 'block';
+            gameUI.style.display = 'none';
+            endScreen.style.display = 'none';
+            isReady = false;
+            readyBtn.textContent = "Ready";
+            readyBtn.className = "not-ready";
+            playerScore = 0;
+            scoreValue.textContent = '0';
+            database.ref('gravity/players/' + playerId).update({ready: false, score: 0});
+          }
+        });
       } else {
         // No game state, reset to waiting
         gameState = 'waiting';
