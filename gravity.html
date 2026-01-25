@@ -148,7 +148,7 @@ function startGame(){
     // Update loop to sync
     setInterval(()=>{
       myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle});
-    },5);
+    },1);
 
     // Listen for other players
     database.ref('gravity/players').on('value', snapshot=>{
