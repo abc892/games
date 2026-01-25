@@ -485,8 +485,9 @@ function startGame(){
       // Check if all players are ready (only in waiting state)
       if(gameState === 'waiting'){
         const playerIds = Object.keys(playersData);
-        if(playerIds.length > 0){ // Need at least 2 players
+        if(playerIds.length > 0){
           // Only consider CURRENT players (those still connected)
+          // Don't wait for players who were in last game but have now disconnected
           const allCurrentPlayersReady = playerIds.every(id => playersData[id].ready === true);
           
           if(allCurrentPlayersReady){
@@ -513,41 +514,32 @@ function startGame(){
           countdownDiv.style.display = 'block';
           startCountdown(state.startTime);
         } else if(state.state === 'playing' && (gameState === 'countdown' || gameState === 'waiting')){
-          // Check if game already ended based on time OR if I'm rejoining alone
+          // Check if game already ended based on time
           const elapsed = Math.floor((Date.now() - state.gameStartTime) / 1000);
+          if(elapsed >= 120){
+            // Game already ended, don't join
+            gameState = 'waiting';
+            readyBtn.style.display = 'block';
+            gameUI.style.display = 'none';
+            return;
+          }
           
-          // Check how many players are currently connected
-          database.ref('gravity/players').once('value', playerSnap => {
-            const currentPlayers = playerSnap.val() || {};
-            const otherPlayers = Object.keys(currentPlayers).filter(id => id !== playerId);
-            
-            // If game expired OR I'm the only one rejoining an old game, reset it
-            if(elapsed >= 120 || otherPlayers.length === 0){
-              // Game already ended or I'm alone, delete the state
-              database.ref('gravity/gameState').remove();
-              database.ref('gravity/orbs').remove();
-              gameState = 'waiting';
-              readyBtn.style.display = 'block';
-              gameUI.style.display = 'none';
-              return;
-            }
-            
-            // Valid game with other players, join it
-            gameState = 'playing';
-            countdownDiv.style.display = 'none';
-            timerDiv.style.display = 'block';
-            scoreDiv.style.display = 'block';
-            liveScores.style.display = 'block';
-            readyBtn.style.display = 'none';
-            gameUI.style.display = 'block';
-            startGameTimer(state.gameStartTime);
-            database.ref('gravity/players/' + playerId).update({wasInLastGame: true});
-          });
+          gameState = 'playing';
+          countdownDiv.style.display = 'none';
+          timerDiv.style.display = 'block';
+          scoreDiv.style.display = 'block';
+          liveScores.style.display = 'block';
+          readyBtn.style.display = 'none';
+          gameUI.style.display = 'block';
+          startGameTimer(state.gameStartTime);
+          // Mark player as being in this game
+          database.ref('gravity/players/' + playerId).update({wasInLastGame: true});
         } else if(state.state === 'ended' && gameState === 'playing'){
           gameState = 'ended';
           liveScores.style.display = 'none';
           showEndScreen();
         } else if(state.state === 'waiting'){
+          // Game was reset, go back to waiting
           gameState = 'waiting';
           readyBtn.style.display = 'block';
           gameUI.style.display = 'none';
@@ -560,6 +552,7 @@ function startGame(){
           database.ref('gravity/players/' + playerId).update({ready: false, score: 0});
         }
       } else {
+        // No game state, reset to waiting
         gameState = 'waiting';
         readyBtn.style.display = 'block';
         gameUI.style.display = 'none';
