@@ -220,8 +220,11 @@ replayBtn.addEventListener("click", () => {
   readyBtn.textContent = "Ready";
   readyBtn.className = "not-ready";
   readyBtn.style.display = 'block';
+  gameUI.style.display = 'none';
+  countdownDiv.style.display = 'block';
+  countdownDiv.textContent = '';
   database.ref('gravity/players/' + playerId).update({ready: false, score: 0});
-  database.ref('gravity/gameState').set({state: 'waiting', startTime: null});
+  database.ref('gravity/gameState').set({state: 'waiting', startTime: null, gameStartTime: null});
 });
 
 // --- Utility ---
@@ -426,17 +429,25 @@ function startGame(){
           gameState = 'countdown';
           readyBtn.style.display = 'none';
           gameUI.style.display = 'block';
+          countdownDiv.style.display = 'block';
           startCountdown(state.startTime);
-        } else if(state.state === 'playing' && gameState === 'countdown'){
+        } else if(state.state === 'playing' && (gameState === 'countdown' || gameState === 'waiting')){
           gameState = 'playing';
           countdownDiv.style.display = 'none';
           timerDiv.style.display = 'block';
           scoreDiv.style.display = 'block';
+          readyBtn.style.display = 'none';
+          gameUI.style.display = 'block';
           startGameTimer(state.gameStartTime);
         } else if(state.state === 'ended' && gameState === 'playing'){
           gameState = 'ended';
           showEndScreen();
         }
+      } else {
+        // No game state, reset to waiting
+        gameState = 'waiting';
+        readyBtn.style.display = 'block';
+        gameUI.style.display = 'none';
       }
     });
     
@@ -451,8 +462,12 @@ function startGame(){
 }
 
 // --- Countdown ---
+let countdownInterval = null;
+
 function startCountdown(startTime){
-  const countdownInterval = setInterval(() => {
+  if(countdownInterval) clearInterval(countdownInterval);
+  
+  countdownInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     const remaining = 3 - elapsed;
     
@@ -460,18 +475,34 @@ function startCountdown(startTime){
       countdownDiv.textContent = remaining;
     } else {
       clearInterval(countdownInterval);
+      countdownInterval = null;
       countdownDiv.textContent = 'GO!';
+      
+      // Only the first player generates orbs
       setTimeout(() => {
-        database.ref('gravity/gameState').set({state: 'playing', gameStartTime: Date.now()});
-        generateOrbs();
+        database.ref('gravity/players').once('value', snap => {
+          const players = snap.val();
+          const playerIds = Object.keys(players || {});
+          const sortedIds = playerIds.sort();
+          
+          // Check if I'm the first player (alphabetically)
+          if(sortedIds[0] === playerId){
+            database.ref('gravity/gameState').set({state: 'playing', gameStartTime: Date.now()});
+            generateOrbs();
+          }
+        });
       }, 500);
     }
   }, 100);
 }
 
 // --- Game Timer ---
+let timerInterval = null;
+
 function startGameTimer(gameStartTime){
-  const timerInterval = setInterval(() => {
+  if(timerInterval) clearInterval(timerInterval);
+  
+  timerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
     const remaining = 120 - elapsed;
     
@@ -480,7 +511,18 @@ function startGameTimer(gameStartTime){
       timeLeft.textContent = remaining;
     } else {
       clearInterval(timerInterval);
-      database.ref('gravity/gameState').set({state: 'ended'});
+      timerInterval = null;
+      
+      // Only first player sets game to ended
+      database.ref('gravity/players').once('value', snap => {
+        const players = snap.val();
+        const playerIds = Object.keys(players || {});
+        const sortedIds = playerIds.sort();
+        
+        if(sortedIds[0] === playerId){
+          database.ref('gravity/gameState').set({state: 'ended'});
+        }
+      });
     }
   }, 100);
 }
