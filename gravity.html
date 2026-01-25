@@ -450,6 +450,7 @@ function startGame(){
     database.ref('gravity/players').on('value', snapshot => {
       const players = snapshot.val();
       if(!players || Object.keys(players).length === 0){
+        // No players left - reset everything
         database.ref('gravity/world').remove();
         database.ref('gravity/gameState').remove();
         database.ref('gravity/orbs').remove();
@@ -513,6 +514,16 @@ function startGame(){
           countdownDiv.style.display = 'block';
           startCountdown(state.startTime);
         } else if(state.state === 'playing' && (gameState === 'countdown' || gameState === 'waiting')){
+          // Check if game already ended based on time
+          const elapsed = Math.floor((Date.now() - state.gameStartTime) / 1000);
+          if(elapsed >= 120){
+            // Game already ended, don't join
+            gameState = 'waiting';
+            readyBtn.style.display = 'block';
+            gameUI.style.display = 'none';
+            return;
+          }
+          
           gameState = 'playing';
           countdownDiv.style.display = 'none';
           timerDiv.style.display = 'block';
