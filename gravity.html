@@ -293,7 +293,9 @@ function startCountdownSequence(){
     if(err) return;
     if(!committed) return; // someone else started it
     // start a 3-second countdown visible to all clients (we'll set no startTime yet)
-    db.ref('gravity/match/countdownStartedAt').set(firebase.database.ServerValue.TIMESTAMP);
+    db.ref('gravity/match').update({
+  countdownStartedAt: firebase.database.ServerValue.TIMESTAMP
+});
     // The actual countdown display is client-side based on serverNow - countdownStartedAt
     // After countdown 3=>0, the starter will set the match startTime as server timestamp:
     runLocalCountdownThenStart();
