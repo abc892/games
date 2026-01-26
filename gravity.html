@@ -475,7 +475,7 @@ function startGame(){
       } else if(isTabActive && gameState === 'waiting'){
         myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle});
       }
-    },50);
+    },15);
 
     database.ref('gravity/players').on('value', snapshot=>{
       playersData = snapshot.val() || {};
