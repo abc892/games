@@ -237,11 +237,11 @@ db.ref('gravity/match').on('value', snap=>{
   const m = snap.val();
   if(m){
     match = m;
-    // Update ready button visibility based on match state - FIX 1
-    if(match.state === "lobby") {
-      readyBtn.style.display = "block";
-    } else {
+    // Update ready button visibility based on match state
+    if(match.state === "playing" || match.state === "ended") {
       readyBtn.style.display = "none";
+    } else {
+      readyBtn.style.display = "block";
     }
     
     // When match ends, ONE player should generate new world for everyone
@@ -563,38 +563,10 @@ function drawOrbs(){
     const o = orbs[id];
     const sx = o.x - player.x + centerX;
     const sy = o.y - player.y + centerY;
-    
-    // FIX 4: Make orbs very attractive with glowing effect
-    // Outer glow
-    const gradient = ctx.createRadialGradient(sx, sy, 0, sx, sy, ORB_RADIUS * 2);
-    gradient.addColorStop(0, "rgba(0, 255, 0, 0.8)");
-    gradient.addColorStop(0.5, "rgba(0, 255, 128, 0.4)");
-    gradient.addColorStop(1, "rgba(0, 255, 0, 0)");
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = "lime";
     ctx.beginPath();
-    ctx.arc(sx, sy, ORB_RADIUS * 2, 0, Math.PI*2);
+    ctx.arc(sx, sy, ORB_RADIUS, 0, Math.PI*2);
     ctx.fill();
-    
-    // Inner bright core
-    ctx.fillStyle = "#00FF00";
-    ctx.beginPath();
-    ctx.arc(sx, sy, ORB_RADIUS * 0.7, 0, Math.PI*2);
-    ctx.fill();
-    
-    // Bright center
-    ctx.fillStyle = "#FFFFFF";
-    ctx.beginPath();
-    ctx.arc(sx, sy, ORB_RADIUS * 0.3, 0, Math.PI*2);
-    ctx.fill();
-    
-    // Pulsing effect
-    const pulse = (Date.now() % 1000) / 1000;
-    const pulseRadius = ORB_RADIUS + Math.sin(pulse * Math.PI * 2) * 3;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(sx, sy, pulseRadius, 0, Math.PI*2);
-    ctx.stroke();
   }
 }
 
@@ -629,34 +601,33 @@ function drawMinimap() {
   const centerX = mapX + miniMap.width/2;
   const centerY = mapY + miniMap.height/2;
   
-  // Draw planets - FIX 3: Scale planets based on their actual radius
+  // Draw planets
   for(let p of planets){
     const dx = p.x - player.x;
     const dy = p.y - player.y;
     const px = centerX + dx * scale;
     const py = centerY + dy * scale;
-    // Scale radius based on actual planet radius (not fixed)
-    const r = Math.max(2, p.radius * scale * 0.4); // FIX 3: Scale properly
+    const r = Math.max(2, p.radius * scale);
     ctx.fillStyle = p.color;
     ctx.beginPath();
     ctx.arc(px, py, r, 0, Math.PI*2);
     ctx.fill();
   }
   
-  // Draw black hole - FIX 3: Scale based on actual radius
+  // Draw black hole
   if(blackHole){
     const dx = blackHole.x - player.x;
     const dy = blackHole.y - player.y;
     const px = centerX + dx * scale;
     const py = centerY + dy * scale;
-    const r = Math.max(3, blackHole.radius * scale * 0.4); // FIX 3: Scale properly
+    const r = Math.max(3, blackHole.radius * scale * 0.3);
     ctx.fillStyle = "purple";
     ctx.beginPath();
     ctx.arc(px, py, r, 0, Math.PI*2);
     ctx.fill();
   }
   
-  // Draw orbs during match - FIX 4: Make minimap orbs attractive too
+  // Draw orbs during match
   if(match.state === "playing") {
     for(let id in orbs) {
       const o = orbs[id];
@@ -664,14 +635,9 @@ function drawMinimap() {
       const dy = o.y - player.y;
       const ox = centerX + dx * scale;
       const oy = centerY + dy * scale;
-      // FIX 4: Attractive minimap orbs
-      ctx.fillStyle = "#00FF00";
+      ctx.fillStyle = "lime";
       ctx.beginPath();
-      ctx.arc(ox, oy, 3, 0, Math.PI*2);
-      ctx.fill();
-      ctx.fillStyle = "#FFFFFF";
-      ctx.beginPath();
-      ctx.arc(ox, oy, 1, 0, Math.PI*2);
+      ctx.arc(ox, oy, 2, 0, Math.PI*2);
       ctx.fill();
     }
   }
@@ -705,66 +671,61 @@ function drawMinimap() {
 
 /* ---------------- LIVE LEADERBOARD ---------------- */
 function drawLiveLeaderboard() {
-  // FIX 2: Show leaderboard during match AND during waiting lobby
-  if (match.state === "playing" || match.state === "lobby") {
-    const leaderboardX = canvas.width - 220;
-    const leaderboardY = 170; // Below minimap
-    const width = 200;
+  if (match.state !== "playing") return;
+  
+  const leaderboardX = canvas.width - 220;
+  const leaderboardY = 170; // Below minimap
+  const width = 200;
+  
+  // Get sorted players
+  const sortedPlayers = Object.values(playersData).sort((a, b) => (b.score || 0) - (a.score || 0));
+  
+  // Background
+  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+  ctx.fillRect(leaderboardX, leaderboardY, width, 40 + sortedPlayers.length * 25);
+  ctx.strokeStyle = "#00c853";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(leaderboardX, leaderboardY, width, 40 + sortedPlayers.length * 25);
+  
+  // Title
+  ctx.fillStyle = "#00c853";
+  ctx.font = "bold 14px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("LIVE LEADERBOARD", leaderboardX + width/2, leaderboardY + 20);
+  
+  // Player entries
+  ctx.font = "12px Arial";
+  ctx.textAlign = "left";
+  for (let i = 0; i < sortedPlayers.length; i++) {
+    const p = sortedPlayers[i];
+    const y = leaderboardY + 40 + i * 25;
     
-    // Get sorted players
-    const sortedPlayers = Object.values(playersData).sort((a, b) => (b.score || 0) - (a.score || 0));
+    // Highlight current player
+    if (p.name === player.name) {
+      ctx.fillStyle = "rgba(0, 200, 83, 0.3)";
+      ctx.fillRect(leaderboardX, y - 10, width, 20);
+    }
     
-    // Background
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(leaderboardX, leaderboardY, width, 40 + sortedPlayers.length * 25);
-    ctx.strokeStyle = "#00c853";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(leaderboardX, leaderboardY, width, 40 + sortedPlayers.length * 25);
-    
-    // Title - change based on state
+    // Rank
     ctx.fillStyle = "#00c853";
-    ctx.font = "bold 14px Arial";
-    ctx.textAlign = "center";
-    if (match.state === "playing") {
-      ctx.fillText("LIVE LEADERBOARD", leaderboardX + width/2, leaderboardY + 20);
+    ctx.fillText(`${i + 1}.`, leaderboardX + 10, y);
+    
+    // Name
+    ctx.fillStyle = "white";
+    const displayName = p.name || "Anon";
+    const maxNameWidth = 120;
+    let nameWidth = ctx.measureText(displayName).width;
+    if (nameWidth > maxNameWidth) {
+      ctx.fillText(displayName.substring(0, 10) + "...", leaderboardX + 30, y);
     } else {
-      ctx.fillText("LOBBY SCORES", leaderboardX + width/2, leaderboardY + 20);
+      ctx.fillText(displayName, leaderboardX + 30, y);
     }
     
-    // Player entries
-    ctx.font = "12px Arial";
+    // Score
+    ctx.fillStyle = "#FFD700";
+    ctx.textAlign = "right";
+    ctx.fillText(p.score || 0, leaderboardX + width - 10, y);
     ctx.textAlign = "left";
-    for (let i = 0; i < sortedPlayers.length; i++) {
-      const p = sortedPlayers[i];
-      const y = leaderboardY + 40 + i * 25;
-      
-      // Highlight current player
-      if (p.name === player.name) {
-        ctx.fillStyle = "rgba(0, 200, 83, 0.3)";
-        ctx.fillRect(leaderboardX, y - 10, width, 20);
-      }
-      
-      // Rank
-      ctx.fillStyle = "#00c853";
-      ctx.fillText(`${i + 1}.`, leaderboardX + 10, y);
-      
-      // Name
-      ctx.fillStyle = "white";
-      const displayName = p.name || "Anon";
-      const maxNameWidth = 120;
-      let nameWidth = ctx.measureText(displayName).width;
-      if (nameWidth > maxNameWidth) {
-        ctx.fillText(displayName.substring(0, 10) + "...", leaderboardX + 30, y);
-      } else {
-        ctx.fillText(displayName, leaderboardX + 30, y);
-      }
-      
-      // Score
-      ctx.fillStyle = "#FFD700";
-      ctx.textAlign = "right";
-      ctx.fillText(p.score || 0, leaderboardX + width - 10, y);
-      ctx.textAlign = "left";
-    }
   }
 }
 
@@ -966,8 +927,10 @@ function loop(){
   // Always draw minimap (in lobby and during match)
   drawMinimap();
   
-  // Draw leaderboard during match AND lobby (FIX 2)
-  drawLiveLeaderboard();
+  // Draw leaderboard only during match
+  if(match.state === "playing") {
+    drawLiveLeaderboard();
+  }
   
   drawHUD();
   requestAnimationFrame(loop);
