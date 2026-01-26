@@ -28,7 +28,7 @@
   #readyBtn {
     position:fixed;
     top:10px;
-    left:10px;
+    right:10px;
     padding:10px 18px;
     font-size:16px;
     border-radius:8px;
@@ -37,10 +37,6 @@
     color:black;
     cursor:pointer;
     z-index:5;
-    display:block;
-  }
-  #readyBtn.hidden {
-    display:none;
   }
 </style>
 </head>
@@ -49,7 +45,7 @@
 <!-- Name entry -->
 <div id="nameOverlay">
   <input id="nameInput" placeholder="Enter your name & press Enter">
-  <div style="font-size:14px; color:#ccc;">Join & then press READY (top-left) to start match when all players are ready</div>
+  <div style="font-size:14px; color:#ccc;">Join & then press READY (top-right) to start match when all players are ready</div>
 </div>
 
 <canvas id="game"></canvas>
@@ -62,7 +58,7 @@
 <script>
 /* ===========================================================
    FULL IMPLEMENTATION:
-   - Lobby with READY/UNREADY (button in top-left, hidden during match)
+   - Lobby with READY/UNREADY
    - All-ready => 3..2..1 countdown (center)
    - Synchronized match start using server timestamp (.info/serverTimeOffset)
    - 2 minute timer synced via server timestamp
@@ -72,9 +68,6 @@
    - Avoid orb spawn intersection with planets, black hole, other orbs
    - When players list becomes empty, the entire gravity/ node is removed
    - All match timestamps removed when players all disconnected (because gravity/ removed)
-   - Minimap in top-right showing planets, black hole, and player
-   - Live leaderboard below minimap during match
-   - Enhanced ranking screen that only disappears for player who clicks REPLAY
    =========================================================== */
 
 /* ---------------- FIREBASE CONFIG ---------------- */
@@ -104,7 +97,6 @@ const ORB_COUNT = 20;
 const ORB_RADIUS = 18;
 const ORB_AREA = 2000; // spawn within ±2000 x/y
 const starSectorSize = 400;
-const miniMap = { width:200, height:150, padding:10 };
 
 /* ---------------- STATE ---------------- */
 let serverOffset = 0; // ms (serverTime = Date.now() + serverOffset)
@@ -120,34 +112,12 @@ let planets = [], blackHole = null;
 let orbs = {};
 let match = { state: "lobby", duration: MATCH_DURATION_MS };
 let isTabActive = true;
-let hideRankingScreen = false;
+
 /* ---------------- UI ELEMENTS ---------------- */
 const nameOverlay = document.getElementById("nameOverlay");
 const nameInput = document.getElementById("nameInput");
 const readyBtn = document.getElementById("readyBtn");
-const player = { x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",ready:false,score:0 };
 nameInput.focus();
-
-/* ---------- NAME ENTRY HANDLER (ADD THIS) ---------- */
-nameInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    const val = nameInput.value.trim();
-    if (!val) return;
-
-    playerName = val;
-    nameOverlay.style.display = "none";
-
-    // Initial spawn
-    player.x = Math.random() * 200 - 100;
-    player.y = Math.random() * 200 - 100;
-
-    registerPresence();
-
-    loadWorldThen(() => {
-      startMainLoop();
-    });
-  }
-});  
 
 /* ---------------- INPUT ---------------- */
 const keys = {};
@@ -155,6 +125,8 @@ window.addEventListener("keydown", e=> keys[e.key]=true);
 window.addEventListener("keyup", e=> keys[e.key]=false);
 document.addEventListener("visibilitychange", ()=>{ isTabActive = !document.hidden; });
 
+/* ---------------- PLAYER OBJECT ---------------- */
+const player = { x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",ready:false,score:0 };
 
 /* ---------------- INITIAL WORLD GENERATION (if needed) ---------------- */
 function generateWorldLocally(){
@@ -257,9 +229,7 @@ db.ref('gravity/match').on('value', snap=>{
     match = m;
   } else {
     match = { state:"lobby", duration: MATCH_DURATION_MS };
-    hideRankingScreen = false; // Reset when match is cleared
   }
-  updateReadyButtonVisibility();
 });
 
 /* ---------------- READY BUTTON ---------------- */
@@ -271,15 +241,6 @@ readyBtn.onclick = () => {
   // If toggling to unready while countdown started, we want to abort countdown if any player unready.
   // That will be handled because players listener checks allReady before starting any new countdown.
 };
-
-// Hide ready button during match
-function updateReadyButtonVisibility(){
-  if(match.state === "playing" || match.state === "ended"){
-    readyBtn.classList.add('hidden');
-  } else {
-    readyBtn.classList.remove('hidden');
-  }
-}
 
 /* ---------------- COUNTDOWN & MATCH START ---------------- */
 let localCountdown = null;
@@ -293,9 +254,7 @@ function startCountdownSequence(){
     if(err) return;
     if(!committed) return; // someone else started it
     // start a 3-second countdown visible to all clients (we'll set no startTime yet)
-    db.ref('gravity/match').update({
-  countdownStartedAt: firebase.database.ServerValue.TIMESTAMP
-});
+    db.ref('gravity/match/countdownStartedAt').set(firebase.database.ServerValue.TIMESTAMP);
     // The actual countdown display is client-side based on serverNow - countdownStartedAt
     // After countdown 3=>0, the starter will set the match startTime as server timestamp:
     runLocalCountdownThenStart();
@@ -432,14 +391,6 @@ function updatePlayerPhysicsAndSync(){
     updatePlayerPhysicsAndSync.lastSync = now;
   }
 }
-function mulberry32(a){
-  return function(){
-    let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}  
 
 /* ---------------- DRAW HELPERS ---------------- */
 function drawStars(){
@@ -567,120 +518,6 @@ function drawOrbs(){
   }
 }
 
-/* ---------------- MINI-MAP ---------------- */
-function drawMiniMap(){
-  const mapX=canvas.width-miniMap.width-miniMap.padding;
-  const mapY=miniMap.padding;
-  ctx.fillStyle="rgba(0,0,0,0.5)";
-  ctx.fillRect(mapX,mapY,miniMap.width,miniMap.height);
-  ctx.strokeStyle="white";
-  ctx.strokeRect(mapX,mapY,miniMap.width,miniMap.height);
-
-  let maxDist=0;
-  for(let p of planets.concat([blackHole])){
-    const d=Math.sqrt((p.x-player.x)**2+(p.y-player.y)**2)+p.radius;
-    if(d>maxDist) maxDist=d;
-  }
-  if(maxDist<200) maxDist=200;
-  const scale=(miniMap.width/2)/maxDist;
-
-  // Draw planets
-  for(let p of planets){
-    const dx=p.x-player.x;
-    const dy=p.y-player.y;
-    const px=mapX+miniMap.width/2+dx*scale;
-    const py=mapY+miniMap.height/2+dy*scale;
-    const r=Math.max(2,p.radius*scale);
-    ctx.fillStyle=p.color;
-    ctx.beginPath();
-    ctx.arc(px,py,r,0,Math.PI*2);
-    ctx.fill();
-  }
-
-  // Black hole on map (barely visible)
-  const dx=blackHole.x-player.x;
-  const dy=blackHole.y-player.y;
-  const px=mapX+miniMap.width/2+dx*scale;
-  const py=mapY+miniMap.height/2+dy*scale;
-  const r=Math.max(2,blackHole.radius*scale);
-  ctx.fillStyle="rgba(180,180,180,0.15)";
-  ctx.beginPath();
-  ctx.arc(px,py,r,0,Math.PI*2);
-  ctx.fill();
-
-  // Player
-  ctx.fillStyle="white";
-  ctx.beginPath();
-  ctx.arc(mapX+miniMap.width/2,mapY+miniMap.height/2,4,0,Math.PI*2);
-  ctx.fill();
-}
-
-function startMainLoop(){
-  requestAnimationFrame(loop);
-}
-
-function loop(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  drawStars();
-  drawPlanetsAndBlackHole();
-  drawOrbs();
-  drawPlayers();
-  drawMiniMap();
-  drawLiveLeaderboard();
-  drawHUD();
-
-  if (match.state === "playing") {
-    updatePlayerPhysicsAndSync();
-
-    // Orb pickup check
-    for (let id in orbs) {
-      const o = orbs[id];
-      if (Math.hypot(player.x - o.x, player.y - o.y) < player.radius + ORB_RADIUS) {
-        tryPickupOrb(id);
-      }
-    }
-  }
-
-  // Spawn orbs when match starts
-  if (match.state === "playing") {
-    spawnInitialOrbsIfNeeded();
-  }
-
-  requestAnimationFrame(loop);
-}
-
-/* ---------------- LIVE LEADERBOARD ---------------- */
-function drawLiveLeaderboard(){
-  if(match.state !== "playing") return;
-  
-  const mapX=canvas.width-miniMap.width-miniMap.padding;
-  const mapY=miniMap.padding + miniMap.height + 10;
-  const boardHeight = 200;
-  
-  ctx.fillStyle="rgba(0,0,0,0.5)";
-  ctx.fillRect(mapX,mapY,miniMap.width,boardHeight);
-  ctx.strokeStyle="white";
-  ctx.strokeRect(mapX,mapY,miniMap.width,boardHeight);
-  
-  ctx.fillStyle="white";
-  ctx.font="14px Arial";
-  ctx.textAlign="center";
-  ctx.fillText("LEADERBOARD", mapX + miniMap.width/2, mapY + 20);
-  
-  const list = Object.values(playersData || {}).slice().sort((a,b)=> (b.score||0) - (a.score||0));
-  ctx.font="12px Arial";
-  ctx.textAlign="left";
-  for(let i=0;i<Math.min(list.length, 8);i++){
-    const p = list[i];
-    const yPos = mapY + 40 + i*20;
-    ctx.fillText(`${i+1}. ${(p.name || 'Anon').substring(0,12)}`, mapX + 10, yPos);
-    ctx.textAlign="right";
-    ctx.fillText(`${p.score||0}`, mapX + miniMap.width - 10, yPos);
-    ctx.textAlign="left";
-  }
-}
-
 /* ---------------- HUD: countdown/time/score ---------------- */
 function drawHUD(){
   ctx.fillStyle = "white";
@@ -710,75 +547,165 @@ function drawHUD(){
       });
     }
   }
-  if(match.state === "ended" && !hideRankingScreen){
-    // Semi-transparent background
-    ctx.fillStyle = "rgba(0,0,0,0.85)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Title with gradient
-    const gradient = ctx.createLinearGradient(0, 50, 0, 120);
-    gradient.addColorStop(0, "#FFD700");
-    gradient.addColorStop(1, "#FFA500");
-    ctx.fillStyle = gradient;
-    ctx.font = "bold 48px Arial";
-    ctx.fillText("MATCH ENDED", canvas.width/2, 100);
-    
-    // Trophy icon (simple)
-    ctx.fillStyle = "#FFD700";
-    ctx.font = "64px Arial";
-    ctx.fillText("🏆", canvas.width/2, 180);
-    
-    // Rankings box
-    const boxWidth = 400;
-    const boxHeight = 60 + Math.min(Object.keys(playersData).length, 10) * 50;
-    const boxX = canvas.width/2 - boxWidth/2;
-    const boxY = 220;
-    
-    ctx.fillStyle = "rgba(30,30,30,0.9)";
-    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-    ctx.strokeStyle = "#FFD700";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-    
-    // Rankings
+  if(match.state === "ended"){
+    ctx.font = "36px Arial";
+    ctx.fillText("MATCH ENDED", canvas.width/2, 80);
+    // ranking
     const list = Object.values(playersData || {}).slice().sort((a,b)=> (b.score||0) - (a.score||0));
-    ctx.textAlign = "left";
-    for(let i=0;i<Math.min(list.length, 10);i++){
+    ctx.font = "22px Arial";
+    for(let i=0;i<list.length;i++){
       const p = list[i];
-      const yPos = boxY + 45 + i*50;
-      
-      // Medal for top 3
-      let medal = "";
-      if(i === 0) medal = "🥇";
-      else if(i === 1) medal = "🥈";
-      else if(i === 2) medal = "🥉";
-      
-      ctx.font = "24px Arial";
-      ctx.fillStyle = i < 3 ? "#FFD700" : "white";
-      ctx.fillText(`${medal} ${i+1}.`, boxX + 20, yPos);
-      
-      ctx.font = "22px Arial";
-      ctx.fillStyle = "white";
-      ctx.fillText(p.name || 'Anon', boxX + 80, yPos);
-      
-      ctx.textAlign = "right";
-      ctx.fillStyle = "#00FF00";
-      ctx.font = "bold 22px Arial";
-      ctx.fillText(`${p.score||0}`, boxX + boxWidth - 20, yPos);
-      ctx.textAlign = "left";
+      ctx.fillText(`${i+1}. ${p.name || 'Anon'} — ${p.score||0}`, canvas.width/2, 130 + i*30);
     }
-    
-    // Replay button
-    const bx = canvas.width/2 - 100, by = boxY + boxHeight + 40, bw = 200, bh = 60;
+    // draw replay button
+    const bx = canvas.width/2 - 80, by = canvas.height - 160, bw = 160, bh = 48;
     ctx.fillStyle = "#00c853";
-    ctx.shadowColor = "rgba(0,200,83,0.5)";
-    ctx.shadowBlur = 20;
     ctx.fillRect(bx, by, bw, bh);
-    ctx.shadowBlur = 0;
-    
     ctx.fillStyle = "black";
-    ctx.font = "bold 24px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("REPLAY", canvas.width/2, by + 40);
+    ctx.font = "20px Arial";
+    ctx.fillText("REPLAY", canvas.width/2, by + 32);
   }
 }
+
+/* ---------------- UTILITY RANDOM ---------------- */
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---------------- ORB COLLISION CHECK ---------------- */
+function detectOrbCollisions(){
+  if(match.state !== "playing") return;
+  for(let id in orbs){
+    const o = orbs[id];
+    if(Math.hypot(player.x - o.x, player.y - o.y) < player.radius + ORB_RADIUS){
+      tryPickupOrb(id);
+      // don't break; try multiple pickups in same frame if overlapping (transaction ensures atomic)
+    }
+  }
+}
+
+/* ---------------- GAME LOOP ---------------- */
+function loop(){
+  ctx.fillStyle = "black";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawStars();
+  updatePlayerPhysicsAndSync();
+  drawPlanetsAndBlackHole();
+  drawOrbs();
+  drawPlayers();
+  detectOrbCollisions();
+  drawHUD();
+  requestAnimationFrame(loop);
+}
+
+/* ---------------- STUBS FROM ORIGINAL CODE for stars etc ---------------- */
+function drawStars(){
+  const centerX=canvas.width/2, centerY=canvas.height/2;
+  const startX=Math.floor((player.x-centerX)/starSectorSize)*starSectorSize;
+  const startY=Math.floor((player.y-centerY)/starSectorSize)*starSectorSize;
+  const endX=Math.floor((player.x+centerX)/starSectorSize)*starSectorSize;
+  const endY=Math.floor((player.y+centerY)/starSectorSize)*starSectorSize;
+  for(let sx=startX;sx<=endX;sx+=starSectorSize){
+    for(let sy=startY;sy<=endY;sy+=starSectorSize){
+      const seed = sx*73856093 ^ sy*19349663;
+      const rand = mulberry32(seed);
+      const starsInSector = 10 + Math.floor(rand()*15);
+      for(let i=0;i<starsInSector;i++){
+        const starX = sx + rand()*starSectorSize;
+        const starY = sy + rand()*starSectorSize;
+        const radius = 0.5 + rand()*1.5;
+        const brightness = 0.2 + rand()*0.5;
+        const screenX = starX - player.x + centerX;
+        const screenY = starY - player.y + centerY;
+        if(screenX>=0 && screenX<=canvas.width && screenY>=0 && screenY<=canvas.height){
+          ctx.fillStyle=`rgba(255,255,255,${brightness})`;
+          ctx.beginPath();
+          ctx.arc(screenX,screenY,radius,0,Math.PI*2);
+          ctx.fill();
+        }
+      }
+    }
+  }
+}
+
+/* ---------------- CLICK HANDLING (for REPLAY button) ---------------- */
+canvas.addEventListener('click', (e)=>{
+  if(match.state === "ended"){
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const bx = canvas.width/2 - 80, by = canvas.height - 160, bw = 160, bh = 48;
+    if(mx >= bx && mx <= bx + bw && my >= by && my <= by + bh){
+      // REPLAY pressed: clear match and orbs, reset ready & scores
+      db.ref('gravity/match').remove();
+      db.ref('gravity/orbs').remove();
+      // set all players ready=false and score=0
+      db.ref('gravity/players').once('value').then(snap=>{
+        const ps = snap.val() || {};
+        for(let id in ps){
+          db.ref('gravity/players/'+id+'/ready').set(false);
+          db.ref('gravity/players/'+id+'/score').set(0);
+        }
+      });
+    }
+  }
+});
+
+/* ---------------- BOOTSTRAP: name entry -> startGame ---------------- */
+nameInput.addEventListener('keydown', e=>{
+  if(e.key === "Enter" && nameInput.value.trim()){
+    playerName = nameInput.value.trim();
+    nameOverlay.remove();
+    startGame();
+  }
+});
+
+/* ---------------- START GAME ---------------- */
+function startGame(){
+  player.name = playerName;
+  player.x = 0; player.y = 0; player.vx=0; player.vy=0;
+  loadWorldThen(()=>{
+    registerPresence(); // registers my player in firebase
+    // listen for match start: when match.state becomes playing, spawn initial orbs if this client detects that it's the one to spawn
+    db.ref('gravity/match').on('value', snap=>{
+      const m = snap.val();
+      if(m && m.state === "playing"){
+        // ensure orbs exist (only spawn if none)
+        spawnInitialOrbsIfNeeded();
+      }
+    });
+    // Start the draw/physics loop
+    requestAnimationFrame(loop);
+    // Update playersData from db periodically already handled by listener
+    // Also set interval that periodically refreshes world when no world exists (safety)
+    setInterval(()=> {
+      if(!planets || !blackHole){
+        db.ref('gravity/world').once('value').then(snap=>{
+          const w = snap.val();
+          if(w && w.planets && w.blackHole){
+            planets = w.planets;
+            blackHole = w.blackHole;
+          } else {
+            // generate & upload if this client is the first (no players)
+            // Only generate if players list empty (we already check players listener to clear gravity)
+            db.ref('gravity/players').once('value').then(pSnap=>{
+              if(!(pSnap.exists())) {
+                generateWorldLocally();
+                db.ref('gravity/world').set({planets,blackHole,created:serverNow()});
+              }
+            });
+          }
+        });
+      }
+    }, 5000);
+  });
+}
+
+/* ---------------- Ensure full cleanup when a player disconnects and others detect 0 players:
+   - db.ref('gravity/players') listener removes gravity root when it sees zero players.
+   Note: if all clients disconnect simultaneously, there's no client to run this code. In that extremely rare edge-case
+   the firebase data may persist until a client connects; the code ensures when a client connects and sees no players it
+   will recreate the world or remove stale data. This is the best client-only approach without server/cloud functions. */
+
+/* ---------------- End of script ---------------- */
+</script>
+</body>
+</html>
