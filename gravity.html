@@ -259,6 +259,13 @@ replayBtn.addEventListener("click", () => {
   gameUI.style.display = 'none';
   countdownDiv.style.display = 'block';
   countdownDiv.textContent = '';
+  liveScores.style.display = 'none';
+  
+  // Clear orb respawn timers
+  for(let timerId in orbRespawnTimers){
+    clearTimeout(orbRespawnTimers[timerId]);
+  }
+  orbRespawnTimers = {};
   
   // Update player status
   database.ref('gravity/players/' + playerId).update({
@@ -272,16 +279,13 @@ replayBtn.addEventListener("click", () => {
     const players = snap.val() || {};
     const currentPlayerIds = Object.keys(players);
     
-    // Find players who left the end screen
-    const playersWhoLeft = currentPlayerIds.filter(id => players[id].leftEndScreen === true);
-    
-    // Check if all CURRENT players have left end screen (ignoring disconnected players)
     const allCurrentPlayersLeft = currentPlayerIds.length > 0 && 
                                    currentPlayerIds.every(id => players[id].leftEndScreen === true);
     
     if(allCurrentPlayersLeft){
       // All current players left end screen, reset game state
       database.ref('gravity/gameState').set({state: 'waiting', startTime: null, gameStartTime: null});
+      database.ref('gravity/orbs').remove();
       
       // Reset wasInLastGame for all current players for the next match
       currentPlayerIds.forEach(id => {
@@ -339,8 +343,8 @@ function generateOrbs(){
     let attempts = 0;
     while(!valid && attempts < 1000){
       attempts++;
-      x = Math.random() * 4000 - 2000;
-      y = Math.random() * 4000 - 2000;
+      x = Math.random() * 2000 - 1000;
+      y = Math.random() * 2000 - 1000;
       valid = true;
       
       // Check distance from planets
@@ -381,8 +385,8 @@ function respawnOrb(orbId){
   
   while(!valid && attempts < 1000){
     attempts++;
-    x = Math.random() * 4000 - 2000;
-    y = Math.random() * 4000 - 2000;
+    x = Math.random() * 2000 - 1000;
+    y = Math.random() * 2000 - 1000;
     valid = true;
     
     for(let p of planets){
@@ -445,16 +449,7 @@ function startGame(){
   loadWorld(()=>{
     const myRef = database.ref('gravity/players/' + playerId);
     myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name,ready:false,score:0});
-    myRef.onDisconnect().remove(() => {
-  // After this player disconnects, check if any players remain
-  database.ref('gravity/players').once('value', snapshot => {
-    const players = snapshot.val();
-    if (!players || Object.keys(players).length === 0) {
-      // Delete entire gravity thread
-      database.ref('gravity').remove();
-    }
-  });
-});
+    myRef.onDisconnect().remove();
     
     database.ref('gravity/players').on('value', snapshot => {
       const players = snapshot.val();
@@ -490,33 +485,24 @@ function startGame(){
         updateLiveScores();
       }
       
-      // Check if all players are ready (only in waiting state)
-if(gameState === 'waiting'){
-  const playerIds = Object.keys(playersData);
-  if(playerIds.length > 0){
-    // Count how many current players are ready
-    let readyCount = 0;
-    let totalCurrentPlayers = 0;
-    
-    for(let id in playersData){
-      totalCurrentPlayers++;
-      if(playersData[id].ready === true){
-        readyCount++;
-      }
-    }
-    
-    // Only start countdown if ALL current players are ready
-    if(totalCurrentPlayers > 0 && readyCount === totalCurrentPlayers){
-      // Start countdown
-      database.ref('gravity/gameState').once('value', stateSnap => {
-        const state = stateSnap.val();
-        if(!state || state.state !== 'countdown'){
-          database.ref('gravity/gameState').set({state: 'countdown', startTime: Date.now()});
+      // Check if all players are ready (only in waiting state, need at least 2 players)
+      if(gameState === 'waiting'){
+        const playerIds = Object.keys(playersData);
+        if(playerIds.length >= 2){
+          const allCurrentPlayersReady = playerIds.every(id => playersData[id].ready === true);
+          
+          if(allCurrentPlayersReady){
+            // Start countdown
+            database.ref('gravity/gameState').once('value', stateSnap => {
+              const state = stateSnap.val();
+              if(!state || state.state !== 'countdown'){
+                database.ref('gravity/gameState').set({state: 'countdown', startTime: Date.now()});
+              }
+            });
+          }
         }
-      });
-    }
-  }
-}
+      }
+    });
     
     // Listen to game state
     database.ref('gravity/gameState').on('value', snapshot => {
@@ -549,11 +535,19 @@ if(gameState === 'waiting'){
           readyBtn.style.display = 'block';
           gameUI.style.display = 'none';
           endScreen.style.display = 'none';
+          liveScores.style.display = 'none';
           isReady = false;
           readyBtn.textContent = "Ready";
           readyBtn.className = "not-ready";
           playerScore = 0;
           scoreValue.textContent = '0';
+          
+          // Clear orb respawn timers
+          for(let timerId in orbRespawnTimers){
+            clearTimeout(orbRespawnTimers[timerId]);
+          }
+          orbRespawnTimers = {};
+          
           database.ref('gravity/players/' + playerId).update({ready: false, score: 0});
         }
       } else {
@@ -562,6 +556,13 @@ if(gameState === 'waiting'){
         readyBtn.style.display = 'block';
         gameUI.style.display = 'none';
         endScreen.style.display = 'none';
+        liveScores.style.display = 'none';
+        
+        // Clear orb respawn timers
+        for(let timerId in orbRespawnTimers){
+          clearTimeout(orbRespawnTimers[timerId]);
+        }
+        orbRespawnTimers = {};
       }
     });
     
@@ -753,9 +754,15 @@ function checkOrbCollision(){
       database.ref('gravity/players/' + playerId).update({score: playerScore});
       database.ref('gravity/orbs/' + orbId).remove();
       
+      // Clear any existing respawn timer for this orb
+      if(orbRespawnTimers[orbId]){
+        clearTimeout(orbRespawnTimers[orbId]);
+      }
+      
       // Respawn after 3 seconds
-      setTimeout(() => {
+      orbRespawnTimers[orbId] = setTimeout(() => {
         respawnOrb(orbId);
+        delete orbRespawnTimers[orbId];
       }, 3000);
       
       break;
@@ -766,13 +773,20 @@ function checkOrbCollision(){
 function updatePlayer(){
   if(!isTabActive) return;
   
-  if(keys["ArrowLeft"]) player.angle-=0.05;
-  if(keys["ArrowRight"]) player.angle+=0.05;
-  if(keys["ArrowUp"]){ player.vx+=Math.cos(player.angle)*thrust; player.vy+=Math.sin(player.angle)*thrust; }
-  if(keys["m"]){ player.vx*=0.98; player.vy*=0.98; }
+  // Only allow movement during playing state
+  if(gameState === 'playing'){
+    if(keys["ArrowLeft"]) player.angle-=0.05;
+    if(keys["ArrowRight"]) player.angle+=0.05;
+    if(keys["ArrowUp"]){ player.vx+=Math.cos(player.angle)*thrust; player.vy+=Math.sin(player.angle)*thrust; }
+    if(keys["m"]){ player.vx*=0.98; player.vy*=0.98; }
+  }
+  
   applyGravity();
   player.x+=player.vx; player.y+=player.vy;
-  checkOrbCollision();
+  
+  if(gameState === 'playing'){
+    checkOrbCollision();
+  }
 }
 
 // --- Infinite stars ---
