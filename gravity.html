@@ -28,7 +28,7 @@
   #readyBtn {
     position:fixed;
     top:10px;
-    right:10px;
+    left:10px;
     padding:10px 18px;
     font-size:16px;
     border-radius:8px;
@@ -37,6 +37,18 @@
     color:black;
     cursor:pointer;
     z-index:5;
+    font-weight:bold;
+    transition: all 0.2s;
+  }
+  #readyBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px #00c853;
+  }
+  #readyBtn.ready {
+    background:#ff5252;
+  }
+  #readyBtn.ready:hover {
+    box-shadow: 0 0 10px #ff5252;
   }
 </style>
 </head>
@@ -45,7 +57,7 @@
 <!-- Name entry -->
 <div id="nameOverlay">
   <input id="nameInput" placeholder="Enter your name & press Enter">
-  <div style="font-size:14px; color:#ccc;">Join & then press READY (top-right) to start match when all players are ready</div>
+  <div style="font-size:14px; color:#ccc;">Join & then press READY (top-left) to start match when all players are ready</div>
 </div>
 
 <canvas id="game"></canvas>
@@ -227,16 +239,28 @@ db.ref('gravity/match').on('value', snap=>{
   const m = snap.val();
   if(m){
     match = m;
+    // Update ready button visibility based on match state
+    if(match.state === "playing" || match.state === "ended") {
+      readyBtn.style.display = "none";
+    } else {
+      readyBtn.style.display = "block";
+    }
   } else {
     match = { state:"lobby", duration: MATCH_DURATION_MS };
+    readyBtn.style.display = "block";
   }
 });
 
 /* ---------------- READY BUTTON ---------------- */
 readyBtn.onclick = () => {
   player.ready = !player.ready;
-  readyBtn.textContent = player.ready ? "UNREADY" : "READY";
-  readyBtn.style.background = player.ready ? "#ff5252" : "#00c853";
+  if (player.ready) {
+    readyBtn.textContent = "UNREADY";
+    readyBtn.classList.add("ready");
+  } else {
+    readyBtn.textContent = "READY";
+    readyBtn.classList.remove("ready");
+  }
   myRef.update({ ready: player.ready });
   // If toggling to unready while countdown started, we want to abort countdown if any player unready.
   // That will be handled because players listener checks allReady before starting any new countdown.
@@ -518,6 +542,155 @@ function drawOrbs(){
   }
 }
 
+/* ---------------- MINIMAP ---------------- */
+function drawMinimap() {
+  const mapSize = 200;
+  const mapMargin = 20;
+  const mapX = canvas.width - mapSize - mapMargin;
+  const mapY = mapMargin;
+  
+  // Background
+  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+  ctx.fillRect(mapX, mapY, mapSize, mapSize);
+  ctx.strokeStyle = "#00c853";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+  
+  // Center point (player)
+  const centerX = mapX + mapSize/2;
+  const centerY = mapY + mapSize/2;
+  
+  // Scale factor: 6000 world units fits in mapSize
+  const scale = mapSize / 6000;
+  
+  // Draw planets
+  for(let p of planets) {
+    const px = centerX + (p.x - player.x) * scale;
+    const py = centerY + (p.y - player.y) * scale;
+    const radius = Math.max(2, p.radius * scale * 0.3);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(px, py, radius, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  // Draw black hole
+  if(blackHole) {
+    const bhX = centerX + (blackHole.x - player.x) * scale;
+    const bhY = centerY + (blackHole.y - player.y) * scale;
+    const bhRadius = Math.max(3, blackHole.radius * scale * 0.3);
+    ctx.fillStyle = "purple";
+    ctx.beginPath();
+    ctx.arc(bhX, bhY, bhRadius, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  // Draw orbs
+  for(let id in orbs) {
+    const o = orbs[id];
+    const ox = centerX + (o.x - player.x) * scale;
+    const oy = centerY + (o.y - player.y) * scale;
+    ctx.fillStyle = "lime";
+    ctx.beginPath();
+    ctx.arc(ox, oy, 2, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  // Draw other players
+  for(let id in playersData) {
+    if(id === playerId) continue;
+    const pl = playersData[id];
+    const px = centerX + (pl.x - player.x) * scale;
+    const py = centerY + (pl.y - player.y) * scale;
+    ctx.fillStyle = "cyan";
+    ctx.beginPath();
+    ctx.arc(px, py, 2, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  // Draw self (center)
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 3, 0, Math.PI*2);
+  ctx.fill();
+  
+  // Draw crosshair
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(centerX - 5, centerY);
+  ctx.lineTo(centerX + 5, centerY);
+  ctx.moveTo(centerX, centerY - 5);
+  ctx.lineTo(centerX, centerY + 5);
+  ctx.stroke();
+  
+  // Title
+  ctx.fillStyle = "white";
+  ctx.font = "bold 12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("MINIMAP", centerX, mapY - 5);
+}
+
+/* ---------------- LIVE LEADERBOARD ---------------- */
+function drawLiveLeaderboard() {
+  if (match.state !== "playing") return;
+  
+  const leaderboardX = canvas.width - 220;
+  const leaderboardY = 230; // Below minimap
+  const width = 200;
+  
+  // Get sorted players
+  const sortedPlayers = Object.values(playersData).sort((a, b) => (b.score || 0) - (a.score || 0));
+  
+  // Background
+  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+  ctx.fillRect(leaderboardX, leaderboardY, width, 40 + sortedPlayers.length * 25);
+  ctx.strokeStyle = "#00c853";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(leaderboardX, leaderboardY, width, 40 + sortedPlayers.length * 25);
+  
+  // Title
+  ctx.fillStyle = "#00c853";
+  ctx.font = "bold 14px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("LIVE LEADERBOARD", leaderboardX + width/2, leaderboardY + 20);
+  
+  // Player entries
+  ctx.font = "12px Arial";
+  ctx.textAlign = "left";
+  for (let i = 0; i < sortedPlayers.length; i++) {
+    const p = sortedPlayers[i];
+    const y = leaderboardY + 40 + i * 25;
+    
+    // Highlight current player
+    if (p.name === player.name) {
+      ctx.fillStyle = "rgba(0, 200, 83, 0.3)";
+      ctx.fillRect(leaderboardX, y - 10, width, 20);
+    }
+    
+    // Rank
+    ctx.fillStyle = "#00c853";
+    ctx.fillText(`${i + 1}.`, leaderboardX + 10, y);
+    
+    // Name
+    ctx.fillStyle = "white";
+    const displayName = p.name || "Anon";
+    const maxNameWidth = 120;
+    let nameWidth = ctx.measureText(displayName).width;
+    if (nameWidth > maxNameWidth) {
+      ctx.fillText(displayName.substring(0, 10) + "...", leaderboardX + 30, y);
+    } else {
+      ctx.fillText(displayName, leaderboardX + 30, y);
+    }
+    
+    // Score
+    ctx.fillStyle = "#FFD700";
+    ctx.textAlign = "right";
+    ctx.fillText(p.score || 0, leaderboardX + width - 10, y);
+    ctx.textAlign = "left";
+  }
+}
+
 /* ---------------- HUD: countdown/time/score ---------------- */
 function drawHUD(){
   ctx.fillStyle = "white";
@@ -529,6 +702,7 @@ function drawHUD(){
     const remaining = Math.max(0, 3000 - elapsed);
     const number = Math.ceil(remaining/1000);
     ctx.font = "96px Arial";
+    ctx.fillStyle = "#00c853";
     ctx.fillText(number || 1, canvas.width/2, canvas.height/2);
   }
   if(match.state === "playing"){
@@ -537,7 +711,8 @@ function drawHUD(){
     const duration = match.duration || MATCH_DURATION_MS;
     const elapsed = serverNow() - startTime;
     const remaining = Math.max(0, Math.ceil((duration - elapsed)/1000));
-    ctx.font = "20px Arial";
+    ctx.font = "bold 20px Arial";
+    ctx.fillStyle = "#00c853";
     ctx.fillText(`Time: ${remaining}s   Score: ${player.score || 0}`, canvas.width/2, 30);
     if(remaining <= 0){
       // end match (use transaction to set ended)
@@ -548,22 +723,153 @@ function drawHUD(){
     }
   }
   if(match.state === "ended"){
-    ctx.font = "36px Arial";
-    ctx.fillText("MATCH ENDED", canvas.width/2, 80);
-    // ranking
-    const list = Object.values(playersData || {}).slice().sort((a,b)=> (b.score||0) - (a.score||0));
-    ctx.font = "22px Arial";
-    for(let i=0;i<list.length;i++){
-      const p = list[i];
-      ctx.fillText(`${i+1}. ${p.name || 'Anon'} — ${p.score||0}`, canvas.width/2, 130 + i*30);
+    // Draw minimap and leaderboard during ended state
+    drawMinimap();
+    drawEndedRanking();
+  }
+}
+
+/* ---------------- ENDED RANKING SCREEN ---------------- */
+function drawEndedRanking() {
+  const sortedPlayers = Object.values(playersData).sort((a, b) => (b.score || 0) - (a.score || 0));
+  
+  // Semi-transparent overlay
+  ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Title
+  ctx.fillStyle = "#00c853";
+  ctx.font = "bold 48px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("MATCH RESULTS", canvas.width/2, 100);
+  
+  // Subtitle
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "20px Arial";
+  ctx.fillText("Final Scores", canvas.width/2, 140);
+  
+  // Podium
+  drawPodium(sortedPlayers);
+  
+  // Rankings list
+  const startY = 400;
+  ctx.font = "bold 16px Arial";
+  ctx.textAlign = "left";
+  
+  for (let i = 0; i < sortedPlayers.length; i++) {
+    const p = sortedPlayers[i];
+    const y = startY + i * 35;
+    
+    // Background for current player
+    if (p.name === player.name) {
+      ctx.fillStyle = "rgba(0, 200, 83, 0.3)";
+      ctx.fillRect(canvas.width/2 - 250, y - 15, 500, 30);
     }
-    // draw replay button
-    const bx = canvas.width/2 - 80, by = canvas.height - 160, bw = 160, bh = 48;
+    
+    // Rank
     ctx.fillStyle = "#00c853";
-    ctx.fillRect(bx, by, bw, bh);
-    ctx.fillStyle = "black";
-    ctx.font = "20px Arial";
-    ctx.fillText("REPLAY", canvas.width/2, by + 32);
+    ctx.fillText(`${i + 1}.`, canvas.width/2 - 230, y);
+    
+    // Name
+    ctx.fillStyle = "white";
+    ctx.fillText(p.name || "Anon", canvas.width/2 - 200, y);
+    
+    // Score
+    ctx.fillStyle = "#FFD700";
+    ctx.textAlign = "right";
+    ctx.fillText(p.score || 0, canvas.width/2 + 230, y);
+    ctx.textAlign = "left";
+    
+    // Separator line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+    ctx.beginPath();
+    ctx.moveTo(canvas.width/2 - 250, y + 5);
+    ctx.lineTo(canvas.width/2 + 250, y + 5);
+    ctx.stroke();
+  }
+  
+  // Replay button
+  const bx = canvas.width/2 - 100;
+  const by = canvas.height - 120;
+  const bw = 200;
+  const bh = 50;
+  
+  // Button background
+  const gradient = ctx.createLinearGradient(bx, by, bx, by + bh);
+  gradient.addColorStop(0, "#00c853");
+  gradient.addColorStop(1, "#00796b");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(bx, by, bw, bh);
+  
+  // Button border
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(bx, by, bw, bh);
+  
+  // Button text
+  ctx.fillStyle = "white";
+  ctx.font = "bold 20px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("PLAY AGAIN", canvas.width/2, by + 32);
+}
+
+/* ---------------- PODIUM DRAWING ---------------- */
+function drawPodium(sortedPlayers) {
+  const centerX = canvas.width/2;
+  const baseY = 250;
+  
+  // Draw podium for top 3
+  for (let i = 0; i < Math.min(3, sortedPlayers.length); i++) {
+    const p = sortedPlayers[i];
+    const rank = i + 1;
+    let podiumX, podiumWidth, podiumHeight;
+    
+    switch(rank) {
+      case 1: // First place - center and tallest
+        podiumX = centerX - 75;
+        podiumWidth = 150;
+        podiumHeight = 100;
+        break;
+      case 2: // Second place - left
+        podiumX = centerX - 250;
+        podiumWidth = 100;
+        podiumHeight = 70;
+        break;
+      case 3: // Third place - right
+        podiumX = centerX + 150;
+        podiumWidth = 100;
+        podiumHeight = 50;
+        break;
+    }
+    
+    // Podium base
+    const gradient = ctx.createLinearGradient(podiumX, baseY - podiumHeight, podiumX, baseY);
+    gradient.addColorStop(0, rank === 1 ? "#FFD700" : rank === 2 ? "#C0C0C0" : "#CD7F32");
+    gradient.addColorStop(1, rank === 1 ? "#B8860B" : rank === 2 ? "#A9A9A9" : "#8B4513");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(podiumX, baseY - podiumHeight, podiumWidth, podiumHeight);
+    
+    // Podium border
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(podiumX, baseY - podiumHeight, podiumWidth, podiumHeight);
+    
+    // Player name on podium
+    ctx.fillStyle = "white";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    const displayName = p.name || "Anon";
+    const nameToShow = displayName.length > 12 ? displayName.substring(0, 10) + "..." : displayName;
+    ctx.fillText(nameToShow, podiumX + podiumWidth/2, baseY - podiumHeight - 20);
+    
+    // Score on podium
+    ctx.fillStyle = "#00c853";
+    ctx.font = "bold 18px Arial";
+    ctx.fillText(p.score || 0, podiumX + podiumWidth/2, baseY - podiumHeight + 30);
+    
+    // Medal emoji
+    ctx.font = "24px Arial";
+    ctx.fillText(rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉", podiumX + podiumWidth/2, baseY - podiumHeight + 60);
   }
 }
 
@@ -592,59 +898,55 @@ function loop(){
   drawOrbs();
   drawPlayers();
   detectOrbCollisions();
+  
+  // Draw minimap and leaderboard during match
+  if(match.state === "playing") {
+    drawMinimap();
+    drawLiveLeaderboard();
+  }
+  
   drawHUD();
   requestAnimationFrame(loop);
 }
 
-/* ---------------- STUBS FROM ORIGINAL CODE for stars etc ---------------- */
-function drawStars(){
-  const centerX=canvas.width/2, centerY=canvas.height/2;
-  const startX=Math.floor((player.x-centerX)/starSectorSize)*starSectorSize;
-  const startY=Math.floor((player.y-centerY)/starSectorSize)*starSectorSize;
-  const endX=Math.floor((player.x+centerX)/starSectorSize)*starSectorSize;
-  const endY=Math.floor((player.y+centerY)/starSectorSize)*starSectorSize;
-  for(let sx=startX;sx<=endX;sx+=starSectorSize){
-    for(let sy=startY;sy<=endY;sy+=starSectorSize){
-      const seed = sx*73856093 ^ sy*19349663;
-      const rand = mulberry32(seed);
-      const starsInSector = 10 + Math.floor(rand()*15);
-      for(let i=0;i<starsInSector;i++){
-        const starX = sx + rand()*starSectorSize;
-        const starY = sy + rand()*starSectorSize;
-        const radius = 0.5 + rand()*1.5;
-        const brightness = 0.2 + rand()*0.5;
-        const screenX = starX - player.x + centerX;
-        const screenY = starY - player.y + centerY;
-        if(screenX>=0 && screenX<=canvas.width && screenY>=0 && screenY<=canvas.height){
-          ctx.fillStyle=`rgba(255,255,255,${brightness})`;
-          ctx.beginPath();
-          ctx.arc(screenX,screenY,radius,0,Math.PI*2);
-          ctx.fill();
-        }
-      }
-    }
-  }
-}
-
 /* ---------------- CLICK HANDLING (for REPLAY button) ---------------- */
+let localReplayClicked = false;
 canvas.addEventListener('click', (e)=>{
-  if(match.state === "ended"){
+  if(match.state === "ended" && !localReplayClicked){
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
-    const bx = canvas.width/2 - 80, by = canvas.height - 160, bw = 160, bh = 48;
+    
+    // Check if replay button was clicked
+    const bx = canvas.width/2 - 100;
+    const by = canvas.height - 120;
+    const bw = 200;
+    const bh = 50;
+    
     if(mx >= bx && mx <= bx + bw && my >= by && my <= by + bh){
-      // REPLAY pressed: clear match and orbs, reset ready & scores
-      db.ref('gravity/match').remove();
-      db.ref('gravity/orbs').remove();
-      // set all players ready=false and score=0
-      db.ref('gravity/players').once('value').then(snap=>{
-        const ps = snap.val() || {};
-        for(let id in ps){
-          db.ref('gravity/players/'+id+'/ready').set(false);
-          db.ref('gravity/players/'+id+'/score').set(0);
-        }
+      // REPLAY pressed: only clear match state for this player
+      // Don't clear orbs or other players' scores
+      localReplayClicked = true;
+      
+      // Set match state back to lobby only for this player's view
+      // and reset this player's ready state and score
+      db.ref('gravity/match/state').transaction(current => {
+        if(current === "ended") return "lobby";
+        return;
       });
+      
+      // Reset this player's state
+      player.ready = false;
+      player.score = 0;
+      readyBtn.textContent = "READY";
+      readyBtn.classList.remove("ready");
+      readyBtn.style.display = "block";
+      
+      // Update Firebase
+      myRef.update({ ready: false, score: 0 });
+      
+      // Reset local replay flag after a delay
+      setTimeout(() => { localReplayClicked = false; }, 1000);
     }
   }
 });
