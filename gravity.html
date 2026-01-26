@@ -109,6 +109,7 @@ const ORB_COUNT = 20;
 const ORB_RADIUS = 18;
 const ORB_AREA = 2000; // spawn within ±2000 x/y
 const starSectorSize = 400;
+const miniMap = { width:200, height:150, padding:10 };
 
 /* ---------------- STATE ---------------- */
 let serverOffset = 0; // ms (serverTime = Date.now() + serverOffset)
@@ -124,6 +125,7 @@ let planets = [], blackHole = null;
 let orbs = {};
 let match = { state: "lobby", duration: MATCH_DURATION_MS };
 let isTabActive = true;
+let hasGeneratedNewWorld = false; // Track if we've generated new world after match
 
 /* ---------------- UI ELEMENTS ---------------- */
 const nameOverlay = document.getElementById("nameOverlay");
@@ -140,7 +142,7 @@ document.addEventListener("visibilitychange", ()=>{ isTabActive = !document.hidd
 /* ---------------- PLAYER OBJECT ---------------- */
 const player = { x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",ready:false,score:0 };
 
-/* ---------------- INITIAL WORLD GENERATION (if needed) ---------------- */
+/* ---------------- INITIAL WORLD GENERATION ---------------- */
 function generateWorldLocally(){
   const colors = ["orange","red","green","blue","purple","yellow","pink","cyan","lime","magenta"];
   planets = [];
@@ -148,8 +150,8 @@ function generateWorldLocally(){
   while(planets.length < 10 && attempts < 5000){
     attempts++;
     const radius = 30 + Math.random()*90;
-    const x = Math.random()*3000 - 1500;
-    const y = Math.random()*3000 - 1500;
+    const x = Math.random()*6000 - 3000; // Larger world
+    const y = Math.random()*6000 - 3000; // Larger world
     const color = colors[Math.floor(Math.random()*colors.length)];
     let ok = true;
     for(let p of planets){
@@ -162,8 +164,8 @@ function generateWorldLocally(){
   // Black Hole placed far away
   let ok=false;
   while(!ok){
-    const x = Math.random()*6000 - 3000;
-    const y = Math.random()*6000 - 3000;
+    const x = Math.random()*8000 - 4000; // Even larger
+    const y = Math.random()*8000 - 4000;
     if(Math.hypot(x,y) > 4000){
       blackHole = {x,y,radius:100,mass:800000,color:"black",angle:0,particles:[]};
       for(let i=0;i<100;i++){
@@ -176,7 +178,7 @@ function generateWorldLocally(){
 
 /* ---------------- LOAD OR CREATE WORLD ---------------- */
 function loadWorldThen(callback){
-  // If no world in firebase, first player will create it.
+  // Always load world from Firebase (shared for all players)
   db.ref('gravity/world').once('value').then(snap=>{
     const data = snap.val();
     if(data && data.planets && data.blackHole){
@@ -184,7 +186,7 @@ function loadWorldThen(callback){
       blackHole = data.blackHole;
       callback();
     } else {
-      // create world locally and save to firebase
+      // If no world exists, create one and save to Firebase (shared)
       generateWorldLocally();
       db.ref('gravity/world').set({planets,blackHole,created: serverNow()})
         .then(()=>callback())
@@ -206,20 +208,16 @@ function registerPresence(){
   player.score = 0;
   myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name,ready:false,score:0,lastUpdate:serverNow()});
   myRef.onDisconnect().remove();
-  // Also, when this client disconnects, check & remove anything leftover if nobody remains.
-  // NOTE: client-side cannot unconditionally guarantee deletion when all clients disconnect (no client to run code),
-  // but we ensure that whenever any client sees players === null (no players), it removes gravity root.
 }
 
 /* ---------------- PLAYERS LISTENER ---------------- */
 db.ref('gravity/players').on('value', snap=>{
   playersData = snap.val() || {};
   const ids = Object.keys(playersData);
-  // If nobody left, remove entire gravity branch (this removes timers/timestamps/world/orbs)
+  // If nobody left, remove entire gravity branch
   if(ids.length === 0){
     db.ref('gravity').remove().catch(()=>{});
   }
-  // If match was running and new player joined, they'll see match state via 'gravity/match' listener below
   // Check if all players are ready (only if match in lobby)
   if(match.state === "lobby" && ids.length > 0){
     const allReady = ids.every(id => playersData[id].ready);
@@ -245,9 +243,49 @@ db.ref('gravity/match').on('value', snap=>{
     } else {
       readyBtn.style.display = "block";
     }
+    
+    // When match ends, ONE player should generate new world for everyone
+    if(match.state === "ended" && !hasGeneratedNewWorld) {
+      hasGeneratedNewWorld = true;
+      
+      // Only the first client to see "ended" state generates new world
+      // Use a transaction to ensure only one client does this
+      db.ref('gravity/worldRegenerateFlag').transaction(current => {
+        if(current === null || current === false) {
+          return true; // Claim the regeneration
+        }
+        return; // Someone else already claimed it
+      }, (err, committed, snap) => {
+        if(err) return;
+        if(committed) {
+          // This client won the transaction, generate new world for everyone
+          generateWorldLocally();
+          db.ref('gravity/world').set({planets,blackHole,created:serverNow()});
+          
+          // Clear the flag after 5 seconds
+          setTimeout(() => {
+            db.ref('gravity/worldRegenerateFlag').set(false);
+            hasGeneratedNewWorld = false;
+          }, 5000);
+        } else {
+          // Someone else is generating the world, wait and load it
+          setTimeout(() => {
+            loadWorldThen(() => {
+              hasGeneratedNewWorld = false;
+            });
+          }, 1000);
+        }
+      });
+    }
+    
+    // Reset flag when returning to lobby
+    if(match.state === "lobby") {
+      hasGeneratedNewWorld = false;
+    }
   } else {
     match = { state:"lobby", duration: MATCH_DURATION_MS };
     readyBtn.style.display = "block";
+    hasGeneratedNewWorld = false;
   }
 });
 
@@ -262,43 +300,33 @@ readyBtn.onclick = () => {
     readyBtn.classList.remove("ready");
   }
   myRef.update({ ready: player.ready });
-  // If toggling to unready while countdown started, we want to abort countdown if any player unready.
-  // That will be handled because players listener checks allReady before starting any new countdown.
 };
 
 /* ---------------- COUNTDOWN & MATCH START ---------------- */
-let localCountdown = null;
 function startCountdownSequence(){
-  // Only one client should attempt to initiate countdown; use a transaction to claim countdown if not already claimed.
-  // We'll set gravity/match/state = "countdown" with a server timestamp for 'countdownStartedBy'
+  // Only one client should attempt to initiate countdown
   db.ref('gravity/match/state').transaction(current => {
     if(current === "lobby" || current === null) return "countdown";
     return; // abort
   }, (err, committed, snap) => {
     if(err) return;
     if(!committed) return; // someone else started it
-    // start a 3-second countdown visible to all clients (we'll set no startTime yet)
+    // start a 3-second countdown visible to all clients
     db.ref('gravity/match/countdownStartedAt').set(firebase.database.ServerValue.TIMESTAMP);
-    // The actual countdown display is client-side based on serverNow - countdownStartedAt
-    // After countdown 3=>0, the starter will set the match startTime as server timestamp:
     runLocalCountdownThenStart();
   });
 }
 
 function runLocalCountdownThenStart(){
-  // We'll read countdownStartedAt, then wait remaining time and start match
   db.ref('gravity/match/countdownStartedAt').once('value').then(snap=>{
     const startedAt = snap.val();
     if(!startedAt) return;
     const remaining = 3000 - (serverNow() - startedAt);
     setTimeout(()=> {
-      // only one client should set the real match.startTime; use a transaction to set match.state to "playing" & startTime only if still "countdown"
       db.ref('gravity/match').transaction(current => {
         if(!current || current.state !== "countdown") return; // abort
         return Object.assign({}, current, { state: "playing", startTime: firebase.database.ServerValue.TIMESTAMP, duration: MATCH_DURATION_MS });
       });
-      // spawn initial orbs (we let the client that succeeded in transaction spawn them)
-      // The transaction callback will run and we can detect who committed by re-checking match state in listener.
     }, Math.max(0, remaining));
   });
 }
@@ -542,66 +570,86 @@ function drawOrbs(){
   }
 }
 
-/* ---------------- MINIMAP ---------------- */
+/* ---------------- DYNAMIC MINIMAP ---------------- */
 function drawMinimap() {
-  const mapSize = 200;
-  const mapMargin = 20;
-  const mapX = canvas.width - mapSize - mapMargin;
-  const mapY = mapMargin;
+  const mapX = canvas.width - miniMap.width - miniMap.padding;
+  const mapY = miniMap.padding;
   
   // Background
   ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-  ctx.fillRect(mapX, mapY, mapSize, mapSize);
+  ctx.fillRect(mapX, mapY, miniMap.width, miniMap.height);
   ctx.strokeStyle = "#00c853";
   ctx.lineWidth = 2;
-  ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+  ctx.strokeRect(mapX, mapY, miniMap.width, miniMap.height);
   
-  // Center point (player)
-  const centerX = mapX + mapSize/2;
-  const centerY = mapY + mapSize/2;
+  // Calculate dynamic scale based on farthest object from player
+  let maxDist = 0;
+  // Check planets
+  for(let p of planets) {
+    const d = Math.hypot(p.x - player.x, p.y - player.y) + p.radius;
+    if(d > maxDist) maxDist = d;
+  }
+  // Check black hole
+  if(blackHole) {
+    const d = Math.hypot(blackHole.x - player.x, blackHole.y - player.y) + blackHole.radius;
+    if(d > maxDist) maxDist = d;
+  }
+  // Minimum scale to show something even if player is at center
+  if(maxDist < 500) maxDist = 500;
   
-  // Scale factor: 6000 world units fits in mapSize
-  const scale = mapSize / 6000;
+  const scale = (miniMap.width/2) / maxDist;
+  const centerX = mapX + miniMap.width/2;
+  const centerY = mapY + miniMap.height/2;
   
   // Draw planets
-  for(let p of planets) {
-    const px = centerX + (p.x - player.x) * scale;
-    const py = centerY + (p.y - player.y) * scale;
-    const radius = Math.max(2, p.radius * scale * 0.3);
+  for(let p of planets){
+    const dx = p.x - player.x;
+    const dy = p.y - player.y;
+    const px = centerX + dx * scale;
+    const py = centerY + dy * scale;
+    const r = Math.max(2, p.radius * scale);
     ctx.fillStyle = p.color;
     ctx.beginPath();
-    ctx.arc(px, py, radius, 0, Math.PI*2);
+    ctx.arc(px, py, r, 0, Math.PI*2);
     ctx.fill();
   }
   
   // Draw black hole
-  if(blackHole) {
-    const bhX = centerX + (blackHole.x - player.x) * scale;
-    const bhY = centerY + (blackHole.y - player.y) * scale;
-    const bhRadius = Math.max(3, blackHole.radius * scale * 0.3);
+  if(blackHole){
+    const dx = blackHole.x - player.x;
+    const dy = blackHole.y - player.y;
+    const px = centerX + dx * scale;
+    const py = centerY + dy * scale;
+    const r = Math.max(3, blackHole.radius * scale * 0.3);
     ctx.fillStyle = "purple";
     ctx.beginPath();
-    ctx.arc(bhX, bhY, bhRadius, 0, Math.PI*2);
+    ctx.arc(px, py, r, 0, Math.PI*2);
     ctx.fill();
   }
   
-  // Draw orbs
-  for(let id in orbs) {
-    const o = orbs[id];
-    const ox = centerX + (o.x - player.x) * scale;
-    const oy = centerY + (o.y - player.y) * scale;
-    ctx.fillStyle = "lime";
-    ctx.beginPath();
-    ctx.arc(ox, oy, 2, 0, Math.PI*2);
-    ctx.fill();
+  // Draw orbs during match
+  if(match.state === "playing") {
+    for(let id in orbs) {
+      const o = orbs[id];
+      const dx = o.x - player.x;
+      const dy = o.y - player.y;
+      const ox = centerX + dx * scale;
+      const oy = centerY + dy * scale;
+      ctx.fillStyle = "lime";
+      ctx.beginPath();
+      ctx.arc(ox, oy, 2, 0, Math.PI*2);
+      ctx.fill();
+    }
   }
   
   // Draw other players
   for(let id in playersData) {
     if(id === playerId) continue;
     const pl = playersData[id];
-    const px = centerX + (pl.x - player.x) * scale;
-    const py = centerY + (pl.y - player.y) * scale;
+    const dx = pl.x - player.x;
+    const dy = pl.y - player.y;
+    const px = centerX + dx * scale;
+    const py = centerY + dy * scale;
     ctx.fillStyle = "cyan";
     ctx.beginPath();
     ctx.arc(px, py, 2, 0, Math.PI*2);
@@ -611,18 +659,8 @@ function drawMinimap() {
   // Draw self (center)
   ctx.fillStyle = "white";
   ctx.beginPath();
-  ctx.arc(centerX, centerY, 3, 0, Math.PI*2);
+  ctx.arc(centerX, centerY, 4, 0, Math.PI*2);
   ctx.fill();
-  
-  // Draw crosshair
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(centerX - 5, centerY);
-  ctx.lineTo(centerX + 5, centerY);
-  ctx.moveTo(centerX, centerY - 5);
-  ctx.lineTo(centerX, centerY + 5);
-  ctx.stroke();
   
   // Title
   ctx.fillStyle = "white";
@@ -636,7 +674,7 @@ function drawLiveLeaderboard() {
   if (match.state !== "playing") return;
   
   const leaderboardX = canvas.width - 220;
-  const leaderboardY = 230; // Below minimap
+  const leaderboardY = 170; // Below minimap
   const width = 200;
   
   // Get sorted players
@@ -723,8 +761,7 @@ function drawHUD(){
     }
   }
   if(match.state === "ended"){
-    // Draw minimap and leaderboard during ended state
-    drawMinimap();
+    // Draw ended ranking screen
     drawEndedRanking();
   }
 }
@@ -746,19 +783,56 @@ function drawEndedRanking() {
   // Subtitle
   ctx.fillStyle = "#FFD700";
   ctx.font = "20px Arial";
+  ctx.textAlign = "center";
   ctx.fillText("Final Scores", canvas.width/2, 140);
   
-  // Podium
-  drawPodium(sortedPlayers);
-  
   // Rankings list
-  const startY = 400;
+  const startY = 180;
   ctx.font = "bold 16px Arial";
   ctx.textAlign = "left";
   
-  for (let i = 0; i < sortedPlayers.length; i++) {
+  // Draw top 3 with special styling
+  for (let i = 0; i < Math.min(3, sortedPlayers.length); i++) {
     const p = sortedPlayers[i];
-    const y = startY + i * 35;
+    const y = startY + i * 60;
+    
+    // Background for top 3
+    const gradient = ctx.createLinearGradient(canvas.width/2 - 250, y - 25, canvas.width/2 - 250, y + 25);
+    if(i === 0) {
+      gradient.addColorStop(0, "rgba(255, 215, 0, 0.3)");
+      gradient.addColorStop(1, "rgba(255, 215, 0, 0.1)");
+    } else if(i === 1) {
+      gradient.addColorStop(0, "rgba(192, 192, 192, 0.3)");
+      gradient.addColorStop(1, "rgba(192, 192, 192, 0.1)");
+    } else {
+      gradient.addColorStop(0, "rgba(205, 127, 50, 0.3)");
+      gradient.addColorStop(1, "rgba(205, 127, 50, 0.1)");
+    }
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(canvas.width/2 - 250, y - 25, 500, 50);
+    
+    // Rank with medal emoji
+    ctx.fillStyle = i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : "#CD7F32";
+    const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
+    ctx.fillText(`${medal} ${i + 1}.`, canvas.width/2 - 230, y);
+    
+    // Name
+    ctx.fillStyle = "white";
+    ctx.fillText(p.name || "Anon", canvas.width/2 - 180, y);
+    
+    // Score
+    ctx.fillStyle = "#FFD700";
+    ctx.textAlign = "right";
+    ctx.fillText(p.score || 0, canvas.width/2 + 230, y);
+    ctx.textAlign = "left";
+  }
+  
+  // Draw remaining players
+  const remainingStartY = startY + Math.min(3, sortedPlayers.length) * 60;
+  for (let i = 3; i < sortedPlayers.length; i++) {
+    const p = sortedPlayers[i];
+    const y = remainingStartY + (i - 3) * 35;
     
     // Background for current player
     if (p.name === player.name) {
@@ -788,7 +862,7 @@ function drawEndedRanking() {
     ctx.stroke();
   }
   
-  // Replay button
+  // Play Again button - ONLY affects the player who clicks it
   const bx = canvas.width/2 - 100;
   const by = canvas.height - 120;
   const bw = 200;
@@ -811,66 +885,11 @@ function drawEndedRanking() {
   ctx.font = "bold 20px Arial";
   ctx.textAlign = "center";
   ctx.fillText("PLAY AGAIN", canvas.width/2, by + 32);
-}
-
-/* ---------------- PODIUM DRAWING ---------------- */
-function drawPodium(sortedPlayers) {
-  const centerX = canvas.width/2;
-  const baseY = 250;
   
-  // Draw podium for top 3
-  for (let i = 0; i < Math.min(3, sortedPlayers.length); i++) {
-    const p = sortedPlayers[i];
-    const rank = i + 1;
-    let podiumX, podiumWidth, podiumHeight;
-    
-    switch(rank) {
-      case 1: // First place - center and tallest
-        podiumX = centerX - 75;
-        podiumWidth = 150;
-        podiumHeight = 100;
-        break;
-      case 2: // Second place - left
-        podiumX = centerX - 250;
-        podiumWidth = 100;
-        podiumHeight = 70;
-        break;
-      case 3: // Third place - right
-        podiumX = centerX + 150;
-        podiumWidth = 100;
-        podiumHeight = 50;
-        break;
-    }
-    
-    // Podium base
-    const gradient = ctx.createLinearGradient(podiumX, baseY - podiumHeight, podiumX, baseY);
-    gradient.addColorStop(0, rank === 1 ? "#FFD700" : rank === 2 ? "#C0C0C0" : "#CD7F32");
-    gradient.addColorStop(1, rank === 1 ? "#B8860B" : rank === 2 ? "#A9A9A9" : "#8B4513");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(podiumX, baseY - podiumHeight, podiumWidth, podiumHeight);
-    
-    // Podium border
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(podiumX, baseY - podiumHeight, podiumWidth, podiumHeight);
-    
-    // Player name on podium
-    ctx.fillStyle = "white";
-    ctx.font = "bold 14px Arial";
-    ctx.textAlign = "center";
-    const displayName = p.name || "Anon";
-    const nameToShow = displayName.length > 12 ? displayName.substring(0, 10) + "..." : displayName;
-    ctx.fillText(nameToShow, podiumX + podiumWidth/2, baseY - podiumHeight - 20);
-    
-    // Score on podium
-    ctx.fillStyle = "#00c853";
-    ctx.font = "bold 18px Arial";
-    ctx.fillText(p.score || 0, podiumX + podiumWidth/2, baseY - podiumHeight + 30);
-    
-    // Medal emoji
-    ctx.font = "24px Arial";
-    ctx.fillText(rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉", podiumX + podiumWidth/2, baseY - podiumHeight + 60);
-  }
+  // Instruction text
+  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+  ctx.font = "14px Arial";
+  ctx.fillText("Each player must click 'PLAY AGAIN' to return to lobby", canvas.width/2, by - 20);
 }
 
 /* ---------------- UTILITY RANDOM ---------------- */
@@ -893,15 +912,23 @@ function loop(){
   ctx.fillStyle = "black";
   ctx.fillRect(0,0,canvas.width,canvas.height);
   drawStars();
+  
+  // Always update physics even in lobby
   updatePlayerPhysicsAndSync();
   drawPlanetsAndBlackHole();
-  drawOrbs();
   drawPlayers();
-  detectOrbCollisions();
   
-  // Draw minimap and leaderboard during match
+  // Draw orbs only during match
   if(match.state === "playing") {
-    drawMinimap();
+    drawOrbs();
+    detectOrbCollisions();
+  }
+  
+  // Always draw minimap (in lobby and during match)
+  drawMinimap();
+  
+  // Draw leaderboard only during match
+  if(match.state === "playing") {
     drawLiveLeaderboard();
   }
   
@@ -909,44 +936,47 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-/* ---------------- CLICK HANDLING (for REPLAY button) ---------------- */
-let localReplayClicked = false;
+/* ---------------- CLICK HANDLING (for PLAY AGAIN button) ---------------- */
 canvas.addEventListener('click', (e)=>{
-  if(match.state === "ended" && !localReplayClicked){
+  if(match.state === "ended"){
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     
-    // Check if replay button was clicked
+    // Check if "PLAY AGAIN" button was clicked
     const bx = canvas.width/2 - 100;
     const by = canvas.height - 120;
     const bw = 200;
     const bh = 50;
     
     if(mx >= bx && mx <= bx + bw && my >= by && my <= by + bh){
-      // REPLAY pressed: only clear match state for this player
-      // Don't clear orbs or other players' scores
-      localReplayClicked = true;
-      
-      // Set match state back to lobby only for this player's view
-      // and reset this player's ready state and score
-      db.ref('gravity/match/state').transaction(current => {
-        if(current === "ended") return "lobby";
-        return;
-      });
-      
-      // Reset this player's state
+      // This only affects the current player
+      // Reset this player's state only
       player.ready = false;
       player.score = 0;
+      player.x = 0;
+      player.y = 0;
+      player.vx = 0;
+      player.vy = 0;
+      
+      // Update Firebase with this player's reset state
+      myRef.update({ 
+        ready: false, 
+        score: 0,
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        lastUpdate: serverNow()
+      });
+      
+      // Show the ready button for this player
+      readyBtn.style.display = "block";
       readyBtn.textContent = "READY";
       readyBtn.classList.remove("ready");
-      readyBtn.style.display = "block";
       
-      // Update Firebase
-      myRef.update({ ready: false, score: 0 });
-      
-      // Reset local replay flag after a delay
-      setTimeout(() => { localReplayClicked = false; }, 1000);
+      // The match state remains "ended" for other players until they click too
+      // This allows each player to return to lobby at their own pace
     }
   }
 });
@@ -966,48 +996,23 @@ function startGame(){
   player.x = 0; player.y = 0; player.vx=0; player.vy=0;
   loadWorldThen(()=>{
     registerPresence(); // registers my player in firebase
-    // listen for match start: when match.state becomes playing, spawn initial orbs if this client detects that it's the one to spawn
+    
+    // Listen for match start
     db.ref('gravity/match').on('value', snap=>{
       const m = snap.val();
       if(m && m.state === "playing"){
-        // ensure orbs exist (only spawn if none)
-        spawnInitialOrbsIfNeeded();
-      }
-    });
-    // Start the draw/physics loop
-    requestAnimationFrame(loop);
-    // Update playersData from db periodically already handled by listener
-    // Also set interval that periodically refreshes world when no world exists (safety)
-    setInterval(()=> {
-      if(!planets || !blackHole){
-        db.ref('gravity/world').once('value').then(snap=>{
-          const w = snap.val();
-          if(w && w.planets && w.blackHole){
-            planets = w.planets;
-            blackHole = w.blackHole;
-          } else {
-            // generate & upload if this client is the first (no players)
-            // Only generate if players list empty (we already check players listener to clear gravity)
-            db.ref('gravity/players').once('value').then(pSnap=>{
-              if(!(pSnap.exists())) {
-                generateWorldLocally();
-                db.ref('gravity/world').set({planets,blackHole,created:serverNow()});
-              }
-            });
-          }
+        // Remove all existing orbs first
+        db.ref('gravity/orbs').remove().then(() => {
+          // Spawn new orbs for the match
+          spawnInitialOrbsIfNeeded();
         });
       }
-    }, 5000);
+    });
+    
+    // Start the draw/physics loop
+    requestAnimationFrame(loop);
   });
 }
-
-/* ---------------- Ensure full cleanup when a player disconnects and others detect 0 players:
-   - db.ref('gravity/players') listener removes gravity root when it sees zero players.
-   Note: if all clients disconnect simultaneously, there's no client to run this code. In that extremely rare edge-case
-   the firebase data may persist until a client connects; the code ensures when a client connects and sees no players it
-   will recreate the world or remove stale data. This is the best client-only approach without server/cloud functions. */
-
-/* ---------------- End of script ---------------- */
 </script>
 </body>
 </html>
