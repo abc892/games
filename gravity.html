@@ -121,12 +121,33 @@ let orbs = {};
 let match = { state: "lobby", duration: MATCH_DURATION_MS };
 let isTabActive = true;
 let hideRankingScreen = false;
-
 /* ---------------- UI ELEMENTS ---------------- */
 const nameOverlay = document.getElementById("nameOverlay");
 const nameInput = document.getElementById("nameInput");
 const readyBtn = document.getElementById("readyBtn");
+const player = { x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",ready:false,score:0 };
 nameInput.focus();
+
+/* ---------- NAME ENTRY HANDLER (ADD THIS) ---------- */
+nameInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    const val = nameInput.value.trim();
+    if (!val) return;
+
+    playerName = val;
+    nameOverlay.style.display = "none";
+
+    // Initial spawn
+    player.x = Math.random() * 200 - 100;
+    player.y = Math.random() * 200 - 100;
+
+    registerPresence();
+
+    loadWorldThen(() => {
+      startMainLoop();
+    });
+  }
+});  
 
 /* ---------------- INPUT ---------------- */
 const keys = {};
@@ -134,8 +155,6 @@ window.addEventListener("keydown", e=> keys[e.key]=true);
 window.addEventListener("keyup", e=> keys[e.key]=false);
 document.addEventListener("visibilitychange", ()=>{ isTabActive = !document.hidden; });
 
-/* ---------------- PLAYER OBJECT ---------------- */
-const player = { x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",ready:false,score:0 };
 
 /* ---------------- INITIAL WORLD GENERATION (if needed) ---------------- */
 function generateWorldLocally(){
@@ -584,6 +603,41 @@ function drawMiniMap(){
   ctx.beginPath();
   ctx.arc(mapX+miniMap.width/2,mapY+miniMap.height/2,4,0,Math.PI*2);
   ctx.fill();
+}
+
+function startMainLoop(){
+  requestAnimationFrame(loop);
+}
+
+function loop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  drawStars();
+  drawPlanetsAndBlackHole();
+  drawOrbs();
+  drawPlayers();
+  drawMiniMap();
+  drawLiveLeaderboard();
+  drawHUD();
+
+  if (match.state === "playing") {
+    updatePlayerPhysicsAndSync();
+
+    // Orb pickup check
+    for (let id in orbs) {
+      const o = orbs[id];
+      if (Math.hypot(player.x - o.x, player.y - o.y) < player.radius + ORB_RADIUS) {
+        tryPickupOrb(id);
+      }
+    }
+  }
+
+  // Spawn orbs when match starts
+  if (match.state === "playing") {
+    spawnInitialOrbsIfNeeded();
+  }
+
+  requestAnimationFrame(loop);
 }
 
 /* ---------------- LIVE LEADERBOARD ---------------- */
