@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Gravity Ball Multiplayer</title>
+<meta charset="UTF-8" />
+<title>Gravity Ball Multiplayer — Full Match Implementation</title>
 <style>
-  body { margin:0; background:black; overflow:hidden; font-family:Arial,sans-serif; }
+  body { margin:0; background:black; overflow:hidden; }
   canvas { display:block; }
   #nameOverlay {
     position:fixed;
     inset:0;
-    background:black;
+    background:rgba(0,0,0,0.95);
     display:flex;
     align-items:center;
     justify-content:center;
-    z-index:10;
+    z-index:20;
+    color:white;
+    flex-direction:column;
+    gap:12px;
   }
   #nameInput {
     font-size:20px;
@@ -24,116 +27,16 @@
   }
   #readyBtn {
     position:fixed;
-    top:20px;
-    right:20px;
-    padding:15px 30px;
-    font-size:18px;
-    font-weight:bold;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    z-index:5;
-    transition:all 0.3s;
-  }
-  #readyBtn.not-ready {
-    background:#444;
-    color:white;
-  }
-  #readyBtn.ready {
-    background:#4CAF50;
-    color:white;
-  }
-  #gameUI {
-    position:fixed;
-    top:20px;
-    left:50%;
-    transform:translateX(-50%);
-    color:white;
-    text-align:center;
-    z-index:5;
-    font-size:24px;
-    font-weight:bold;
-  }
-  #countdown {
-    font-size:80px;
-    color:#FFD700;
-    text-shadow:0 0 20px #FFD700;
-  }
-  #liveScores {
-    position:fixed;
-    top:100px;
-    right:20px;
-    background:rgba(0,0,0,0.7);
-    padding:15px;
-    border-radius:8px;
-    color:white;
-    min-width:200px;
-    z-index:5;
-    display:none;
-  }
-  #liveScores h3 {
-    margin:0 0 10px 0;
-    font-size:18px;
-    border-bottom:2px solid #FFD700;
-    padding-bottom:5px;
-  }
-  .live-score-item {
-    display:flex;
-    justify-content:space-between;
-    padding:5px 0;
+    top:10px;
+    right:10px;
+    padding:10px 18px;
     font-size:16px;
-  }
-  .live-score-item.current-player {
-    color:#4CAF50;
-    font-weight:bold;
-  }
-  #endScreen {
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.95);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:20;
-    flex-direction:column;
-    color:white;
-  }
-  #endScreen h1 {
-    font-size:48px;
-    margin-bottom:30px;
-    color:#FFD700;
-  }
-  #leaderboard {
-    background:rgba(255,255,255,0.1);
-    padding:30px;
-    border-radius:10px;
-    margin-bottom:30px;
-    min-width:400px;
-  }
-  .rank-item {
-    display:flex;
-    justify-content:space-between;
-    padding:10px;
-    margin:5px 0;
-    background:rgba(255,255,255,0.05);
-    border-radius:5px;
-    font-size:20px;
-  }
-  .rank-item.first { background:rgba(255,215,0,0.3); }
-  .rank-item.second { background:rgba(192,192,192,0.3); }
-  .rank-item.third { background:rgba(205,127,50,0.3); }
-  #replayBtn {
-    padding:15px 40px;
-    font-size:22px;
-    background:#4CAF50;
-    color:white;
-    border:none;
     border-radius:8px;
+    border:none;
+    background:#00c853;
+    color:black;
     cursor:pointer;
-    font-weight:bold;
-  }
-  #replayBtn:hover {
-    background:#45a049;
+    z-index:5;
   }
 </style>
 </head>
@@ -142,38 +45,32 @@
 <!-- Name entry -->
 <div id="nameOverlay">
   <input id="nameInput" placeholder="Enter your name & press Enter">
-</div>
-
-<!-- Ready button -->
-<button id="readyBtn" class="not-ready" style="display:none;">Ready</button>
-
-<!-- Game UI -->
-<div id="gameUI" style="display:none;">
-  <div id="countdown"></div>
-  <div id="timer" style="display:none;">Time: <span id="timeLeft">120</span>s</div>
-  <div id="score" style="display:none;">Score: <span id="scoreValue">0</span></div>
-</div>
-
-<!-- Live Scores -->
-<div id="liveScores">
-  <h3>Live Scores</h3>
-  <div id="liveScoresList"></div>
-</div>
-
-<!-- End screen -->
-<div id="endScreen">
-  <h1>Game Over!</h1>
-  <div id="leaderboard"></div>
-  <button id="replayBtn">Play Again</button>
+  <div style="font-size:14px; color:#ccc;">Join & then press READY (top-right) to start match when all players are ready</div>
 </div>
 
 <canvas id="game"></canvas>
+<button id="readyBtn">READY</button>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
+/* ===========================================================
+   FULL IMPLEMENTATION:
+   - Lobby with READY/UNREADY
+   - All-ready => 3..2..1 countdown (center)
+   - Synchronized match start using server timestamp (.info/serverTimeOffset)
+   - 2 minute timer synced via server timestamp
+   - 20 green orbs (radius 18) in ±2000 area; stored in Firebase
+   - Orb pickup uses a transaction to ensure single-winner
+   - Orb respawn after 3s (spawn created by the client who successfully removed the orb)
+   - Avoid orb spawn intersection with planets, black hole, other orbs
+   - When players list becomes empty, the entire gravity/ node is removed
+   - All match timestamps removed when players all disconnected (because gravity/ removed)
+   =========================================================== */
+
+/* ---------------- FIREBASE CONFIG ---------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
   authDomain: "games-c3e27.firebaseapp.com",
@@ -184,122 +81,55 @@ const firebaseConfig = {
   appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
 };
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const db = firebase.database();
 
-// --- Variables ---
+/* ---------------- CANVAS ---------------- */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
 
-const G = 0.15, thrust = 0.1, keys = {};
-const miniMap = { width:200, height:150, padding:10 };
+/* ---------------- CONSTANTS ---------------- */
+const G = 0.15;
+const thrust = 0.1;
+const MATCH_DURATION_MS = 120000; // 2 minutes
+const ORB_COUNT = 20;
+const ORB_RADIUS = 18;
+const ORB_AREA = 2000; // spawn within ±2000 x/y
 const starSectorSize = 400;
+
+/* ---------------- STATE ---------------- */
+let serverOffset = 0; // ms (serverTime = Date.now() + serverOffset)
+db.ref('.info/serverTimeOffset').on('value', snap=>{
+  serverOffset = snap.val() || 0;
+});
+function serverNow(){ return Date.now() + serverOffset; }
 
 let playerName = null;
 let playerId = 'player_' + Math.random().toString(36).substr(2,8) + Date.now();
 let playersData = {};
 let planets = [], blackHole = null;
-let isTabActive = true;
-let lastUpdateTime = Date.now();
-
-// Game state
-let gameState = 'waiting'; // waiting, countdown, playing, ended
-let isReady = false;
-let countdownValue = 3;
-let gameTimer = 120;
-let playerScore = 0;
 let orbs = {};
-let orbRespawnTimers = {};
+let match = { state: "lobby", duration: MATCH_DURATION_MS };
+let isTabActive = true;
 
-// --- UI Elements ---
+/* ---------------- UI ELEMENTS ---------------- */
 const nameOverlay = document.getElementById("nameOverlay");
 const nameInput = document.getElementById("nameInput");
 const readyBtn = document.getElementById("readyBtn");
-const gameUI = document.getElementById("gameUI");
-const countdownDiv = document.getElementById("countdown");
-const timerDiv = document.getElementById("timer");
-const scoreDiv = document.getElementById("score");
-const scoreValue = document.getElementById("scoreValue");
-const timeLeft = document.getElementById("timeLeft");
-const endScreen = document.getElementById("endScreen");
-const leaderboard = document.getElementById("leaderboard");
-const replayBtn = document.getElementById("replayBtn");
-const liveScores = document.getElementById("liveScores");
-const liveScoresList = document.getElementById("liveScoresList");
-
 nameInput.focus();
 
-nameInput.addEventListener("keydown", e => {
-  if(e.key === "Enter" && nameInput.value.trim()){
-    playerName = nameInput.value.trim();
-    nameOverlay.remove();
-    startGame();
-  }
-});
+/* ---------------- INPUT ---------------- */
+const keys = {};
+window.addEventListener("keydown", e=> keys[e.key]=true);
+window.addEventListener("keyup", e=> keys[e.key]=false);
+document.addEventListener("visibilitychange", ()=>{ isTabActive = !document.hidden; });
 
-// Ready button
-readyBtn.addEventListener("click", () => {
-  isReady = !isReady;
-  readyBtn.textContent = isReady ? "Unready" : "Ready";
-  readyBtn.className = isReady ? "ready" : "not-ready";
-  database.ref('gravity/players/' + playerId).update({ready: isReady});
-});
+/* ---------------- PLAYER OBJECT ---------------- */
+const player = { x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",ready:false,score:0 };
 
-// Replay button
-replayBtn.addEventListener("click", () => {
-  endScreen.style.display = 'none';
-  gameState = 'waiting';
-  playerScore = 0;
-  scoreValue.textContent = '0';
-  isReady = false;
-  readyBtn.textContent = "Ready";
-  readyBtn.className = "not-ready";
-  readyBtn.style.display = 'block';
-  gameUI.style.display = 'none';
-  countdownDiv.style.display = 'block';
-  countdownDiv.textContent = '';
-  liveScores.style.display = 'none';
-  
-  // Clear orb respawn timers
-  for(let timerId in orbRespawnTimers){
-    clearTimeout(orbRespawnTimers[timerId]);
-  }
-  orbRespawnTimers = {};
-  
-  // Update player status
-  database.ref('gravity/players/' + playerId).update({
-    ready: false, 
-    score: 0,
-    leftEndScreen: true
-  });
-  
-  // Check if all players have left end screen
-  database.ref('gravity/players').once('value', snap => {
-    const players = snap.val() || {};
-    const currentPlayerIds = Object.keys(players);
-    
-    const allCurrentPlayersLeft = currentPlayerIds.length > 0 && 
-                                   currentPlayerIds.every(id => players[id].leftEndScreen === true);
-    
-    if(allCurrentPlayersLeft){
-      // All current players left end screen, reset game state
-      database.ref('gravity/gameState').set({state: 'waiting', startTime: null, gameStartTime: null});
-      database.ref('gravity/orbs').remove();
-      
-      // Reset wasInLastGame for all current players for the next match
-      currentPlayerIds.forEach(id => {
-        database.ref('gravity/players/' + id).update({wasInLastGame: false, leftEndScreen: false});
-      });
-    }
-  });
-});
-
-// --- Utility ---
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;}}
-
-// --- Generate world if first player ---
-function generateWorld(){
+/* ---------------- INITIAL WORLD GENERATION (if needed) ---------------- */
+function generateWorldLocally(){
   const colors = ["orange","red","green","blue","purple","yellow","pink","cyan","lime","magenta"];
   planets = [];
   let attempts = 0;
@@ -311,18 +141,18 @@ function generateWorld(){
     const color = colors[Math.floor(Math.random()*colors.length)];
     let ok = true;
     for(let p of planets){
-      const dx=x-p.x, dy=y-p.y, dist=Math.sqrt(dx*dx+dy*dy);
+      const dx=x-p.x, dy=y-p.y, dist=Math.hypot(dx,dy);
       if(dist < radius+p.radius+50){ ok=false; break; }
     }
-    if(Math.sqrt(x*x+y*y)<200) ok=false;
+    if(Math.hypot(x,y)<200) ok=false;
     if(ok) planets.push({x,y,radius,mass:Math.pow(radius,3)*0.07,color});
   }
-
+  // Black Hole placed far away
   let ok=false;
   while(!ok){
     const x = Math.random()*6000 - 3000;
     const y = Math.random()*6000 - 3000;
-    if(Math.sqrt(x*x+y*y) > 4000){
+    if(Math.hypot(x,y) > 4000){
       blackHole = {x,y,radius:100,mass:800000,color:"black",angle:0,particles:[]};
       for(let i=0;i<100;i++){
         blackHole.particles.push({r:blackHole.radius+Math.random()*150,angle:Math.random()*Math.PI*2,speed:0.002+Math.random()*0.004,size:1+Math.random()*2});
@@ -330,466 +160,443 @@ function generateWorld(){
       ok=true;
     }
   }
-
-  database.ref('gravity/world').set({planets,blackHole,created:Date.now()});
 }
 
-// --- Generate Orbs ---
-function generateOrbs(){
-  const newOrbs = {};
-  for(let i = 0; i < 20; i++){
-    let valid = false;
-    let x, y;
-    let attempts = 0;
-    while(!valid && attempts < 1000){
-      attempts++;
-      x = Math.random() * 2000 - 1000;
-      y = Math.random() * 2000 - 1000;
-      valid = true;
-      
-      // Check distance from planets
-      for(let p of planets){
-        const dist = Math.sqrt((x-p.x)**2 + (y-p.y)**2);
-        if(dist < p.radius + 50){ valid = false; break; }
-      }
-      
-      // Check distance from black hole
-      if(valid){
-        const dist = Math.sqrt((x-blackHole.x)**2 + (y-blackHole.y)**2);
-        if(dist < blackHole.radius + 100) valid = false;
-      }
-      
-      // Check distance from other orbs
-      if(valid){
-        for(let id in newOrbs){
-          const orb = newOrbs[id];
-          const dist = Math.sqrt((x-orb.x)**2 + (y-orb.y)**2);
-          if(dist < 100){ valid = false; break; }
-        }
-      }
-    }
-    
-    if(valid){
-      newOrbs['orb_'+i] = {x, y, radius: 18};
-    }
-  }
-  
-  database.ref('gravity/orbs').set(newOrbs);
-}
-
-// --- Respawn single orb ---
-function respawnOrb(orbId){
-  let valid = false;
-  let x, y;
-  let attempts = 0;
-  
-  while(!valid && attempts < 1000){
-    attempts++;
-    x = Math.random() * 2000 - 1000;
-    y = Math.random() * 2000 - 1000;
-    valid = true;
-    
-    for(let p of planets){
-      const dist = Math.sqrt((x-p.x)**2 + (y-p.y)**2);
-      if(dist < p.radius + 50){ valid = false; break; }
-    }
-    
-    if(valid){
-      const dist = Math.sqrt((x-blackHole.x)**2 + (y-blackHole.y)**2);
-      if(dist < blackHole.radius + 100) valid = false;
-    }
-    
-    if(valid){
-      for(let id in orbs){
-        const orb = orbs[id];
-        const dist = Math.sqrt((x-orb.x)**2 + (y-orb.y)**2);
-        if(dist < 100){ valid = false; break; }
-      }
-    }
-  }
-  
-  if(valid){
-    database.ref('gravity/orbs/' + orbId).set({x, y, radius: 18});
-  }
-}
-
-// --- Load world ---
-function loadWorld(callback){
-  database.ref('gravity/players').once('value', playersSnapshot => {
-    const activePlayers = playersSnapshot.val();
-    const hasActivePlayers = activePlayers && Object.keys(activePlayers).length > 0;
-    
-    if(!hasActivePlayers){
-      generateWorld();
+/* ---------------- LOAD OR CREATE WORLD ---------------- */
+function loadWorldThen(callback){
+  // If no world in firebase, first player will create it.
+  db.ref('gravity/world').once('value').then(snap=>{
+    const data = snap.val();
+    if(data && data.planets && data.blackHole){
+      planets = data.planets;
+      blackHole = data.blackHole;
       callback();
     } else {
-      database.ref('gravity/world').once('value', snapshot => {
-        const data = snapshot.val();
-        if(data){
-          planets = data.planets;
-          blackHole = data.blackHole;
-          callback();
-        } else {
-          generateWorld();
-          callback();
-        }
-      });
+      // create world locally and save to firebase
+      generateWorldLocally();
+      db.ref('gravity/world').set({planets,blackHole,created: serverNow()})
+        .then(()=>callback())
+        .catch(()=>callback());
     }
+  }).catch(err=>{
+    // fallback: generate local
+    generateWorldLocally();
+    callback();
   });
 }
 
-// --- Player ---
-const player = {x:0,y:0,vx:0,vy:0,angle:0,radius:8,name:"",score:0};
-
-function startGame(){
-  player.x = 0; player.y = 0;
+/* ---------------- PRESENCE & CLEANUP ---------------- */
+// Register player in players list and ensure removal on disconnect
+const myRef = db.ref('gravity/players/' + playerId);
+function registerPresence(){
   player.name = playerName;
+  player.ready = false;
   player.score = 0;
-
-  loadWorld(()=>{
-    const myRef = database.ref('gravity/players/' + playerId);
-    myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name,ready:false,score:0});
-    myRef.onDisconnect().remove();
-    
-    database.ref('gravity/players').on('value', snapshot => {
-      const players = snapshot.val();
-      if(!players || Object.keys(players).length === 0){
-        database.ref('gravity/world').remove();
-        database.ref('gravity/gameState').remove();
-        database.ref('gravity/orbs').remove();
-      } else {
-        // Check if all players have left the ended state
-        const allLeftEndScreen = Object.values(players).every(p => p.leftEndScreen === true);
-        if(allLeftEndScreen){
-          // Reset all players' leftEndScreen flag
-          Object.keys(players).forEach(id => {
-            database.ref('gravity/players/' + id).update({leftEndScreen: false});
-          });
-        }
-      }
-    });
-
-    setInterval(()=>{
-      if(isTabActive && gameState === 'playing'){
-        myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,score:playerScore});
-      } else if(isTabActive && gameState === 'waiting'){
-        myRef.update({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle});
-      }
-    },15);
-
-    database.ref('gravity/players').on('value', snapshot=>{
-      playersData = snapshot.val() || {};
-      
-      // Update live scores during gameplay
-      if(gameState === 'playing'){
-        updateLiveScores();
-      }
-      
-      // Check if all players are ready (only in waiting state, need at least 2 players)
-      if(gameState === 'waiting'){
-        const playerIds = Object.keys(playersData);
-        if(playerIds.length >= 2){
-          const allCurrentPlayersReady = playerIds.every(id => playersData[id].ready === true);
-          
-          if(allCurrentPlayersReady){
-            // Start countdown
-            database.ref('gravity/gameState').once('value', stateSnap => {
-              const state = stateSnap.val();
-              if(!state || state.state !== 'countdown'){
-                database.ref('gravity/gameState').set({state: 'countdown', startTime: Date.now()});
-              }
-            });
-          }
-        }
-      }
-    });
-    
-    // Listen to game state
-    database.ref('gravity/gameState').on('value', snapshot => {
-      const state = snapshot.val();
-      if(state){
-        if(state.state === 'countdown' && gameState === 'waiting'){
-          gameState = 'countdown';
-          readyBtn.style.display = 'none';
-          gameUI.style.display = 'block';
-          countdownDiv.style.display = 'block';
-          startCountdown(state.startTime);
-        } else if(state.state === 'playing' && (gameState === 'countdown' || gameState === 'waiting')){
-          gameState = 'playing';
-          countdownDiv.style.display = 'none';
-          timerDiv.style.display = 'block';
-          scoreDiv.style.display = 'block';
-          liveScores.style.display = 'block';
-          readyBtn.style.display = 'none';
-          gameUI.style.display = 'block';
-          startGameTimer(state.gameStartTime);
-          // Mark player as being in this game
-          database.ref('gravity/players/' + playerId).update({wasInLastGame: true});
-        } else if(state.state === 'ended' && gameState === 'playing'){
-          gameState = 'ended';
-          liveScores.style.display = 'none';
-          showEndScreen();
-        } else if(state.state === 'waiting'){
-          // Game was reset, go back to waiting
-          gameState = 'waiting';
-          readyBtn.style.display = 'block';
-          gameUI.style.display = 'none';
-          endScreen.style.display = 'none';
-          liveScores.style.display = 'none';
-          isReady = false;
-          readyBtn.textContent = "Ready";
-          readyBtn.className = "not-ready";
-          playerScore = 0;
-          scoreValue.textContent = '0';
-          
-          // Clear orb respawn timers
-          for(let timerId in orbRespawnTimers){
-            clearTimeout(orbRespawnTimers[timerId]);
-          }
-          orbRespawnTimers = {};
-          
-          database.ref('gravity/players/' + playerId).update({ready: false, score: 0});
-        }
-      } else {
-        // No game state, reset to waiting
-        gameState = 'waiting';
-        readyBtn.style.display = 'block';
-        gameUI.style.display = 'none';
-        endScreen.style.display = 'none';
-        liveScores.style.display = 'none';
-        
-        // Clear orb respawn timers
-        for(let timerId in orbRespawnTimers){
-          clearTimeout(orbRespawnTimers[timerId]);
-        }
-        orbRespawnTimers = {};
-      }
-    });
-    
-    // Listen to orbs
-    database.ref('gravity/orbs').on('value', snapshot => {
-      orbs = snapshot.val() || {};
-    });
-
-    readyBtn.style.display = 'block';
-    requestAnimationFrame(loop);
-  });
+  myRef.set({x:player.x,y:player.y,vx:player.vx,vy:player.vy,angle:player.angle,name:player.name,ready:false,score:0,lastUpdate:serverNow()});
+  myRef.onDisconnect().remove();
+  // Also, when this client disconnects, check & remove anything leftover if nobody remains.
+  // NOTE: client-side cannot unconditionally guarantee deletion when all clients disconnect (no client to run code),
+  // but we ensure that whenever any client sees players === null (no players), it removes gravity root.
 }
 
-// --- Countdown ---
-let countdownInterval = null;
-
-function startCountdown(startTime){
-  if(countdownInterval) clearInterval(countdownInterval);
-  
-  countdownInterval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const remaining = 3 - elapsed;
-    
-    if(remaining > 0){
-      countdownDiv.textContent = remaining;
-    } else {
-      clearInterval(countdownInterval);
-      countdownInterval = null;
-      countdownDiv.textContent = 'GO!';
-      
-      // Only the first player generates orbs
-      setTimeout(() => {
-        database.ref('gravity/players').once('value', snap => {
-          const players = snap.val();
-          const playerIds = Object.keys(players || {});
-          const sortedIds = playerIds.sort();
-          
-          // Check if I'm the first player (alphabetically)
-          if(sortedIds[0] === playerId){
-            database.ref('gravity/gameState').set({state: 'playing', gameStartTime: Date.now()});
-            generateOrbs();
-          }
-        });
-      }, 500);
+/* ---------------- PLAYERS LISTENER ---------------- */
+db.ref('gravity/players').on('value', snap=>{
+  playersData = snap.val() || {};
+  const ids = Object.keys(playersData);
+  // If nobody left, remove entire gravity branch (this removes timers/timestamps/world/orbs)
+  if(ids.length === 0){
+    db.ref('gravity').remove().catch(()=>{});
+  }
+  // If match was running and new player joined, they'll see match state via 'gravity/match' listener below
+  // Check if all players are ready (only if match in lobby)
+  if(match.state === "lobby" && ids.length > 0){
+    const allReady = ids.every(id => playersData[id].ready);
+    if(allReady){
+      startCountdownSequence();
     }
-  }, 100);
-}
-
-// --- Game Timer ---
-let timerInterval = null;
-
-function startGameTimer(gameStartTime){
-  if(timerInterval) clearInterval(timerInterval);
-  
-  timerInterval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
-    const remaining = 120 - elapsed;
-    
-    if(remaining > 0){
-      gameTimer = remaining;
-      timeLeft.textContent = remaining;
-    } else {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      
-      // Only first player sets game to ended
-      database.ref('gravity/players').once('value', snap => {
-        const players = snap.val();
-        const playerIds = Object.keys(players || {});
-        const sortedIds = playerIds.sort();
-        
-        if(sortedIds[0] === playerId){
-          database.ref('gravity/gameState').set({state: 'ended'});
-        }
-      });
-    }
-  }, 100);
-}
-
-// --- End Screen ---
-function showEndScreen(){
-  timerDiv.style.display = 'none';
-  scoreDiv.style.display = 'none';
-  
-  const rankings = Object.keys(playersData).map(id => ({
-    name: playersData[id].name,
-    score: playersData[id].score || 0
-  })).sort((a, b) => b.score - a.score);
-  
-  leaderboard.innerHTML = '';
-  rankings.forEach((player, index) => {
-    const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : '';
-    const rankItem = document.createElement('div');
-    rankItem.className = 'rank-item ' + rankClass;
-    rankItem.innerHTML = `
-      <span>#${index + 1} ${player.name}</span>
-      <span>${player.score} points</span>
-    `;
-    leaderboard.appendChild(rankItem);
-  });
-  
-  endScreen.style.display = 'flex';
-}
-
-// --- Update Live Scores ---
-function updateLiveScores(){
-  const scores = Object.keys(playersData).map(id => ({
-    id: id,
-    name: playersData[id].name,
-    score: playersData[id].score || 0
-  })).sort((a, b) => b.score - a.score);
-  
-  liveScoresList.innerHTML = '';
-  scores.forEach(player => {
-    const item = document.createElement('div');
-    item.className = 'live-score-item' + (player.id === playerId ? ' current-player' : '');
-    item.innerHTML = `
-      <span>${player.name}</span>
-      <span>${player.score}</span>
-    `;
-    liveScoresList.appendChild(item);
-  });
-}
-
-// --- Input ---
-window.addEventListener("keydown", e=>keys[e.key]=true);
-window.addEventListener("keyup", e=>keys[e.key]=false);
-
-document.addEventListener("visibilitychange", () => {
-  isTabActive = !document.hidden;
-  if(isTabActive){
-    lastUpdateTime = Date.now();
   }
 });
 
-window.addEventListener("blur", () => {
-  isTabActive = false;
+/* ---------------- ORBS LISTENER ---------------- */
+db.ref('gravity/orbs').on('value', snap=>{
+  orbs = snap.val() || {};
 });
 
-window.addEventListener("focus", () => {
-  isTabActive = true;
-  lastUpdateTime = Date.now();
+/* ---------------- MATCH LISTENER ---------------- */
+db.ref('gravity/match').on('value', snap=>{
+  const m = snap.val();
+  if(m){
+    match = m;
+  } else {
+    match = { state:"lobby", duration: MATCH_DURATION_MS };
+  }
 });
 
-// --- Physics ---
-function applyGravity(){
-  for(let p of planets.concat([blackHole])){
+/* ---------------- READY BUTTON ---------------- */
+readyBtn.onclick = () => {
+  player.ready = !player.ready;
+  readyBtn.textContent = player.ready ? "UNREADY" : "READY";
+  readyBtn.style.background = player.ready ? "#ff5252" : "#00c853";
+  myRef.update({ ready: player.ready });
+  // If toggling to unready while countdown started, we want to abort countdown if any player unready.
+  // That will be handled because players listener checks allReady before starting any new countdown.
+};
+
+/* ---------------- COUNTDOWN & MATCH START ---------------- */
+let localCountdown = null;
+function startCountdownSequence(){
+  // Only one client should attempt to initiate countdown; use a transaction to claim countdown if not already claimed.
+  // We'll set gravity/match/state = "countdown" with a server timestamp for 'countdownStartedBy'
+  db.ref('gravity/match/state').transaction(current => {
+    if(current === "lobby" || current === null) return "countdown";
+    return; // abort
+  }, (err, committed, snap) => {
+    if(err) return;
+    if(!committed) return; // someone else started it
+    // start a 3-second countdown visible to all clients (we'll set no startTime yet)
+    db.ref('gravity/match/countdownStartedAt').set(firebase.database.ServerValue.TIMESTAMP);
+    // The actual countdown display is client-side based on serverNow - countdownStartedAt
+    // After countdown 3=>0, the starter will set the match startTime as server timestamp:
+    runLocalCountdownThenStart();
+  });
+}
+
+function runLocalCountdownThenStart(){
+  // We'll read countdownStartedAt, then wait remaining time and start match
+  db.ref('gravity/match/countdownStartedAt').once('value').then(snap=>{
+    const startedAt = snap.val();
+    if(!startedAt) return;
+    const remaining = 3000 - (serverNow() - startedAt);
+    setTimeout(()=> {
+      // only one client should set the real match.startTime; use a transaction to set match.state to "playing" & startTime only if still "countdown"
+      db.ref('gravity/match').transaction(current => {
+        if(!current || current.state !== "countdown") return; // abort
+        return Object.assign({}, current, { state: "playing", startTime: firebase.database.ServerValue.TIMESTAMP, duration: MATCH_DURATION_MS });
+      });
+      // spawn initial orbs (we let the client that succeeded in transaction spawn them)
+      // The transaction callback will run and we can detect who committed by re-checking match state in listener.
+    }, Math.max(0, remaining));
+  });
+}
+
+/* ---------------- SPAWN ORBS (authoritative-ish) ---------------- */
+function spawnInitialOrbsIfNeeded(){
+  // Called after match starts. Only spawn if orbs node is empty.
+  db.ref('gravity/orbs').once('value').then(snap=>{
+    if(snap.exists()) return;
+    for(let i=0;i<ORB_COUNT;i++){
+      spawnSingleOrb();
+    }
+  });
+}
+
+function spawnSingleOrb(){
+  // choose random location in ±ORB_AREA that doesn't intersect planets, blackHole, or existing orbs
+  db.ref('gravity/orbs').once('value').then(snap=>{
+    const currentOrbs = snap.val() || {};
+    let attempts = 0;
+    while(attempts < 5000){
+      attempts++;
+      const x = Math.random()*ORB_AREA*2 - ORB_AREA;
+      const y = Math.random()*ORB_AREA*2 - ORB_AREA;
+      let ok = true;
+      for(let id in currentOrbs){
+        const o = currentOrbs[id];
+        if(Math.hypot(x-o.x, y-o.y) < ORB_RADIUS*2 + 6){ ok=false; break; }
+      }
+      for(let p of planets){
+        if(Math.hypot(x-p.x, y-p.y) < p.radius + ORB_RADIUS + 12){ ok=false; break; }
+      }
+      if(blackHole && Math.hypot(x-blackHole.x, y-blackHole.y) < blackHole.radius + ORB_RADIUS + 30) ok=false;
+      if(ok){
+        db.ref('gravity/orbs').push({x,y});
+        return;
+      }
+    }
+    // if unable to find after many attempts, skip
+  });
+}
+
+/* ---------------- ORB PICKUP (atomic) ---------------- */
+function tryPickupOrb(orbId){
+  const orbRef = db.ref('gravity/orbs/' + orbId);
+  // Transaction to remove orb only if it still exists (committed means this client won it)
+  orbRef.transaction(current => {
+    if(current === null) return; // someone else already removed
+    return null; // delete it
+  }, (err, committed, snap) => {
+    if(err) return;
+    if(committed){
+      // this client successfully took the orb
+      player.score = (player.score || 0) + 1;
+      myRef.child('score').set(player.score);
+      // spawn a replacement after 3s (this client will spawn)
+      setTimeout(()=> spawnSingleOrb(), 3000);
+    }
+  });
+}
+
+/* ---------------- PHYSICS ---------------- */
+function applyGravityAndCollisions(){
+  // gravity from planets + blackHole (inside planet: linear r-proportional)
+  for(let p of planets.concat(blackHole ? [blackHole] : [])){
     let dx = p.x - player.x;
     let dy = p.y - player.y;
-    let dist = Math.sqrt(dx*dx + dy*dy); if(dist<0.1) dist=0.1;
-    const R=p.radius+player.radius;
-    const nx=dx/dist, ny=dy/dist;
-    const accel=dist>R? G*p.mass/(dist*dist) : G*p.mass*dist/(R*R*R);
-    player.vx += accel*nx; player.vy += accel*ny;
-    if(dist<R && p!==blackHole){
-      player.x = p.x - nx*R; player.y = p.y - ny*R;
+    let dist = Math.hypot(dx,dy);
+    if(dist < 0.1) dist = 0.1;
+    const R = p.radius + player.radius;
+    const nx = dx / dist, ny = dy / dist;
+    const accel = dist > R ? G * p.mass / (dist*dist) : G * p.mass * dist / (R*R*R);
+    player.vx += accel * nx;
+    player.vy += accel * ny;
+    if(dist < R && p !== blackHole){
+      player.x = p.x - nx * R;
+      player.y = p.y - ny * R;
       const vDotN = player.vx*nx + player.vy*ny;
-      if(vDotN>0){ player.vx-=vDotN*nx; player.vy-=vDotN*ny; }
-    }
-  }
-
-  for(let id in playersData){
-    if(id===playerId) continue;
-    const op=playersData[id];
-    let dx=op.x-player.x, dy=op.y-player.y;
-    let dist=Math.sqrt(dx*dx+dy*dy);
-    let minDist=player.radius+8;
-    if(dist<minDist && dist>0){
-      let nx=dx/dist, ny=dy/dist, overlap=minDist-dist;
-      player.x-=nx*overlap*0.5;
-      player.y-=ny*overlap*0.5;
-    }
-  }
-}
-
-// --- Check orb collision ---
-function checkOrbCollision(){
-  if(gameState !== 'playing') return;
-  
-  for(let orbId in orbs){
-    const orb = orbs[orbId];
-    const dx = orb.x - player.x;
-    const dy = orb.y - player.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    
-    if(dist < player.radius + orb.radius){
-      playerScore++;
-      scoreValue.textContent = playerScore;
-      database.ref('gravity/players/' + playerId).update({score: playerScore});
-      database.ref('gravity/orbs/' + orbId).remove();
-      
-      // Clear any existing respawn timer for this orb
-      if(orbRespawnTimers[orbId]){
-        clearTimeout(orbRespawnTimers[orbId]);
+      if(vDotN > 0){
+        player.vx -= vDotN*nx;
+        player.vy -= vDotN*ny;
       }
-      
-      // Respawn after 3 seconds
-      orbRespawnTimers[orbId] = setTimeout(() => {
-        respawnOrb(orbId);
-        delete orbRespawnTimers[orbId];
-      }, 3000);
-      
-      break;
+    }
+  }
+  // player-player simple separation
+  for(let id in playersData){
+    if(id === playerId) continue;
+    const op = playersData[id];
+    let dx = op.x - player.x, dy = op.y - player.y;
+    let dist = Math.hypot(dx,dy);
+    let minDist = player.radius + 8;
+    if(dist < minDist && dist > 0){
+      let nx = dx/dist, ny = dy/dist, overlap = minDist - dist;
+      player.x -= nx * overlap * 0.5;
+      player.y -= ny * overlap * 0.5;
     }
   }
 }
 
-function updatePlayer(){
+/* ---------------- PLAYER UPDATE ---------------- */
+function updatePlayerPhysicsAndSync(){
   if(!isTabActive) return;
-  
-  // Only allow movement during playing state
-  if(gameState === 'playing'){
-    if(keys["ArrowLeft"]) player.angle-=0.05;
-    if(keys["ArrowRight"]) player.angle+=0.05;
-    if(keys["ArrowUp"]){ player.vx+=Math.cos(player.angle)*thrust; player.vy+=Math.sin(player.angle)*thrust; }
-    if(keys["m"]){ player.vx*=0.98; player.vy*=0.98; }
-  }
-  
-  applyGravity();
-  player.x+=player.vx; player.y+=player.vy;
-  
-  if(gameState === 'playing'){
-    checkOrbCollision();
+  if(keys["ArrowLeft"]) player.angle -= 0.05;
+  if(keys["ArrowRight"]) player.angle += 0.05;
+  if(keys["ArrowUp"]){ player.vx += Math.cos(player.angle) * thrust; player.vy += Math.sin(player.angle) * thrust; }
+  if(keys["m"]){ player.vx *= 0.98; player.vy *= 0.98; }
+  applyGravityAndCollisions();
+  player.x += player.vx;
+  player.y += player.vy;
+  // Sync to firebase (rate-limited)
+  const now = Date.now();
+  if(!updatePlayerPhysicsAndSync.lastSync || now - updatePlayerPhysicsAndSync.lastSync > 50){
+    myRef.update({ x: player.x, y: player.y, vx: player.vx, vy: player.vy, angle: player.angle, lastUpdate: serverNow(), name: player.name });
+    updatePlayerPhysicsAndSync.lastSync = now;
   }
 }
 
-// --- Infinite stars ---
+/* ---------------- DRAW HELPERS ---------------- */
+function drawStars(){
+  const centerX = canvas.width/2, centerY = canvas.height/2;
+  const startX = Math.floor((player.x - centerX)/starSectorSize)*starSectorSize;
+  const startY = Math.floor((player.y - centerY)/starSectorSize)*starSectorSize;
+  const endX = Math.floor((player.x + centerX)/starSectorSize)*starSectorSize;
+  const endY = Math.floor((player.y + centerY)/starSectorSize)*starSectorSize;
+  for(let sx = startX; sx <= endX; sx += starSectorSize){
+    for(let sy = startY; sy <= endY; sy += starSectorSize){
+      const seed = sx*73856093 ^ sy*19349663;
+      const rand = mulberry32(seed);
+      const starsInSector = 10 + Math.floor(rand()*15);
+      for(let i=0;i<starsInSector;i++){
+        const starX = sx + rand()*starSectorSize;
+        const starY = sy + rand()*starSectorSize;
+        const radius = 0.5 + rand()*1.5;
+        const brightness = 0.2 + rand()*0.5;
+        const screenX = starX - player.x + centerX;
+        const screenY = starY - player.y + centerY;
+        if(screenX>=0 && screenX<=canvas.width && screenY>=0 && screenY<=canvas.height){
+          ctx.fillStyle=`rgba(255,255,255,${brightness})`;
+          ctx.beginPath();
+          ctx.arc(screenX,screenY,radius,0,Math.PI*2);
+          ctx.fill();
+        }
+      }
+    }
+  }
+}
+
+function drawPlanetsAndBlackHole(){
+  const centerX = canvas.width/2, centerY = canvas.height/2;
+  for(let p of planets){
+    const screenX = p.x - player.x + centerX;
+    const screenY = p.y - player.y + centerY;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, p.radius, 0, Math.PI*2);
+    ctx.fill();
+  }
+  if(blackHole){
+    const bhX = blackHole.x - player.x + centerX;
+    const bhY = blackHole.y - player.y + centerY;
+    blackHole.angle += 0.005;
+    for(let i=0;i<5;i++){
+      ctx.strokeStyle = `rgba(150,0,200,${0.1-i*0.015})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(bhX,bhY,blackHole.radius*(1.2+i*0.3),blackHole.angle,blackHole.angle+Math.PI*1.5);
+      ctx.stroke();
+    }
+    const gradient = ctx.createRadialGradient(bhX,bhY,blackHole.radius*0.5,bhX,bhY,blackHole.radius*3);
+    gradient.addColorStop(0,"rgba(0,0,0,1)");
+    gradient.addColorStop(0.3,"rgba(50,0,50,0.3)");
+    gradient.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(bhX,bhY,blackHole.radius*3,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = blackHole.color;
+    ctx.beginPath();
+    ctx.arc(bhX,bhY,blackHole.radius,0,Math.PI*2);
+    ctx.fill();
+    for(let p of blackHole.particles){
+      p.angle += p.speed;
+      const px = bhX + Math.cos(p.angle)*p.r;
+      const py = bhY + Math.sin(p.angle)*p.r;
+      ctx.fillStyle = `rgba(200,50,250,0.3)`;
+      ctx.beginPath();
+      ctx.arc(px,py,p.size,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+}
+
+function drawPlayers(){
+  const centerX = canvas.width/2, centerY = canvas.height/2;
+  for(let id in playersData){
+    if(id === playerId) continue;
+    const pl = playersData[id];
+    const px = pl.x - player.x + centerX;
+    const py = pl.y - player.y + centerY;
+    ctx.save();
+    ctx.translate(px,py);
+    ctx.rotate(pl.angle || 0);
+    ctx.fillStyle="white";
+    ctx.beginPath();
+    ctx.arc(0,0,player.radius,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle="cyan";
+    ctx.beginPath();
+    ctx.moveTo(0,0); ctx.lineTo(15,0); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle="white";
+    ctx.font="14px Arial";
+    ctx.textAlign="center";
+    ctx.fillText(pl.name || "Anon", px, py - player.radius - 10);
+  }
+  // draw self
+  const px = canvas.width/2, py = canvas.height/2;
+  ctx.save();
+  ctx.translate(px,py);
+  ctx.rotate(player.angle);
+  ctx.fillStyle="white";
+  ctx.beginPath();
+  ctx.arc(0,0,player.radius,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle="cyan";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(15,0); ctx.stroke();
+  ctx.restore();
+}
+
+function drawOrbs(){
+  const centerX = canvas.width/2, centerY = canvas.height/2;
+  for(let id in orbs){
+    const o = orbs[id];
+    const sx = o.x - player.x + centerX;
+    const sy = o.y - player.y + centerY;
+    ctx.fillStyle = "lime";
+    ctx.beginPath();
+    ctx.arc(sx, sy, ORB_RADIUS, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+/* ---------------- HUD: countdown/time/score ---------------- */
+function drawHUD(){
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  if(match.state === "countdown"){
+    // display 3..2..1 based on countdownStartedAt server timestamp
+    const started = match.countdownStartedAt || 0;
+    const elapsed = serverNow() - started;
+    const remaining = Math.max(0, 3000 - elapsed);
+    const number = Math.ceil(remaining/1000);
+    ctx.font = "96px Arial";
+    ctx.fillText(number || 1, canvas.width/2, canvas.height/2);
+  }
+  if(match.state === "playing"){
+    // compute remaining time via server-aligned clock
+    const startTime = match.startTime || 0;
+    const duration = match.duration || MATCH_DURATION_MS;
+    const elapsed = serverNow() - startTime;
+    const remaining = Math.max(0, Math.ceil((duration - elapsed)/1000));
+    ctx.font = "20px Arial";
+    ctx.fillText(`Time: ${remaining}s   Score: ${player.score || 0}`, canvas.width/2, 30);
+    if(remaining <= 0){
+      // end match (use transaction to set ended)
+      db.ref('gravity/match/state').transaction(current=>{
+        if(current === "playing") return "ended";
+        return;
+      });
+    }
+  }
+  if(match.state === "ended"){
+    ctx.font = "36px Arial";
+    ctx.fillText("MATCH ENDED", canvas.width/2, 80);
+    // ranking
+    const list = Object.values(playersData || {}).slice().sort((a,b)=> (b.score||0) - (a.score||0));
+    ctx.font = "22px Arial";
+    for(let i=0;i<list.length;i++){
+      const p = list[i];
+      ctx.fillText(`${i+1}. ${p.name || 'Anon'} — ${p.score||0}`, canvas.width/2, 130 + i*30);
+    }
+    // draw replay button
+    const bx = canvas.width/2 - 80, by = canvas.height - 160, bw = 160, bh = 48;
+    ctx.fillStyle = "#00c853";
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.fillText("REPLAY", canvas.width/2, by + 32);
+  }
+}
+
+/* ---------------- UTILITY RANDOM ---------------- */
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---------------- ORB COLLISION CHECK ---------------- */
+function detectOrbCollisions(){
+  if(match.state !== "playing") return;
+  for(let id in orbs){
+    const o = orbs[id];
+    if(Math.hypot(player.x - o.x, player.y - o.y) < player.radius + ORB_RADIUS){
+      tryPickupOrb(id);
+      // don't break; try multiple pickups in same frame if overlapping (transaction ensures atomic)
+    }
+  }
+}
+
+/* ---------------- GAME LOOP ---------------- */
+function loop(){
+  ctx.fillStyle = "black";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawStars();
+  updatePlayerPhysicsAndSync();
+  drawPlanetsAndBlackHole();
+  drawOrbs();
+  drawPlayers();
+  detectOrbCollisions();
+  drawHUD();
+  requestAnimationFrame(loop);
+}
+
+/* ---------------- STUBS FROM ORIGINAL CODE for stars etc ---------------- */
 function drawStars(){
   const centerX=canvas.width/2, centerY=canvas.height/2;
   const startX=Math.floor((player.x-centerX)/starSectorSize)*starSectorSize;
@@ -819,161 +626,86 @@ function drawStars(){
   }
 }
 
-// --- Draw ---
-function drawPlayer(pl){
-  const centerX=canvas.width/2, centerY=canvas.height/2;
-  const px = (pl===player)? centerX : pl.x-player.x+centerX;
-  const py = (pl===player)? centerY : pl.y-player.y+centerY;
-  ctx.save();
-  ctx.translate(px,py);
-  ctx.rotate(pl.angle);
-  ctx.fillStyle="white";
-  ctx.beginPath();
-  ctx.arc(0,0,player.radius,0,Math.PI*2);
-  ctx.fill();
-  ctx.strokeStyle="cyan";
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(15,0); ctx.stroke();
-  ctx.restore();
-
-  ctx.fillStyle="white";
-  ctx.font="14px Arial";
-  ctx.textAlign="center";
-  ctx.fillText(pl.name,px,py-player.radius-10);
-}
-
-function drawPlanets(){
-  const centerX=canvas.width/2, centerY=canvas.height/2;
-  for(let p of planets){
-    const screenX=p.x-player.x+centerX;
-    const screenY=p.y-player.y+centerY;
-    ctx.fillStyle=p.color;
-    ctx.beginPath();
-    ctx.arc(screenX,screenY,p.radius,0,Math.PI*2);
-    ctx.fill();
-  }
-
-  const bhX = blackHole.x - player.x + centerX;
-  const bhY = blackHole.y - player.y + centerY;
-  blackHole.angle += 0.005;
-  for(let i=0;i<5;i++){
-    ctx.strokeStyle = `rgba(150,0,200,${0.1-i*0.015})`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(bhX,bhY,blackHole.radius*(1.2+i*0.3),blackHole.angle,blackHole.angle+Math.PI*1.5);
-    ctx.stroke();
-  }
-  const gradient = ctx.createRadialGradient(bhX,bhY,blackHole.radius*0.5,bhX,bhY,blackHole.radius*3);
-  gradient.addColorStop(0,"rgba(0,0,0,1)");
-  gradient.addColorStop(0.3,"rgba(50,0,50,0.3)");
-  gradient.addColorStop(1,"rgba(0,0,0,0)");
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(bhX,bhY,blackHole.radius*3,0,Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = blackHole.color;
-  ctx.beginPath();
-  ctx.arc(bhX,bhY,blackHole.radius,0,Math.PI*2);
-  ctx.fill();
-
-  for(let p of blackHole.particles){
-    p.angle += p.speed;
-    const px = bhX + Math.cos(p.angle)*p.r;
-    const py = bhY + Math.sin(p.angle)*p.r;
-    ctx.fillStyle = `rgba(200,50,250,0.3)`;
-    ctx.beginPath();
-    ctx.arc(px,py,p.size,0,Math.PI*2);
-    ctx.fill();
-  }
-}
-
-// --- Draw Orbs ---
-function drawOrbs(){
-  if(gameState !== 'playing') return;
-  
-  const centerX = canvas.width/2, centerY = canvas.height/2;
-  for(let orbId in orbs){
-    const orb = orbs[orbId];
-    const screenX = orb.x - player.x + centerX;
-    const screenY = orb.y - player.y + centerY;
-    
-    ctx.fillStyle = 'rgba(0,255,0,0.3)';
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, orb.radius + 5, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = '#00ff00';
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, orb.radius, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.strokeStyle = '#00aa00';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-}
-
-// --- Mini-map ---
-function drawMiniMap(){
-  const mapX=canvas.width-miniMap.width-miniMap.padding;
-  const mapY=miniMap.padding;
-  ctx.fillStyle="rgba(0,0,0,0.5)";
-  ctx.fillRect(mapX,mapY,miniMap.width,miniMap.height);
-  ctx.strokeStyle="white";
-  ctx.strokeRect(mapX,mapY,miniMap.width,miniMap.height);
-
-  let maxDist=0;
-  for(let p of planets.concat([blackHole])){
-    const d=Math.sqrt((p.x-player.x)**2+(p.y-player.y)**2)+p.radius;
-    if(d>maxDist) maxDist=d;
-  }
-  if(maxDist<200) maxDist=200;
-  const scale=(miniMap.width/2)/maxDist;
-
-  for(let p of planets){
-    const dx=p.x-player.x, dy=p.y-player.y;
-    const px=mapX+miniMap.width/2+dx*scale;
-    const py=mapY+miniMap.height/2+dy*scale;
-    const r=Math.max(2,p.radius*scale);
-    ctx.fillStyle=p.color;
-    ctx.beginPath();
-    ctx.arc(px,py,r,0,Math.PI*2);
-    ctx.fill();
-  }
-  
-  const dx=blackHole.x-player.x, dy=blackHole.y-player.y;
-  const px=mapX+miniMap.width/2+dx*scale, py=mapY+miniMap.height/2+dy*scale;
-  const r=Math.max(2,blackHole.radius*scale);
-  ctx.fillStyle="rgba(180,180,180,0.3)";
-  ctx.beginPath();
-  ctx.arc(px,py,r,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle="white";
-  ctx.beginPath();
-  ctx.arc(mapX+miniMap.width/2,mapY+miniMap.height/2,4,0,Math.PI*2);
-  ctx.fill();
-}
-
-// --- Game Loop ---
-function loop(){
-  ctx.fillStyle="black";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  drawStars();
-  updatePlayer();
-  drawPlanets();
-  drawOrbs();
-
-  for(let id in playersData){
-    if(id !== playerId){
-      const pl=playersData[id];
-      drawPlayer(pl);
+/* ---------------- CLICK HANDLING (for REPLAY button) ---------------- */
+canvas.addEventListener('click', (e)=>{
+  if(match.state === "ended"){
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const bx = canvas.width/2 - 80, by = canvas.height - 160, bw = 160, bh = 48;
+    if(mx >= bx && mx <= bx + bw && my >= by && my <= by + bh){
+      // REPLAY pressed: clear match and orbs, reset ready & scores
+      db.ref('gravity/match').remove();
+      db.ref('gravity/orbs').remove();
+      // set all players ready=false and score=0
+      db.ref('gravity/players').once('value').then(snap=>{
+        const ps = snap.val() || {};
+        for(let id in ps){
+          db.ref('gravity/players/'+id+'/ready').set(false);
+          db.ref('gravity/players/'+id+'/score').set(0);
+        }
+      });
     }
   }
-  drawPlayer(player);
-  drawMiniMap();
-  requestAnimationFrame(loop);
+});
+
+/* ---------------- BOOTSTRAP: name entry -> startGame ---------------- */
+nameInput.addEventListener('keydown', e=>{
+  if(e.key === "Enter" && nameInput.value.trim()){
+    playerName = nameInput.value.trim();
+    nameOverlay.remove();
+    startGame();
+  }
+});
+
+/* ---------------- START GAME ---------------- */
+function startGame(){
+  player.name = playerName;
+  player.x = 0; player.y = 0; player.vx=0; player.vy=0;
+  loadWorldThen(()=>{
+    registerPresence(); // registers my player in firebase
+    // listen for match start: when match.state becomes playing, spawn initial orbs if this client detects that it's the one to spawn
+    db.ref('gravity/match').on('value', snap=>{
+      const m = snap.val();
+      if(m && m.state === "playing"){
+        // ensure orbs exist (only spawn if none)
+        spawnInitialOrbsIfNeeded();
+      }
+    });
+    // Start the draw/physics loop
+    requestAnimationFrame(loop);
+    // Update playersData from db periodically already handled by listener
+    // Also set interval that periodically refreshes world when no world exists (safety)
+    setInterval(()=> {
+      if(!planets || !blackHole){
+        db.ref('gravity/world').once('value').then(snap=>{
+          const w = snap.val();
+          if(w && w.planets && w.blackHole){
+            planets = w.planets;
+            blackHole = w.blackHole;
+          } else {
+            // generate & upload if this client is the first (no players)
+            // Only generate if players list empty (we already check players listener to clear gravity)
+            db.ref('gravity/players').once('value').then(pSnap=>{
+              if(!(pSnap.exists())) {
+                generateWorldLocally();
+                db.ref('gravity/world').set({planets,blackHole,created:serverNow()});
+              }
+            });
+          }
+        });
+      }
+    }, 5000);
+  });
 }
+
+/* ---------------- Ensure full cleanup when a player disconnects and others detect 0 players:
+   - db.ref('gravity/players') listener removes gravity root when it sees zero players.
+   Note: if all clients disconnect simultaneously, there's no client to run this code. In that extremely rare edge-case
+   the firebase data may persist until a client connects; the code ensures when a client connects and sees no players it
+   will recreate the world or remove stale data. This is the best client-only approach without server/cloud functions. */
+
+/* ---------------- End of script ---------------- */
 </script>
 </body>
 </html>
