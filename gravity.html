@@ -126,6 +126,7 @@ let orbs = {};
 let match = { state: "lobby", duration: MATCH_DURATION_MS };
 let isTabActive = true;
 let hasGeneratedNewWorld = false; // Track if we've generated new world after match
+let localPlayerWantsReplay = false; // Track if this player clicked PLAY AGAIN
 
 /* ---------------- UI ELEMENTS ---------------- */
 const nameOverlay = document.getElementById("nameOverlay");
@@ -281,11 +282,13 @@ db.ref('gravity/match').on('value', snap=>{
     // Reset flag when returning to lobby
     if(match.state === "lobby") {
       hasGeneratedNewWorld = false;
+      localPlayerWantsReplay = false; // Reset the replay flag
     }
   } else {
     match = { state:"lobby", duration: MATCH_DURATION_MS };
     readyBtn.style.display = "block";
     hasGeneratedNewWorld = false;
+    localPlayerWantsReplay = false; // Reset the replay flag
   }
 });
 
@@ -785,6 +788,16 @@ function drawLiveLeaderboard() {
 function drawHUD(){
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
+  
+  // If this player clicked PLAY AGAIN, don't show ended screen for them
+  if(match.state === "ended" && localPlayerWantsReplay){
+    // Show waiting message instead of ranking
+    ctx.font = "bold 24px Arial";
+    ctx.fillStyle = "#00c853";
+    ctx.fillText("Waiting for other players to continue...", canvas.width/2, canvas.height/2);
+    return;
+  }
+  
   if(match.state === "countdown"){
     // display 3..2..1 based on countdownStartedAt server timestamp
     const started = match.countdownStartedAt || 0;
@@ -1009,6 +1022,9 @@ canvas.addEventListener('click', (e)=>{
       player.vx = 0;
       player.vy = 0;
       
+      // Mark that this player wants to play again (local state for immediate UI update)
+      localPlayerWantsReplay = true;
+      
       // Update Firebase with this player's reset state
       myRef.update({ 
         ready: false, 
@@ -1020,19 +1036,19 @@ canvas.addEventListener('click', (e)=>{
         lastUpdate: serverNow()
       });
       
-      // Check if all players have reset (score = 0 and ready = false)
-      // Only then change match state back to lobby
+      // Check if all connected players have reset (score = 0 and ready = false)
+      // Disconnected players are already removed by Firebase onDisconnect()
       db.ref('gravity/players').once('value').then(snap => {
         const allPlayers = snap.val() || {};
         const allReset = Object.values(allPlayers).every(p => (p.score === 0 || !p.score) && !p.ready);
         
         if(allReset) {
-          // All players have clicked "PLAY AGAIN", return to lobby
+          // All connected players have clicked "PLAY AGAIN", return to lobby
           db.ref('gravity/match/state').set("lobby");
         }
       });
       
-      // Show the ready button for this player
+      // Show the ready button for this player immediately
       readyBtn.style.display = "block";
       readyBtn.textContent = "READY";
       readyBtn.classList.remove("ready");
