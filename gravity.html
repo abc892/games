@@ -1020,15 +1020,16 @@ canvas.addEventListener('click', (e)=>{
         lastUpdate: serverNow()
       });
       
-      // CRITICAL FIX: Change match state from "ended" to "lobby" for this player
-      // Use a transaction to ensure we don't override if match is already in another state
-      db.ref('gravity/match/state').transaction(current => {
-        // Only change if still "ended" - this allows multiple players to click
-        // without interfering with each other
-        if(current === "ended") {
-          return "lobby";
+      // Check if all players have reset (score = 0 and ready = false)
+      // Only then change match state back to lobby
+      db.ref('gravity/players').once('value').then(snap => {
+        const allPlayers = snap.val() || {};
+        const allReset = Object.values(allPlayers).every(p => (p.score === 0 || !p.score) && !p.ready);
+        
+        if(allReset) {
+          // All players have clicked "PLAY AGAIN", return to lobby
+          db.ref('gravity/match/state').set("lobby");
         }
-        return current; // Keep current state if not "ended"
       });
       
       // Show the ready button for this player
