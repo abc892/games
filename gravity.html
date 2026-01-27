@@ -104,7 +104,7 @@ resize(); window.addEventListener('resize', resize);
 /* ---------------- CONSTANTS ---------------- */
 const G = 0.15;
 const thrust = 0.1;
-const MATCH_DURATION_MS = 3000; // 2 minutes
+const MATCH_DURATION_MS = 120000; // 2 minutes
 const ORB_COUNT = 20;
 const ORB_RADIUS = 18;
 const ORB_AREA = 2000; // spawn within ±2000 x/y
@@ -127,6 +127,7 @@ let match = { state: "lobby", duration: MATCH_DURATION_MS };
 let isTabActive = true;
 let hasGeneratedNewWorld = false; // Track if we've generated new world after match
 let localPlayerWantsReplay = false; // Track if this player clicked PLAY AGAIN
+let finalMatchResults = null; // Snapshot of scores when match ends
 
 /* ---------------- UI ELEMENTS ---------------- */
 const nameOverlay = document.getElementById("nameOverlay");
@@ -237,7 +238,15 @@ db.ref('gravity/orbs').on('value', snap=>{
 db.ref('gravity/match').on('value', snap=>{
   const m = snap.val();
   if(m){
+    const previousState = match.state;
     match = m;
+    
+    // Snapshot final results when match just ended
+    if(match.state === "ended" && previousState !== "ended"){
+      // Capture current player data as final results
+      finalMatchResults = JSON.parse(JSON.stringify(playersData));
+    }
+    
     // Update ready button visibility - ONLY visible in lobby
     if(match.state === "lobby") {
       readyBtn.style.display = "block";
@@ -303,12 +312,14 @@ db.ref('gravity/match').on('value', snap=>{
     if(match.state === "lobby") {
       hasGeneratedNewWorld = false;
       localPlayerWantsReplay = false; // Reset the replay flag
+      finalMatchResults = null; // Clear final results when returning to lobby
     }
   } else {
     match = { state:"lobby", duration: MATCH_DURATION_MS };
     readyBtn.style.display = "block";
     hasGeneratedNewWorld = false;
     localPlayerWantsReplay = false; // Reset the replay flag
+    finalMatchResults = null;
   }
 });
 
@@ -838,7 +849,10 @@ function drawHUD(){
 
 /* ---------------- ENDED RANKING SCREEN ---------------- */
 function drawEndedRanking() {
-  const sortedPlayers = Object.values(playersData).sort((a, b) => (b.score || 0) - (a.score || 0));
+  // Use finalMatchResults snapshot (frozen when match ended) instead of live playersData
+  // This prevents players from disappearing when they disconnect after match ends
+  const resultsToShow = finalMatchResults || playersData;
+  const sortedPlayers = Object.values(resultsToShow).sort((a, b) => (b.score || 0) - (a.score || 0));
   
   // Semi-transparent overlay
   ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
