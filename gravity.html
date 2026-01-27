@@ -237,11 +237,11 @@ db.ref('gravity/match').on('value', snap=>{
   const m = snap.val();
   if(m){
     match = m;
-    // Update ready button visibility based on match state
-    if(match.state === "playing" || match.state === "ended") {
-      readyBtn.style.display = "none";
-    } else {
+    // Update ready button visibility - ONLY visible in lobby
+    if(match.state === "lobby") {
       readyBtn.style.display = "block";
+    } else {
+      readyBtn.style.display = "none";
     }
     
     // When match ends, ONE player should generate new world for everyone
@@ -559,14 +559,64 @@ function drawPlayers(){
 
 function drawOrbs(){
   const centerX = canvas.width/2, centerY = canvas.height/2;
+  const time = Date.now() * 0.001;
+  
   for(let id in orbs){
     const o = orbs[id];
     const sx = o.x - player.x + centerX;
     const sy = o.y - player.y + centerY;
-    ctx.fillStyle = "lime";
+    
+    // Outer glow ring - pulsing
+    const pulseScale = 1 + Math.sin(time * 3) * 0.15;
+    const gradient1 = ctx.createRadialGradient(sx, sy, 0, sx, sy, ORB_RADIUS * 2.5 * pulseScale);
+    gradient1.addColorStop(0, "rgba(0, 255, 100, 0.4)");
+    gradient1.addColorStop(0.5, "rgba(0, 255, 100, 0.2)");
+    gradient1.addColorStop(1, "rgba(0, 255, 100, 0)");
+    ctx.fillStyle = gradient1;
     ctx.beginPath();
-    ctx.arc(sx, sy, ORB_RADIUS, 0, Math.PI*2);
+    ctx.arc(sx, sy, ORB_RADIUS * 2.5 * pulseScale, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Inner glow
+    const gradient2 = ctx.createRadialGradient(sx, sy, 0, sx, sy, ORB_RADIUS * 1.3);
+    gradient2.addColorStop(0, "rgba(150, 255, 150, 0.8)");
+    gradient2.addColorStop(0.7, "rgba(0, 255, 100, 0.6)");
+    gradient2.addColorStop(1, "rgba(0, 255, 100, 0)");
+    ctx.fillStyle = gradient2;
+    ctx.beginPath();
+    ctx.arc(sx, sy, ORB_RADIUS * 1.3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Main orb with radial gradient
+    const gradient3 = ctx.createRadialGradient(sx - ORB_RADIUS * 0.3, sy - ORB_RADIUS * 0.3, 0, sx, sy, ORB_RADIUS);
+    gradient3.addColorStop(0, "#ffffff");
+    gradient3.addColorStop(0.3, "#90ff90");
+    gradient3.addColorStop(0.7, "#00ff40");
+    gradient3.addColorStop(1, "#00cc33");
+    ctx.fillStyle = gradient3;
+    ctx.beginPath();
+    ctx.arc(sx, sy, ORB_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Highlight shine
+    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+    ctx.beginPath();
+    ctx.arc(sx - ORB_RADIUS * 0.35, sy - ORB_RADIUS * 0.35, ORB_RADIUS * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Rotating sparkles
+    for(let i = 0; i < 6; i++){
+      const angle = (time * 2 + i * Math.PI / 3) % (Math.PI * 2);
+      const dist = ORB_RADIUS * 1.8;
+      const sparkleX = sx + Math.cos(angle) * dist;
+      const sparkleY = sy + Math.sin(angle) * dist;
+      const sparkleSize = 2 + Math.sin(time * 5 + i) * 1;
+      
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + Math.sin(time * 5 + i) * 0.4})`;
+      ctx.beginPath();
+      ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }
 
@@ -601,13 +651,14 @@ function drawMinimap() {
   const centerX = mapX + miniMap.width/2;
   const centerY = mapY + miniMap.height/2;
   
-  // Draw planets
+  // Draw planets with scaled size based on their radius
   for(let p of planets){
     const dx = p.x - player.x;
     const dy = p.y - player.y;
     const px = centerX + dx * scale;
     const py = centerY + dy * scale;
-    const r = Math.max(2, p.radius * scale);
+    // Scale planet size: larger planets appear bigger on minimap
+    const r = Math.max(2, p.radius * scale * 0.8); // 0.8 factor for better visibility
     ctx.fillStyle = p.color;
     ctx.beginPath();
     ctx.arc(px, py, r, 0, Math.PI*2);
@@ -671,7 +722,8 @@ function drawMinimap() {
 
 /* ---------------- LIVE LEADERBOARD ---------------- */
 function drawLiveLeaderboard() {
-  if (match.state !== "playing") return;
+  // Show leaderboard in both lobby and playing states
+  if (match.state !== "playing" && match.state !== "lobby") return;
   
   const leaderboardX = canvas.width - 220;
   const leaderboardY = 170; // Below minimap
@@ -927,10 +979,8 @@ function loop(){
   // Always draw minimap (in lobby and during match)
   drawMinimap();
   
-  // Draw leaderboard only during match
-  if(match.state === "playing") {
-    drawLiveLeaderboard();
-  }
+  // Draw leaderboard in lobby and during match
+  drawLiveLeaderboard();
   
   drawHUD();
   requestAnimationFrame(loop);
