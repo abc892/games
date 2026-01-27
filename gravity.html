@@ -245,6 +245,26 @@ db.ref('gravity/match').on('value', snap=>{
       readyBtn.style.display = "none";
     }
     
+    // If countdown just started, ALL clients should monitor and transition to playing
+    if(match.state === "countdown" && match.countdownStartedAt){
+      const remaining = 3000 - (serverNow() - match.countdownStartedAt);
+      if(remaining > 0){
+        // Schedule transition to playing state
+        setTimeout(()=> {
+          db.ref('gravity/match/state').once('value').then(stateSnap => {
+            // Only transition if still in countdown (not already playing)
+            if(stateSnap.val() === "countdown"){
+              db.ref('gravity/match').update({
+                state: "playing",
+                startTime: firebase.database.ServerValue.TIMESTAMP,
+                duration: MATCH_DURATION_MS
+              });
+            }
+          });
+        }, Math.max(0, remaining));
+      }
+    }
+    
     // When match ends, ONE player should generate new world for everyone
     if(match.state === "ended" && !hasGeneratedNewWorld) {
       hasGeneratedNewWorld = true;
@@ -314,23 +334,8 @@ function startCountdownSequence(){
   }, (err, committed, snap) => {
     if(err) return;
     if(!committed) return; // someone else started it
-    // start a 3-second countdown visible to all clients
+    // Set countdown start timestamp - all clients will monitor this via match listener
     db.ref('gravity/match/countdownStartedAt').set(firebase.database.ServerValue.TIMESTAMP);
-    runLocalCountdownThenStart();
-  });
-}
-
-function runLocalCountdownThenStart(){
-  db.ref('gravity/match/countdownStartedAt').once('value').then(snap=>{
-    const startedAt = snap.val();
-    if(!startedAt) return;
-    const remaining = 3000 - (serverNow() - startedAt);
-    setTimeout(()=> {
-      db.ref('gravity/match').transaction(current => {
-        if(!current || current.state !== "countdown") return; // abort
-        return Object.assign({}, current, { state: "playing", startTime: firebase.database.ServerValue.TIMESTAMP, duration: MATCH_DURATION_MS });
-      });
-    }, Math.max(0, remaining));
   });
 }
 
@@ -1013,38 +1018,45 @@ canvas.addEventListener('click', (e)=>{
     const bh = 50;
     
     if(mx >= bx && mx <= bx + bw && my >= by && my <= by + bh){
-      // This only affects the current player
-      // Reset this player's state only
+      // Mark that this player wants to play again (local state for immediate UI update)
+      localPlayerWantsReplay = true;
+      
+      // Reset this player's LOCAL state only (don't update Firebase yet)
       player.ready = false;
-      player.score = 0;
       player.x = 0;
       player.y = 0;
       player.vx = 0;
       player.vy = 0;
+      // Keep player.score as is for now - don't reset yet
       
-      // Mark that this player wants to play again (local state for immediate UI update)
-      localPlayerWantsReplay = true;
-      
-      // Update Firebase with this player's reset state
+      // Update Firebase with ONLY the replay flag, keeping score intact for ranking display
       myRef.update({ 
-        ready: false, 
-        score: 0,
+        ready: false,
         x: 0,
         y: 0,
         vx: 0,
         vy: 0,
+        wantsReplay: true, // Flag to indicate this player clicked PLAY AGAIN
         lastUpdate: serverNow()
       });
       
-      // Check if all connected players have reset (score = 0 and ready = false)
-      // Disconnected players are already removed by Firebase onDisconnect()
+      // Check if all connected players want replay
       db.ref('gravity/players').once('value').then(snap => {
         const allPlayers = snap.val() || {};
-        const allReset = Object.values(allPlayers).every(p => (p.score === 0 || !p.score) && !p.ready);
+        const allWantReplay = Object.values(allPlayers).every(p => p.wantsReplay === true);
         
-        if(allReset) {
-          // All connected players have clicked "PLAY AGAIN", return to lobby
+        if(allWantReplay) {
+          // All connected players clicked "PLAY AGAIN"
+          // NOW reset scores and return to lobby
           db.ref('gravity/match/state').set("lobby");
+          
+          // Reset all players' scores
+          Object.keys(allPlayers).forEach(pid => {
+            db.ref('gravity/players/' + pid).update({ score: 0, wantsReplay: false });
+          });
+          
+          // Reset local score
+          player.score = 0;
         }
       });
       
