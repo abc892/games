@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gas Simulator with Momentum Piston</title>
+<style>
+body { margin:0; background:black; color:white; font-family:Arial; overflow:hidden; }
+canvas { display:block; }
+#ui {
+  position: fixed; top:10px; left:10px;
+  background: rgba(0,0,0,0.7);
+  padding:12px; border-radius:10px; font-size:14px;
+}
+button, input { margin-top:5px; cursor:pointer; }
+input { width:150px; }
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <div>Particles: <span id="count">0</span></div>
+  <div>Speed:</div>
+  <input type="range" min="1" max="20" value="5" oninput="SPEED=+this.value">
+  <br>
+  <button onclick="addParticles(5)">Add 5</button>
+  <button onclick="removeParticles(5)">Remove 5</button>
+  <button onclick="clearParticles()">Clear</button>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+function resize(){ canvas.width=innerWidth; canvas.height=innerHeight; }
+resize(); addEventListener("resize",resize);
+
+let SPEED = 5;
+const countEl = document.getElementById("count");
+
+/* ===== PARTICLE ===== */
+class Particle {
+  constructor(x,y,vx,vy,r=5){
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.r = r;
+    this.mass = r*r*r; // mass proportional to vol
+  }
+  update(piston){
+    this.x += this.vx; this.y += this.vy;
+
+    // Left wall
+    if(this.x-this.r<0){ this.x=this.r; this.vx*=-1; }
+    // Right wall = piston
+    if(this.x+this.r>piston.x){
+      this.x = piston.x-this.r;
+      const oldVx = this.vx;
+      this.vx*=-1;
+      if(!piston.dragging){
+        // realistic momentum transfer: Δv = 2*m*vp/m_piston
+        piston.vx += (2*this.mass*oldVx)/piston.mass;
+      }
+    }
+    // Top/Bottom walls
+    if(this.y-this.r<0){ this.y=this.r; this.vy*=-1; }
+    if(this.y+this.r>canvas.height){ this.y=canvas.height-this.r; this.vy*=-1; }
+  }
+  draw(){
+    const speed = Math.hypot(this.vx,this.vy);
+    const color = `hsl(${Math.min(speed*50,360)},100%,50%)`;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+/* ===== WORLD ===== */
+let particles = [];
+
+/* ===== PISTON ===== */
+let piston = {
+  x: canvas.width-100,
+  y: 0,
+  width: 20,
+  height: canvas.height,
+  vx:0,
+  mass: 2000, // light piston → moves more with particles
+  dragging:false
+};
+
+canvas.addEventListener("mousedown",e=>{
+  const mx = e.clientX;
+  if(mx>piston.x && mx<piston.x+piston.width) piston.dragging = true;
+});
+canvas.addEventListener("mouseup",e=> piston.dragging=false);
+canvas.addEventListener("mousemove",e=>{
+  if(piston.dragging){ piston.x = Math.min(Math.max(e.clientX,100),canvas.width-20); piston.vx=0; }
+});
+
+/* ===== PARTICLE FUNCTIONS ===== */
+function addParticles(n){
+  for(let i=0;i<n;i++){
+    const r = 4 + Math.random()*6; // variable radius
+    const x = Math.random()*(piston.x-20-r);
+    const y = Math.random()*(canvas.height-2*r)+r;
+    const vx = (Math.random()-0.5)*4;
+    const vy = (Math.random()-0.5)*4;
+    particles.push(new Particle(x,y,vx,vy,r));
+  }
+  countEl.textContent = particles.length;
+}
+function removeParticles(n){ particles.splice(-n,n); countEl.textContent=particles.length; }
+function clearParticles(){ particles=[]; countEl.textContent=0; }
+
+/* ===== PARTICLE COLLISIONS ===== */
+function collide(a,b){
+  const dx = b.x-a.x; const dy = b.y-a.y;
+  const dist = Math.hypot(dx,dy);
+  if(dist < a.r+b.r){
+    const angle = Math.atan2(dy,dx);
+    const totalMass = a.mass+b.mass;
+
+    const v1 = rotate({x:a.vx,y:a.vy}, -angle);
+    const v2 = rotate({x:b.vx,y:b.vy}, -angle);
+
+    const u1 = {x:(v1.x*(a.mass-b.mass)+2*b.mass*v2.x)/totalMass, y:v1.y};
+    const u2 = {x:(v2.x*(b.mass-a.mass)+2*a.mass*v1.x)/totalMass, y:v2.y};
+
+    const finalV1 = rotate(u1, angle);
+    const finalV2 = rotate(u2, angle);
+
+    a.vx=finalV1.x; a.vy=finalV1.y;
+    b.vx=finalV2.x; b.vy=finalV2.y;
+
+    const overlap = a.r+b.r-dist+0.5;
+    a.x -= Math.cos(angle)*overlap*(b.mass/totalMass);
+    a.y -= Math.sin(angle)*overlap*(b.mass/totalMass);
+    b.x += Math.cos(angle)*overlap*(a.mass/totalMass);
+    b.y += Math.sin(angle)*overlap*(a.mass/totalMass);
+  }
+}
+function rotate(v,angle){ return {x:v.x*Math.cos(angle)-v.y*Math.sin(angle), y:v.x*Math.sin(angle)+v.y*Math.cos(angle)}; }
+
+/* ===== LOOP ===== */
+function loop(){
+  ctx.fillStyle="rgba(0,0,0,0.25)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // update piston
+  if(!piston.dragging){
+    piston.x += piston.vx;
+    piston.vx *= 0.95; // damping
+    piston.x = Math.min(Math.max(piston.x,100),canvas.width-20);
+  }
+
+  // draw piston
+  ctx.fillStyle="gray";
+  ctx.fillRect(piston.x,piston.y,piston.width,piston.height);
+
+  // collisions and updates
+  for(let s=0;s<SPEED;s++){
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++) collide(particles[i],particles[j]);
+      particles[i].update(piston);
+    }
+  }
+
+  // draw particles
+  particles.forEach(p=>p.draw());
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
