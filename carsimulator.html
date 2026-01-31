@@ -807,9 +807,9 @@
             acceleration: 0.3,
             deceleration: 0.15,
             brakeForce: 0.5,
-            turnSpeed: 0.08,
+            turnSpeed: 0.05,
             currentTurn: 0,
-            maxTurnSpeed: 0.17,
+            maxTurnSpeed: 0.12,
             rpm: 0,
             gear: 1,
             drift: 0,
@@ -1098,7 +1098,7 @@
                 targetTurn = -car.turnSpeed * (car.speed / 50);
             }
             
-            car.currentTurn += (targetTurn - car.currentTurn) * 0.12;
+            car.currentTurn += (targetTurn - car.currentTurn) * 0.1;
             car.currentTurn = Math.max(-car.maxTurnSpeed, Math.min(car.maxTurnSpeed, car.currentTurn));
             
             // Apply drift to turning
