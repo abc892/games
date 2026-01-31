@@ -101,7 +101,7 @@ canvas.addEventListener("mousemove",e=>{
 /* ===== PARTICLE FUNCTIONS ===== */
 function addParticles(n){
   for(let i=0;i<n;i++){
-    const r = 2 + Math.random()*20; // variable radius
+    const r = 4 + Math.random()*14; // variable radius
     const x = Math.random()*(piston.x-20-r);
     const y = Math.random()*(canvas.height-2*r)+r;
     const vx = (Math.random()-0.5)*4;
