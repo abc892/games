@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Car Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background: #000;
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 200px;
+        }
+        
+        #hud div {
+            margin: 5px 0;
+        }
+        
+        .speed {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        
+        #controls div {
+            margin: 5px 0;
+        }
+        
+        #time-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: right;
+        }
+        
+        .speedometer {
+            width: 200px;
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .speedometer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #ffaa00, #ff0000);
+            width: 0%;
+            transition: width 0.1s;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div id="hud">
+        <div class="speed" id="speed">0 km/h</div>
+        <div>Gear: <span id="gear">1</span></div>
+        <div>RPM: <span id="rpm">0</span></div>
+        <div class="speedometer">
+            <div class="speedometer-fill" id="speedometer"></div>
+        </div>
+    </div>
+    
+    <div id="controls">
+        <div><strong>Controls:</strong></div>
+        <div>↑ / W - Accelerate</div>
+        <div>↓ / S - Brake/Reverse</div>
+        <div>← / A - Turn Left</div>
+        <div>→ / D - Turn Right</div>
+        <div>Space - Handbrake</div>
+        <div>L - Toggle Headlights</div>
+        <div>C - Change Camera</div>
+        <div>R - Reset Car</div>
+    </div>
+    
+    <div id="time-display">
+        <div>Time: <span id="time">12:00</span></div>
+        <div>Lights: <span id="lights-status">OFF</span></div>
+    </div>
+    
+    <div id="game-over" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 40px; border-radius: 20px; text-align: center; color: white; font-size: 24px; z-index: 1000;">
+        <div style="font-size: 48px; color: #ff0000; margin-bottom: 20px;">GAME OVER!</div>
+        <div style="margin-bottom: 30px;">The monster caught you!</div>
+        <button id="replay-btn" style="padding: 15px 40px; font-size: 20px; background: #ff0000; color: white; border: none; border-radius: 10px; cursor: pointer;">Replay</button>
+    </div>
+    
+    <div id="monster-health-bar" style="display: none; position: absolute; pointer-events: none; transition: opacity 0.3s;">
+        <div style="background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 10px; border: 2px solid #ff0000;">
+            <div style="color: #ff3333; text-align: center; margin-bottom: 5px; font-size: 16px; font-weight: bold; text-shadow: 0 0 10px #ff0000;">MONSTER</div>
+            <div style="width: 200px; height: 20px; background: #1a0000; border-radius: 10px; overflow: hidden; border: 1px solid #330000;">
+                <div id="monster-health-fill" style="width: 100%; height: 100%; background: #00ff00; transition: width 0.3s, background-color 0.3s;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        // Day/Night cycle system
+        let timeOfDay = 12; // Start at noon (0-24 hours)
+        let timeSpeed = 0.005; // Slower time progression for better experience
+        let headlightsOn = false;
+        
+        // Monster system
+        let monster = null;
+        let monsterActive = false;
+        let monsterHealth = 300;
+        let maxMonsterHealth = 300;
+        let gameOver = false;
+        
+        // Camera control
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let cameraRotationX = 0;
+        let cameraRotationY = 0;
+        
+        // Create spooky monster - IMPROVED VERSION
+        function createMonster() {
+            const monsterGroup = new THREE.Group();
+            
+            // Main body - larger and more imposing
+            const bodyGeometry = new THREE.SphereGeometry(4, 20, 20);
+            bodyGeometry.scale(1, 1.5, 1); // Make it taller
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x0a0a0a,
+                emissive: 0x1a0000,
+                emissiveIntensity: 0.8,
+                roughness: 0.3,
+                metalness: 0.7
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 3;
+            body.castShadow = true;
+            monsterGroup.add(body);
+            
+            // Pulsating dark aura
+            const auraGeometry = new THREE.SphereGeometry(5.5, 16, 16);
+            const auraMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x330000,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.BackSide
+            });
+            const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+            aura.position.y = 3;
+            monsterGroup.add(aura);
+            monsterGroup.userData.aura = aura; // Store for animation
+            
+            // Horns/spikes on head
+            for (let i = 0; i < 8; i++) {
+                const hornGeometry = new THREE.ConeGeometry(0.4, 3, 8);
+                const hornMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x000000,
+                    emissive: 0x330000,
+                    emissiveIntensity: 0.5
+                });
+                const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+                const angle = (i / 8) * Math.PI * 2;
+                horn.position.set(
+                    Math.cos(angle) * 3,
+                    6.5,
+                    Math.sin(angle) * 3
+                );
+                horn.rotation.x = -Math.PI / 6;
+                horn.rotation.z = angle;
+                horn.castShadow = true;
+                monsterGroup.add(horn);
+            }
+            
+            // Multiple glowing red eyes (creepier)
+            const eyeGeometry = new THREE.SphereGeometry(0.4, 12, 12);
+            const eyeMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,
+                emissive: 0xff0000,
+                emissiveIntensity: 3
+            });
+            
+            // Main eyes
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-1.2, 4, 3.5);
+            monsterGroup.add(leftEye);
+            
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.position.set(1.2, 4, 3.5);
+            monsterGroup.add(rightEye);
+            
+            // Extra eyes for extra creepiness
+            const extraEye1 = new THREE.Mesh(eyeGeometry.clone(), eyeMaterial.clone());
+            extraEye1.position.set(0, 5, 3.8);
+            extraEye1.scale.set(0.7, 0.7, 0.7);
+            monsterGroup.add(extraEye1);
+            
+            // Skeletal claws/arms
+            for (let i = 0; i < 4; i++) {
+                const armGroup = new THREE.Group();
+                const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+                
+                // Upper arm
+                const upperArmGeometry = new THREE.CylinderGeometry(0.4, 0.3, 4, 8);
+                const armMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x1a0a0a,
+                    emissive: 0x220000,
+                    emissiveIntensity: 0.4
+                });
+                const upperArm = new THREE.Mesh(upperArmGeometry, armMaterial);
+                upperArm.position.y = -1;
+                upperArm.rotation.z = Math.PI / 3;
+                upperArm.castShadow = true;
+                armGroup.add(upperArm);
+                
+                // Forearm
+                const foreArmGeometry = new THREE.CylinderGeometry(0.3, 0.2, 3.5, 8);
+                const foreArm = new THREE.Mesh(foreArmGeometry, armMaterial);
+                foreArm.position.set(1.5, -2.5, 0);
+                foreArm.rotation.z = -Math.PI / 2.5;
+                foreArm.castShadow = true;
+                armGroup.add(foreArm);
+                
+                // Claws
+                for (let j = 0; j < 3; j++) {
+                    const clawGeometry = new THREE.ConeGeometry(0.15, 1.5, 6);
+                    const claw = new THREE.Mesh(clawGeometry, armMaterial);
+                    claw.position.set(3 + j * 0.3, -3.5, (j - 1) * 0.3);
+                    claw.rotation.z = -Math.PI / 2;
+                    claw.castShadow = true;
+                    armGroup.add(claw);
+                }
+                
+                armGroup.position.set(
+                    Math.cos(angle) * 3,
+                    3,
+                    Math.sin(angle) * 3
+                );
+                armGroup.rotation.y = angle;
+                monsterGroup.add(armGroup);
+                monsterGroup.userData['arm' + i] = armGroup; // Store for animation
+            }
+            
+            // Floating particle effects
+            const particleCount = 20;
+            const particleGeometry = new THREE.SphereGeometry(0.1, 6, 6);
+            const particleMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.6
+            });
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial.clone());
+                particle.position.set(
+                    (Math.random() - 0.5) * 8,
+                    Math.random() * 6,
+                    (Math.random() - 0.5) * 8
+                );
+                monsterGroup.add(particle);
+                monsterGroup.userData['particle' + i] = particle; // Store for animation
+            }
+            
+            // Stronger point lights for eerie glow
+            const monsterLight1 = new THREE.PointLight(0xff0000, 2, 30);
+            monsterLight1.position.set(0, 4, 0);
+            monsterGroup.add(monsterLight1);
+            
+            const monsterLight2 = new THREE.PointLight(0x660000, 1, 20);
+            monsterLight2.position.set(0, 1, 0);
+            monsterGroup.add(monsterLight2);
+            
+            // Store collision radius
+            monsterGroup.userData.collisionRadius = 6; // Larger collision area
+            
+            monsterGroup.position.set(0, 100, 0); // Start high in sky
+            return monsterGroup;
+        }
+        
+        // Collision detection arrays
+        const obstacles = [];
+        const boundarySize = 2400; // Keep car within this boundary
+        
+        // Clouds
+        function createCloud(x, y, z) {
+            const cloudGroup = new THREE.Group();
+            const cloudMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.8,
+                roughness: 1
+            });
+            
+            for (let i = 0; i < 5; i++) {
+                const cloudGeometry = new THREE.SphereGeometry(15 + Math.random() * 10, 8, 8);
+                const cloudPart = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                cloudPart.position.set(
+                    (Math.random() - 0.5) * 30,
+                    (Math.random() - 0.5) * 8,
+                    (Math.random() - 0.5) * 30
+                );
+                cloudPart.scale.set(1, 0.6, 1);
+                cloudGroup.add(cloudPart);
+            }
+            cloudGroup.position.set(x, y, z);
+            return cloudGroup;
+        }
+        
+        const clouds = [];
+        for (let i = 0; i < 30; i++) {
+            const cloud = createCloud(
+                (Math.random() - 0.5) * 2000,
+                100 + Math.random() * 100,
+                (Math.random() - 0.5) * 2000
+            );
+            clouds.push(cloud);
+            scene.add(cloud);
+        }
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        sunLight.position.set(50, 100, 50);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 500;
+        sunLight.shadow.camera.left = -200;
+        sunLight.shadow.camera.right = 200;
+        sunLight.shadow.camera.top = 200;
+        sunLight.shadow.camera.bottom = -200;
+        scene.add(sunLight);
+        
+        // Ground
+        const groundGeometry = new THREE.PlaneGeometry(5000, 5000, 100, 100);
+        const groundMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x4a7c4a,
+            roughness: 0.9,
+            metalness: 0.1
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
+        // Add dirt patches for variation
+        for (let i = 0; i < 50; i++) {
+            const dirtGeometry = new THREE.CircleGeometry(10 + Math.random() * 20, 32);
+            const dirtMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x8b7355,
+                roughness: 1
+            });
+            const dirtPatch = new THREE.Mesh(dirtGeometry, dirtMaterial);
+            dirtPatch.rotation.x = -Math.PI / 2;
+            dirtPatch.position.set(
+                (Math.random() - 0.5) * 4000,
+                0.05,
+                (Math.random() - 0.5) * 4000
+            );
+            dirtPatch.receiveShadow = true;
+            scene.add(dirtPatch);
+        }
+        
+        // Boundary walls
+        const wallMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x654321,
+            roughness: 0.8
+        });
+        
+        // North wall
+        const northWall = new THREE.Mesh(new THREE.BoxGeometry(boundarySize * 2, 10, 5), wallMaterial);
+        northWall.position.set(0, 5, -boundarySize);
+        northWall.castShadow = true;
+        northWall.receiveShadow = true;
+        scene.add(northWall);
+        
+        // South wall
+        const southWall = new THREE.Mesh(new THREE.BoxGeometry(boundarySize * 2, 10, 5), wallMaterial);
+        southWall.position.set(0, 5, boundarySize);
+        southWall.castShadow = true;
+        southWall.receiveShadow = true;
+        scene.add(southWall);
+        
+        // East wall
+        const eastWall = new THREE.Mesh(new THREE.BoxGeometry(5, 10, boundarySize * 2), wallMaterial);
+        eastWall.position.set(boundarySize, 5, 0);
+        eastWall.castShadow = true;
+        eastWall.receiveShadow = true;
+        scene.add(eastWall);
+        
+        // West wall
+        const westWall = new THREE.Mesh(new THREE.BoxGeometry(5, 10, boundarySize * 2), wallMaterial);
+        westWall.position.set(-boundarySize, 5, 0);
+        westWall.castShadow = true;
+        westWall.receiveShadow = true;
+        scene.add(westWall);
+        
+        // Road
+        const roadGeometry = new THREE.PlaneGeometry(20, 5000);
+        const roadMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x333333,
+            roughness: 0.9
+        });
+        const road = new THREE.Mesh(roadGeometry, roadMaterial);
+        road.rotation.x = -Math.PI / 2;
+        road.position.y = 0.1;
+        road.receiveShadow = true;
+        scene.add(road);
+        
+        // Road markings
+        for (let i = -2500; i < 2500; i += 40) {
+            const markingGeometry = new THREE.PlaneGeometry(2, 15);
+            const markingMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const marking = new THREE.Mesh(markingGeometry, markingMaterial);
+            marking.rotation.x = -Math.PI / 2;
+            marking.position.set(0, 0.15, i);
+            scene.add(marking);
+        }
+        
+        // Trees
+        function createTree(x, z) {
+            const trunkGeometry = new THREE.CylinderGeometry(1, 1.5, 10, 8);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.set(x, 5, z);
+            trunk.castShadow = true;
+            scene.add(trunk);
+            
+            const leavesGeometry = new THREE.SphereGeometry(6, 8, 8);
+            const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+            const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+            leaves.position.set(x, 12, z);
+            leaves.castShadow = true;
+            scene.add(leaves);
+            
+            // Add to obstacles for collision
+            obstacles.push({ x: x, z: z, radius: 2 });
+        }
+        
+        // Pine trees
+        function createPineTree(x, z) {
+            const trunkGeometry = new THREE.CylinderGeometry(0.8, 1, 12, 8);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x6b4423 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.set(x, 6, z);
+            trunk.castShadow = true;
+            scene.add(trunk);
+            
+            // Create cone-shaped foliage
+            for (let i = 0; i < 4; i++) {
+                const coneGeometry = new THREE.ConeGeometry(5 - i * 1, 4, 8);
+                const coneMaterial = new THREE.MeshStandardMaterial({ color: 0x1a4d1a });
+                const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+                cone.position.set(x, 10 + i * 2.5, z);
+                cone.castShadow = true;
+                scene.add(cone);
+            }
+            
+            // Add to obstacles for collision
+            obstacles.push({ x: x, z: z, radius: 1.5 });
+        }
+        
+        // Bushes
+        function createBush(x, z) {
+            const bushGroup = new THREE.Group();
+            for (let i = 0; i < 3; i++) {
+                const bushGeometry = new THREE.SphereGeometry(1 + Math.random() * 0.5, 6, 6);
+                const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x2d5a2d });
+                const bushPart = new THREE.Mesh(bushGeometry, bushMaterial);
+                bushPart.position.set(
+                    (Math.random() - 0.5) * 2,
+                    0.5 + Math.random() * 0.5,
+                    (Math.random() - 0.5) * 2
+                );
+                bushPart.castShadow = true;
+                bushGroup.add(bushPart);
+            }
+            bushGroup.position.set(x, 0, z);
+            scene.add(bushGroup);
+        }
+        
+        // Rocks
+        function createRock(x, z) {
+            const rockGeometry = new THREE.DodecahedronGeometry(1 + Math.random() * 1.5, 0);
+            const rockMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x808080,
+                roughness: 0.9
+            });
+            const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+            rock.position.set(x, 0.5, z);
+            rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+            rock.castShadow = true;
+            scene.add(rock);
+            
+            // Add to obstacles for collision
+            obstacles.push({ x: x, z: z, radius: 2 });
+        }
+        
+        // Grass clusters
+        function createGrassCluster(x, z) {
+            const grassGroup = new THREE.Group();
+            for (let i = 0; i < 8; i++) {
+                const bladeGeometry = new THREE.PlaneGeometry(0.3, 1.5);
+                const grassMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x3a5f3a,
+                    side: THREE.DoubleSide
+                });
+                const blade = new THREE.Mesh(bladeGeometry, grassMaterial);
+                blade.position.set(
+                    (Math.random() - 0.5) * 1.5,
+                    0.75,
+                    (Math.random() - 0.5) * 1.5
+                );
+                blade.rotation.y = Math.random() * Math.PI;
+                grassGroup.add(blade);
+            }
+            grassGroup.position.set(x, 0, z);
+            scene.add(grassGroup);
+            // Grass is passable, no collision
+        }
+        
+        // Flowers
+        function createFlowerPatch(x, z) {
+            const flowerGroup = new THREE.Group();
+            const colors = [0xff69b4, 0xffff00, 0xff4500, 0x9370db, 0xffffff];
+            
+            for (let i = 0; i < 5; i++) {
+                const stemGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 4);
+                const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                
+                const petalGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+                const petalMaterial = new THREE.MeshStandardMaterial({ 
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+                const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+                
+                const offsetX = (Math.random() - 0.5) * 1;
+                const offsetZ = (Math.random() - 0.5) * 1;
+                
+                stem.position.set(offsetX, 0.4, offsetZ);
+                petal.position.set(offsetX, 0.8, offsetZ);
+                
+                flowerGroup.add(stem);
+                flowerGroup.add(petal);
+            }
+            flowerGroup.position.set(x, 0, z);
+            scene.add(flowerGroup);
+            // Flowers are passable, no collision
+        }
+        
+        // Palm trees
+        function createPalmTree(x, z) {
+            const trunkGeometry = new THREE.CylinderGeometry(0.6, 0.8, 15, 8);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8b6f47 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.set(x, 7.5, z);
+            trunk.rotation.z = (Math.random() - 0.5) * 0.2;
+            trunk.castShadow = true;
+            scene.add(trunk);
+            
+            // Palm leaves
+            for (let i = 0; i < 8; i++) {
+                const leafGeometry = new THREE.BoxGeometry(0.5, 6, 0.1);
+                const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x2d5a2d });
+                const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                leaf.position.set(x, 15, z);
+                leaf.rotation.z = (i / 8) * Math.PI * 2;
+                leaf.rotation.y = -0.3;
+                leaf.castShadow = true;
+                scene.add(leaf);
+            }
+            
+            // Add to obstacles for collision
+            obstacles.push({ x: x, z: z, radius: 1.5 });
+        }
+        
+        // Distribute vegetation across the area
+        for (let i = 0; i < 500; i++) {
+            const side = Math.random() > 0.5 ? 1 : -1;
+            const x = side * (30 + Math.random() * 2200);
+            const z = -2500 + Math.random() * 5000;
+            
+            const plantType = Math.random();
+            
+            if (plantType < 0.2) {
+                createTree(x, z);
+            } else if (plantType < 0.35) {
+                createPineTree(x, z);
+            } else if (plantType < 0.5) {
+                createBush(x, z);
+            } else if (plantType < 0.6) {
+                createRock(x, z);
+            } else if (plantType < 0.75) {
+                createGrassCluster(x, z);
+            } else if (plantType < 0.85) {
+                createFlowerPatch(x, z);
+            } else {
+                createPalmTree(x, z);
+            }
+        }
+        
+        // Car
+        const carGroup = new THREE.Group();
+        
+        // Car body
+        const bodyGeometry = new THREE.BoxGeometry(4, 2, 8);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xff0000,
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        const carBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        carBody.position.y = 1.5;
+        carBody.castShadow = true;
+        carGroup.add(carBody);
+        
+        // Car roof
+        const roofGeometry = new THREE.BoxGeometry(3.5, 1.5, 4);
+        const roofMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xff0000,
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        const carRoof = new THREE.Mesh(roofGeometry, roofMaterial);
+        carRoof.position.set(0, 2.75, 0.5);
+        carRoof.castShadow = true;
+        carGroup.add(carRoof);
+        
+        // Windows
+        const windowMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x000033,
+            metalness: 0.9,
+            roughness: 0.1,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        const frontWindowGeometry = new THREE.PlaneGeometry(3.4, 1.4);
+        const frontWindow = new THREE.Mesh(frontWindowGeometry, windowMaterial);
+        frontWindow.position.set(0, 2.75, 2.51);
+        carGroup.add(frontWindow);
+        
+        const backWindow = new THREE.Mesh(frontWindowGeometry, windowMaterial);
+        backWindow.position.set(0, 2.75, -1.49);
+        backWindow.rotation.y = Math.PI;
+        carGroup.add(backWindow);
+        
+        // Wheels
+        const wheelGeometry = new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16);
+        const wheelMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x222222,
+            roughness: 0.9
+        });
+        
+        const wheels = [];
+        const wheelPositions = [
+            [-2, 0.8, 2.5],
+            [2, 0.8, 2.5],
+            [-2, 0.8, -2.5],
+            [2, 0.8, -2.5]
+        ];
+        
+        wheelPositions.forEach((pos, index) => {
+            const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(pos[0], pos[1], pos[2]);
+            wheel.castShadow = true;
+            carGroup.add(wheel);
+            wheels.push(wheel);
+        });
+        
+        // Headlights - NOW AT THE BACK
+        const headlightGeometry = new THREE.CircleGeometry(0.3, 16);
+        const headlightMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xffffaa,
+            emissive: 0xffffaa,
+            emissiveIntensity: 0.5
+        });
+        
+        const leftHeadlight = new THREE.Mesh(headlightGeometry, headlightMaterial);
+        leftHeadlight.position.set(-1.2, 1.5, -4.01);
+        carGroup.add(leftHeadlight);
+        
+        const rightHeadlight = new THREE.Mesh(headlightGeometry, headlightMaterial);
+        rightHeadlight.position.set(1.2, 1.5, -4.01);
+        carGroup.add(rightHeadlight);
+        
+        // Actual headlight beams (SpotLights) - pointing BACKWARD now
+        const leftHeadlightBeam = new THREE.SpotLight(0xffffcc, 0, 80, Math.PI / 5, 0.3, 1.5);
+        leftHeadlightBeam.position.set(-1.2, 1.5, -4);
+        leftHeadlightBeam.castShadow = true;
+        carGroup.add(leftHeadlightBeam);
+        
+        // Create target for left headlight - positioned behind car
+        const leftTarget = new THREE.Object3D();
+        leftTarget.position.set(-1.2, 0, -40);
+        carGroup.add(leftTarget);
+        leftHeadlightBeam.target = leftTarget;
+        
+        const rightHeadlightBeam = new THREE.SpotLight(0xffffcc, 0, 80, Math.PI / 5, 0.3, 1.5);
+        rightHeadlightBeam.position.set(1.2, 1.5, -4);
+        rightHeadlightBeam.castShadow = true;
+        carGroup.add(rightHeadlightBeam);
+        
+        // Create target for right headlight - positioned behind car
+        const rightTarget = new THREE.Object3D();
+        rightTarget.position.set(1.2, 0, -40);
+        carGroup.add(rightTarget);
+        rightHeadlightBeam.target = rightTarget;
+        
+        // Brake lights - NOW AT THE FRONT
+        const brakeGeometry = new THREE.CircleGeometry(0.25, 16);
+        const brakeMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xff0000,
+            emissive: 0xff0000,
+            emissiveIntensity: 0
+        });
+        
+        const leftBrakeLight = new THREE.Mesh(brakeGeometry, brakeMaterial.clone());
+        leftBrakeLight.position.set(-1.2, 1.2, 4.01);
+        leftBrakeLight.rotation.y = 0;
+        carGroup.add(leftBrakeLight);
+        
+        const rightBrakeLight = new THREE.Mesh(brakeGeometry, brakeMaterial.clone());
+        rightBrakeLight.position.set(1.2, 1.2, 4.01);
+        rightBrakeLight.rotation.y = 0;
+        carGroup.add(rightBrakeLight);
+        
+        // Dust particles
+        const dustParticles = [];
+        const dustGeometry = new THREE.SphereGeometry(0.1, 4, 4);
+        const dustMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x8b7355,
+            transparent: true,
+            opacity: 0.6
+        });
+        
+        function createDustParticle(x, y, z) {
+            const particle = new THREE.Mesh(dustGeometry, dustMaterial.clone());
+            particle.position.set(x, y, z);
+            particle.velocity = {
+                x: (Math.random() - 0.5) * 0.2,
+                y: Math.random() * 0.3 + 0.1,
+                z: (Math.random() - 0.5) * 0.2
+            };
+            particle.life = 1.0;
+            scene.add(particle);
+            dustParticles.push(particle);
+        }
+        
+        carGroup.position.set(0, 0, 0);
+        scene.add(carGroup);
+        
+        // Car physics
+        const car = {
+            speed: 0,
+            maxSpeed: 200,
+            acceleration: 0.3,
+            deceleration: 0.15,
+            brakeForce: 0.5,
+            turnSpeed: 0.08,
+            currentTurn: 0,
+            maxTurnSpeed: 0.17,
+            rpm: 0,
+            gear: 1,
+            drift: 0,
+            velocityX: 0,
+            velocityZ: 0,
+            suspensionBounce: 0,
+            suspensionVelocity: 0
+        };
+        
+        // Input handling
+        const keys = {};
+        
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === ' ') e.preventDefault();
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Camera modes
+        let cameraMode = 0;
+        const cameraOffsets = [
+            { x: 0, y: 5, z: 15 },   // Behind car - positive value = distance behind
+            { x: 0, y: 10, z: 25 },  // Far behind
+            { x: 0, y: 3, z: 8 }     // Hood view
+        ];
+        
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'c') {
+                cameraMode = (cameraMode + 1) % cameraOffsets.length;
+            }
+            if (e.key.toLowerCase() === 'r') {
+                // Reset camera rotation
+                cameraRotationX = 0;
+                cameraRotationY = 0;
+            }
+            if (e.key.toLowerCase() === 'l') {
+                headlightsOn = !headlightsOn;
+                document.getElementById('lights-status').textContent = headlightsOn ? 'ON' : 'OFF';
+            }
+        });
+        
+        // Replay button
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            gameOver = false;
+            timeOfDay = 12;
+            carGroup.position.set(0, 0, 0);
+            carGroup.rotation.y = 0;
+            car.speed = 0;
+            car.velocityX = 0;
+            car.velocityZ = 0;
+            monsterHealth = maxMonsterHealth;
+            if (monster) {
+                scene.remove(monster);
+                monster = null;
+            }
+            monsterActive = false;
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('monster-health-bar').style.display = 'none';
+        });
+        
+        // Mouse/Touch camera controls
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+                
+                cameraRotationY += deltaX * 0.005;
+                cameraRotationX += deltaY * 0.005;
+                
+                // Limit vertical rotation
+                cameraRotationX = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, cameraRotationX));
+                
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            }
+        });
+        
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        // Touch controls
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        });
+        
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                const deltaX = e.touches[0].clientX - previousMousePosition.x;
+                const deltaY = e.touches[0].clientY - previousMousePosition.y;
+                
+                cameraRotationY += deltaX * 0.005;
+                cameraRotationX += deltaY * 0.005;
+                
+                cameraRotationX = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, cameraRotationX));
+                
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                e.preventDefault();
+            }
+        });
+        
+        renderer.domElement.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+        
+        // Click/Tap to damage monster
+        renderer.domElement.addEventListener('click', (e) => {
+            if (monsterActive && monster) {
+                // Check if monster is in range
+                const distanceToMonster = Math.sqrt(
+                    Math.pow(monster.position.x - carGroup.position.x, 2) +
+                    Math.pow(monster.position.z - carGroup.position.z, 2)
+                );
+                
+                if (distanceToMonster < 30) {
+                    monsterHealth -= 10;
+                    updateMonsterHealthBar();
+                    
+                    if (monsterHealth <= 0) {
+                        defeatMonster();
+                    }
+                }
+            }
+        });
+        
+        // Update monster health bar position to follow monster in 3D space with proper scaling
+        function updateMonsterHealthBarPosition() {
+            if (!monster || !monsterActive) return;
+            
+            // Convert 3D monster position to 2D screen coordinates
+            const vector = new THREE.Vector3(
+                monster.position.x,
+                monster.position.y + 8, // Above monster head
+                monster.position.z
+            );
+            
+            // Calculate distance from camera
+            const distanceFromCamera = camera.position.distanceTo(monster.position);
+            
+            vector.project(camera);
+            
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+            
+            const healthBar = document.getElementById('monster-health-bar');
+            
+            // Scale based on distance - closer = bigger, farther = smaller
+            const baseScale = 1;
+            const scale = Math.max(0.3, Math.min(2, baseScale * (50 / distanceFromCamera)));
+            
+            healthBar.style.left = x + 'px';
+            healthBar.style.top = y + 'px';
+            healthBar.style.transform = `translate(-50%, -100%) scale(${scale})`;
+            
+            // Hide if too far or behind camera
+            if (distanceFromCamera > 200 || vector.z > 1) {
+                healthBar.style.opacity = '0';
+            } else {
+                healthBar.style.opacity = '1';
+            }
+        }
+        
+        // Update monster health bar
+        function updateMonsterHealthBar() {
+            const healthPercent = (monsterHealth / maxMonsterHealth) * 100;
+            const healthFill = document.getElementById('monster-health-fill');
+            healthFill.style.width = healthPercent + '%';
+            
+            // Color gradient from green to red
+            if (healthPercent > 66) {
+                healthFill.style.background = '#00ff00';
+            } else if (healthPercent > 33) {
+                healthFill.style.background = '#ffff00';
+            } else {
+                healthFill.style.background = '#ff0000';
+            }
+            
+            updateMonsterHealthBarPosition();
+        }
+        
+        // Defeat monster animation
+        function defeatMonster() {
+            if (!monster) return;
+            
+            // Death animation - fade and shrink
+            let scale = 1;
+            let opacity = 1;
+            const deathAnimation = setInterval(() => {
+                scale -= 0.05;
+                opacity -= 0.05;
+                
+                monster.scale.set(scale, scale, scale);
+                monster.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        child.material.opacity = opacity;
+                        child.material.transparent = true;
+                    }
+                });
+                
+                monster.position.y += 2; // Float upward
+                
+                if (scale <= 0) {
+                    clearInterval(deathAnimation);
+                    scene.remove(monster);
+                    monster = null;
+                    monsterActive = false;
+                    document.getElementById('monster-health-bar').style.display = 'none';
+                }
+            }, 50);
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (gameOver) {
+                renderer.render(scene, camera);
+                return;
+            }
+            
+            // Handle acceleration
+            if (keys['arrowup'] || keys['w']) {
+                car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
+                // Turn off brake lights
+                leftBrakeLight.material.emissiveIntensity = 0;
+                rightBrakeLight.material.emissiveIntensity = 0;
+            } else if (keys['arrowdown'] || keys['s']) {
+                if (car.speed > 0) {
+                    car.speed = Math.max(car.speed - car.brakeForce, -20);
+                } else {
+                    car.speed = Math.max(car.speed - car.acceleration, -20);
+                }
+                // Turn on brake lights
+                leftBrakeLight.material.emissiveIntensity = 1;
+                rightBrakeLight.material.emissiveIntensity = 1;
+            } else {
+                // Natural deceleration
+                if (car.speed > 0) {
+                    car.speed = Math.max(car.speed - car.deceleration, 0);
+                } else if (car.speed < 0) {
+                    car.speed = Math.min(car.speed + car.deceleration, 0);
+                }
+                // Turn off brake lights
+                leftBrakeLight.material.emissiveIntensity = 0;
+                rightBrakeLight.material.emissiveIntensity = 0;
+            }
+            
+            // Handbrake - causes drift
+            let driftFactor = 1;
+            if (keys[' '] && Math.abs(car.speed) > 10) {
+                car.speed *= 0.95;
+                driftFactor = 0.5; // Reduced grip
+                car.drift += Math.abs(car.currentTurn) * 0.5;
+                // Bright brake lights during handbrake
+                leftBrakeLight.material.emissiveIntensity = 1.5;
+                rightBrakeLight.material.emissiveIntensity = 1.5;
+                
+                // Generate more dust during drift
+                if (Math.random() > 0.3) {
+                    const driftDir = car.currentTurn > 0 ? -1 : 1;
+                    createDustParticle(
+                        carGroup.position.x + driftDir * 2,
+                        0.5,
+                        carGroup.position.z
+                    );
+                }
+            } else {
+                car.drift *= 0.9;
+            }
+            
+            // Handle turning with drift physics
+            let targetTurn = 0;
+            if ((keys['arrowleft'] || keys['a']) && Math.abs(car.speed) > 0.5) {
+                targetTurn = car.turnSpeed * (car.speed / 50);
+            } else if ((keys['arrowright'] || keys['d']) && Math.abs(car.speed) > 0.5) {
+                targetTurn = -car.turnSpeed * (car.speed / 50);
+            }
+            
+            car.currentTurn += (targetTurn - car.currentTurn) * 0.12;
+            car.currentTurn = Math.max(-car.maxTurnSpeed, Math.min(car.maxTurnSpeed, car.currentTurn));
+            
+            // Apply drift to turning
+            const effectiveTurn = car.currentTurn * driftFactor;
+            
+            // Update car rotation
+            carGroup.rotation.y += effectiveTurn;
+            
+            // Physics-based movement with momentum
+            const forwardX = -Math.sin(carGroup.rotation.y);
+            const forwardZ = -Math.cos(carGroup.rotation.y);
+            
+            // Add velocity
+            car.velocityX += forwardX * car.speed * 0.01;
+            car.velocityZ += forwardZ * car.speed * 0.01;
+            
+            // Apply friction
+            car.velocityX *= 0.95;
+            car.velocityZ *= 0.95;
+            
+            // Update position
+            carGroup.position.x += car.velocityX;
+            carGroup.position.z += car.velocityZ;
+            
+            // Boundary check - keep car within walls with hard stop
+            const carRadius = 3;
+            if (carGroup.position.x > boundarySize - carRadius) {
+                carGroup.position.x = boundarySize - carRadius;
+                car.velocityX = 0;
+                car.speed *= 0.3;
+            }
+            if (carGroup.position.x < -boundarySize + carRadius) {
+                carGroup.position.x = -boundarySize + carRadius;
+                car.velocityX = 0;
+                car.speed *= 0.3;
+            }
+            if (carGroup.position.z > boundarySize - carRadius) {
+                carGroup.position.z = boundarySize - carRadius;
+                car.velocityZ = 0;
+                car.speed *= 0.3;
+            }
+            if (carGroup.position.z < -boundarySize + carRadius) {
+                carGroup.position.z = -boundarySize + carRadius;
+                car.velocityZ = 0;
+                car.speed *= 0.3;
+            }
+            
+            // Collision detection with obstacles
+            for (let obstacle of obstacles) {
+                const dx = carGroup.position.x - obstacle.x;
+                const dz = carGroup.position.z - obstacle.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                const minDistance = obstacle.radius + 3; // Car radius ~3
+                
+                if (distance < minDistance) {
+                    // Push car away from obstacle
+                    const angle = Math.atan2(dz, dx);
+                    carGroup.position.x = obstacle.x + Math.cos(angle) * minDistance;
+                    carGroup.position.z = obstacle.z + Math.sin(angle) * minDistance;
+                    
+                    // Bounce back
+                    car.velocityX *= -0.3;
+                    car.velocityZ *= -0.3;
+                    car.speed *= 0.5;
+                }
+            }
+            
+            // Suspension bounce effect
+            const targetBounce = Math.abs(car.speed) * 0.002 + Math.abs(car.currentTurn) * 2;
+            car.suspensionVelocity += (targetBounce - car.suspensionBounce) * 0.1;
+            car.suspensionBounce += car.suspensionVelocity;
+            car.suspensionVelocity *= 0.8;
+            car.suspensionBounce *= 0.9;
+            
+            // Ground collision - keep car at ground level with suspension
+            // Add small bounce but ensure car never goes below ground (y=0)
+            const bounceEffect = Math.sin(Date.now() * 0.01) * car.suspensionBounce * 0.1;
+            carGroup.position.y = Math.max(0, bounceEffect);
+            
+            // Day/Night cycle with enhanced periods
+            timeOfDay += timeSpeed;
+            if (timeOfDay >= 24) timeOfDay = 0;
+            
+            // Calculate sun position and lighting based on time
+            const sunAngle = (timeOfDay / 24) * Math.PI * 2 - Math.PI / 2;
+            const sunHeight = Math.sin(sunAngle);
+            
+            // Update sun position
+            sunLight.position.x = Math.cos(sunAngle) * 200;
+            sunLight.position.y = Math.max(Math.abs(sunHeight) * 150, 20);
+            sunLight.position.z = Math.sin(sunAngle) * 200;
+            
+            // Enhanced time periods with visible changes
+            let lightIntensity;
+            let skyColor;
+            let timePeriod = "";
+            
+            // More granular time periods
+            if (timeOfDay >= 5 && timeOfDay < 7) {
+                // Dawn (5-7 AM)
+                timePeriod = "Dawn";
+                const t = (timeOfDay - 5) / 2;
+                lightIntensity = 0.2 + t * 0.3;
+                skyColor = new THREE.Color().lerpColors(
+                    new THREE.Color(0x1a1a3a),
+                    new THREE.Color(0xff6b6b),
+                    t
+                ).lerp(new THREE.Color(0x87ceeb), t * 0.5);
+            } else if (timeOfDay >= 7 && timeOfDay < 10) {
+                // Morning (7-10 AM)
+                timePeriod = "Morning";
+                const t = (timeOfDay - 7) / 3;
+                lightIntensity = 0.5 + t * 0.2;
+                skyColor = new THREE.Color().lerpColors(
+                    new THREE.Color(0xff6b6b),
+                    new THREE.Color(0x87ceeb),
+                    t
+                );
+            } else if (timeOfDay >= 10 && timeOfDay < 12) {
+                // Late Morning (10-12 PM)
+                timePeriod = "Late Morning";
+                lightIntensity = 0.7;
+                skyColor = new THREE.Color(0x87ceeb);
+            } else if (timeOfDay >= 12 && timeOfDay < 15) {
+                // Noon/Afternoon (12-3 PM)
+                timePeriod = "Afternoon";
+                lightIntensity = 0.75;
+                skyColor = new THREE.Color(0x87ceeb);
+            } else if (timeOfDay >= 15 && timeOfDay < 17) {
+                // Late Afternoon (3-5 PM)
+                timePeriod = "Late Afternoon";
+                const t = (timeOfDay - 15) / 2;
+                lightIntensity = 0.75 - t * 0.2;
+                skyColor = new THREE.Color().lerpColors(
+                    new THREE.Color(0x87ceeb),
+                    new THREE.Color(0xffa500),
+                    t * 0.3
+                );
+            } else if (timeOfDay >= 17 && timeOfDay < 19) {
+                // Evening/Dusk (5-7 PM)
+                timePeriod = "Evening";
+                const t = (timeOfDay - 17) / 2;
+                lightIntensity = 0.55 - t * 0.3;
+                skyColor = new THREE.Color().lerpColors(
+                    new THREE.Color(0xffa500),
+                    new THREE.Color(0xff6347),
+                    t
+                ).lerp(new THREE.Color(0x4a2a6a), t * 0.5);
+            } else if (timeOfDay >= 19 && timeOfDay < 21) {
+                // Twilight (7-9 PM)
+                timePeriod = "Twilight";
+                const t = (timeOfDay - 19) / 2;
+                lightIntensity = 0.25 - t * 0.1;
+                skyColor = new THREE.Color().lerpColors(
+                    new THREE.Color(0x4a2a6a),
+                    new THREE.Color(0x0a0a1a),
+                    t
+                );
+            } else {
+                // Night (9 PM - 5 AM)
+                timePeriod = "Night";
+                lightIntensity = 0.15;
+                skyColor = new THREE.Color(0x0a0a1a);
+            }
+            
+            sunLight.intensity = lightIntensity * 0.9;
+            ambientLight.intensity = Math.max(lightIntensity * 0.5, 0.15);
+            
+            scene.background = skyColor;
+            
+            // 2. Make car headlights more pronounced in evening and night
+            let headlightBoost = 1;
+            if (timePeriod === "Evening" || timePeriod === "Twilight") {
+                headlightBoost = 2;
+            } else if (timePeriod === "Night") {
+                headlightBoost = 3;
+            }
+            
+            // Update headlights with evening/night boost
+            if (headlightsOn) {
+                leftHeadlightBeam.intensity = 2.0 * headlightBoost;
+                rightHeadlightBeam.intensity = 2.0 * headlightBoost;
+                leftHeadlight.material.emissiveIntensity = 1.2;
+                rightHeadlight.material.emissiveIntensity = 1.2;
+            } else {
+                leftHeadlightBeam.intensity = 0;
+                rightHeadlightBeam.intensity = 0;
+                leftHeadlight.material.emissiveIntensity = 0.5;
+                rightHeadlight.material.emissiveIntensity = 0.5;
+            }
+            
+            // 3. Monster spawning and behavior
+            const isNight = timePeriod === "Night";
+            const isMorning = timePeriod === "Morning" || timePeriod === "Late Morning" || timePeriod === "Afternoon";
+            
+            // Spawn monster at night - closer to car for visibility
+            if (isNight && !monsterActive && !monster) {
+                monster = createMonster();
+                scene.add(monster);
+                monsterActive = true;
+                monsterHealth = maxMonsterHealth; // 8. Reset health each night
+                updateMonsterHealthBar();
+                document.getElementById('monster-health-bar').style.display = 'block';
+                
+                // Spawn MUCH closer to car - within visible range
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 30 + Math.random() * 20; // 30-50 units away
+                monster.position.set(
+                    carGroup.position.x + Math.cos(angle) * distance,
+                    100, // Start high in sky
+                    carGroup.position.z + Math.sin(angle) * distance
+                );
+            }
+            
+            // Remove monster in morning
+            if (isMorning && monsterActive && monster) {
+                // Ascend to sky
+                monster.position.y += 1;
+                if (monster.position.y > 150) {
+                    scene.remove(monster);
+                    monster = null;
+                    monsterActive = false;
+                    document.getElementById('monster-health-bar').style.display = 'none';
+                }
+            }
+            
+            // Monster chases car during night
+            if (monsterActive && monster && monster.position.y > 5) {
+                // Descend from sky at moderate speed
+                monster.position.y -= 5.0;
+                updateMonsterHealthBarPosition();
+            } else if (monsterActive && monster) {
+                // Chase the car at challenging speed
+                const dx = carGroup.position.x - monster.position.x;
+                const dz = carGroup.position.z - monster.position.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                
+                // Improved collision - check if ANY part of monster touches car
+                const monsterRadius = monster.userData.collisionRadius || 6;
+                const carRadius = 4; // Car collision radius
+                const collisionDistance = monsterRadius + carRadius;
+                
+                if (distance > collisionDistance) {
+                    // Chase speed: 3.5 units per frame
+                    const speed = 3.5;
+                    monster.position.x += (dx / distance) * speed;
+                    monster.position.z += (dz / distance) * speed;
+                    
+                    // Make monster look at car
+                    monster.lookAt(carGroup.position.x, monster.position.y, carGroup.position.z);
+                    
+                    // Hovering animation
+                    monster.position.y = 5 + Math.sin(Date.now() * 0.005) * 3;
+                    
+                    // Rotate monster creepily
+                    monster.rotation.y += 0.03;
+                    
+                    // Animate aura pulsing
+                    if (monster.userData.aura) {
+                        const pulse = Math.sin(Date.now() * 0.01) * 0.2 + 0.3;
+                        monster.userData.aura.material.opacity = pulse;
+                        monster.userData.aura.scale.set(1 + pulse * 0.2, 1 + pulse * 0.2, 1 + pulse * 0.2);
+                    }
+                    
+                    // Animate arms waving
+                    for (let i = 0; i < 4; i++) {
+                        const arm = monster.userData['arm' + i];
+                        if (arm) {
+                            arm.rotation.z = Math.sin(Date.now() * 0.003 + i) * 0.3;
+                        }
+                    }
+                    
+                    // Animate particles floating
+                    for (let i = 0; i < 20; i++) {
+                        const particle = monster.userData['particle' + i];
+                        if (particle) {
+                            particle.position.y += Math.sin(Date.now() * 0.002 + i) * 0.02;
+                        }
+                    }
+                    
+                    // Update health bar position every frame
+                    updateMonsterHealthBarPosition();
+                } else {
+                    // Monster caught the car - GAME OVER
+                    gameOver = true;
+                    document.getElementById('game-over').style.display = 'block';
+                }
+            }
+            
+            // Format time display
+            const hours = Math.floor(timeOfDay);
+            const minutes = Math.floor((timeOfDay - hours) * 60);
+            const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            document.getElementById('time').textContent = timeString;
+            
+            // Rotate wheels
+            wheels.forEach((wheel, index) => {
+                wheel.rotation.x += car.speed * 0.05;
+                if (index < 2) { // Front wheels
+                    wheel.rotation.y = -car.currentTurn * 10;
+                }
+            });
+            
+            // Realistic car tilt based on speed and turning
+            const tiltAmount = -car.currentTurn * 3;
+            const pitchAmount = -car.speed * 0.003;
+            carBody.rotation.z += (tiltAmount - carBody.rotation.z) * 0.1;
+            carBody.rotation.x += (pitchAmount - carBody.rotation.x) * 0.1;
+            carRoof.rotation.z = carBody.rotation.z;
+            carRoof.rotation.x = carBody.rotation.x;
+            
+            // Add slight body roll on bumps
+            const bodyRoll = Math.sin(Date.now() * 0.02) * car.suspensionBounce * 0.05;
+            carBody.position.y = 1.5 + bodyRoll;
+            
+            // Calculate RPM and gear
+            car.rpm = Math.min(Math.abs(car.speed) * 50, 8000);
+            car.gear = Math.floor(Math.abs(car.speed) / 30) + 1;
+            car.gear = Math.max(1, Math.min(6, car.gear));
+            
+            // Update camera with shake and smooth following
+            const offset = cameraOffsets[cameraMode];
+            
+            // Camera shake based on speed and turning
+            const shake = {
+                x: (Math.random() - 0.5) * car.speed * 0.005,
+                y: (Math.random() - 0.5) * car.speed * 0.005,
+                z: (Math.random() - 0.5) * car.speed * 0.005
+            };
+            
+            let targetX, targetZ, lookAtX, lookAtZ;
+            
+            if (cameraMode < 2) {
+                // Behind car views
+                const backwardX = -Math.sin(carGroup.rotation.y);
+                const backwardZ = -Math.cos(carGroup.rotation.y);
+                
+                // Apply user camera rotation
+                const rotatedX = backwardX * Math.cos(cameraRotationY) - backwardZ * Math.sin(cameraRotationY);
+                const rotatedZ = backwardX * Math.sin(cameraRotationY) + backwardZ * Math.cos(cameraRotationY);
+                
+                targetX = carGroup.position.x - rotatedX * offset.z;
+                targetZ = carGroup.position.z - rotatedZ * offset.z;
+                
+                // Look AT the car
+                lookAtX = carGroup.position.x;
+                lookAtZ = carGroup.position.z;
+            } else {
+                // Hood view - camera near front of car, looking forward
+                const forwardX = -Math.sin(carGroup.rotation.y);
+                const forwardZ = -Math.cos(carGroup.rotation.y);
+                
+                targetX = carGroup.position.x + forwardX * 3;
+                targetZ = carGroup.position.z + forwardZ * 3;
+                
+                lookAtX = carGroup.position.x + forwardX * 50;
+                lookAtZ = carGroup.position.z + forwardZ * 50;
+            }
+            
+            camera.position.x += (targetX + shake.x - camera.position.x) * 0.15;
+            camera.position.y += (carGroup.position.y + offset.y + shake.y + cameraRotationX * 5 - camera.position.y) * 0.15;
+            camera.position.z += (targetZ + shake.z - camera.position.z) * 0.15;
+            camera.lookAt(
+                lookAtX + shake.x * 2, 
+                carGroup.position.y + 2 + shake.y * 2, 
+                lookAtZ + shake.z * 2
+            );
+            
+            // Animate clouds slowly
+            clouds.forEach((cloud, index) => {
+                cloud.position.x += Math.sin(index) * 0.02;
+                cloud.position.z += Math.cos(index) * 0.02;
+                
+                // Wrap clouds around
+                if (cloud.position.x > 1000) cloud.position.x = -1000;
+                if (cloud.position.x < -1000) cloud.position.x = 1000;
+                if (cloud.position.z > 1000) cloud.position.z = -1000;
+                if (cloud.position.z < -1000) cloud.position.z = 1000;
+            });
+            
+            // Update dust particles
+            for (let i = dustParticles.length - 1; i >= 0; i--) {
+                const particle = dustParticles[i];
+                particle.position.x += particle.velocity.x;
+                particle.position.y += particle.velocity.y;
+                particle.position.z += particle.velocity.z;
+                particle.velocity.y -= 0.01; // Gravity
+                particle.life -= 0.02;
+                particle.material.opacity = particle.life * 0.6;
+                particle.scale.set(particle.life, particle.life, particle.life);
+                
+                if (particle.life <= 0 || particle.position.y < 0) {
+                    scene.remove(particle);
+                    dustParticles.splice(i, 1);
+                }
+            }
+            
+            // Spawn dust when moving fast
+            if (Math.abs(car.speed) > 30 && Math.random() > 0.7) {
+                createDustParticle(
+                    carGroup.position.x + (Math.random() - 0.5) * 3,
+                    0.3,
+                    carGroup.position.z + (Math.random() - 0.5) * 3
+                );
+            }
+            
+            // Update HUD
+            document.getElementById('speed').textContent = Math.abs(car.speed).toFixed(0) + ' km/h';
+            document.getElementById('gear').textContent = car.speed < 0 ? 'R' : car.gear;
+            document.getElementById('rpm').textContent = car.rpm.toFixed(0);
+            document.getElementById('speedometer').style.width = (Math.abs(car.speed) / car.maxSpeed * 100) + '%';
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        animate();
+    </script>
+</body>
+</html>
