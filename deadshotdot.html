@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Deadshot Aim Dot</title>
+<title>Deadshot Green Dot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
   html, body {
@@ -24,9 +25,9 @@
     position: fixed;
     top: 50%;
     left: 50%;
-    width: 6px;
-    height: 6px;
-    background: white;
+    width: var(--dot-size);
+    height: var(--dot-size);
+    background: lime;
     border-radius: 50%;
     transform: translate(-50%, -50%);
     z-index: 9999;
@@ -35,32 +36,19 @@
 </style>
 </head>
 
-<body tabindex="0">
+<body>
 
-<iframe src="https://deadshot.io"></iframe>
-<div class="aim-dot" id="aimDot"></div>
+<iframe
+  src="https://deadshot.io"
+  allow="fullscreen; gamepad; pointer-lock"
+  allowfullscreen
+></iframe>
+
+<div class="aim-dot"></div>
 
 <script>
-  const dot = document.getElementById("aimDot");
-  let visible = true;
-
-  // Force focus so keys work
-  window.focus();
-  document.body.focus();
-
-  window.addEventListener("keydown", (e) => {
-    const key = e.key.toLowerCase();
-
-    if (key === "t") {
-      visible = !visible;
-      dot.style.display = visible ? "block" : "none";
-    }
-
-    if (key === "r") dot.style.backgroundColor = "red";
-    if (key === "b") dot.style.backgroundColor = "blue";
-    if (key === "y") dot.style.backgroundColor = "yellow";
-    if (key === "g") dot.style.backgroundColor = "lime";
-  }, true); // 👈 CAPTURE MODE
+  /* SAFE size control */
+  document.documentElement.style.setProperty("--dot-size", "8px");
 </script>
 
 </body>
