@@ -6,25 +6,40 @@
 <style>
 body { margin:0; background:black; color:white; font-family:Arial; overflow:hidden; }
 canvas { display:block; }
-#ui {
-  position: fixed; top:10px; left:10px;
+.ui {
+  position: fixed; top:10px;
   background: rgba(0,0,0,0.7);
   padding:12px; border-radius:10px; font-size:14px;
 }
+#ui-left { left:10px; }
+#ui-right { right:10px; }
 button, input { margin-top:5px; cursor:pointer; }
 input { width:150px; }
+.label { font-weight: bold; color: #4CAF50; margin-top: 10px; }
 </style>
 </head>
 <body>
 
-<div id="ui">
-  <div>Particles: <span id="count">0</span></div>
+<div id="ui-left" class="ui">
+  <div class="label">LEFT SIDE SPAWNER</div>
+  <div>Particles: <span id="count-left">0</span></div>
   <div>Speed:</div>
-  <input type="range" min="1" max="20" value="5" oninput="SPEED=+this.value">
+  <input type="range" min="1" max="20" value="5" oninput="SPEED_LEFT=+this.value">
   <br>
-  <button onclick="addParticles(5)">Add 5</button>
-  <button onclick="removeParticles(5)">Remove 5</button>
-  <button onclick="clearParticles()">Clear</button>
+  <button onclick="addParticles(5, 'left')">Add 5</button>
+  <button onclick="removeParticles(5, 'left')">Remove 5</button>
+  <button onclick="clearParticles('left')">Clear</button>
+</div>
+
+<div id="ui-right" class="ui">
+  <div class="label">RIGHT SIDE SPAWNER</div>
+  <div>Particles: <span id="count-right">0</span></div>
+  <div>Speed:</div>
+  <input type="range" min="1" max="20" value="5" oninput="SPEED_RIGHT=+this.value">
+  <br>
+  <button onclick="addParticles(5, 'right')">Add 5</button>
+  <button onclick="removeParticles(5, 'right')">Remove 5</button>
+  <button onclick="clearParticles('right')">Clear</button>
 </div>
 
 <canvas id="c"></canvas>
@@ -35,39 +50,61 @@ const ctx = canvas.getContext("2d");
 function resize(){ canvas.width=innerWidth; canvas.height=innerHeight; }
 resize(); addEventListener("resize",resize);
 
-let SPEED = 5;
-const countEl = document.getElementById("count");
+let SPEED_LEFT = 5;  // Speed for right-side particles
+let SPEED_RIGHT = 5; // Speed for left-side particles
+const countElLeft = document.getElementById("count-left");
+const countElRight = document.getElementById("count-right");
 
 /* ===== PARTICLE ===== */
 class Particle {
-  constructor(x,y,vx,vy,r=5){
+  constructor(x,y,vx,vy,r=5,side='right'){
     this.x = x; this.y = y;
     this.vx = vx; this.vy = vy;
     this.r = r;
     this.mass = r*r*r; // mass proportional to vol
+    this.side = side; // track which side spawned it
   }
   update(piston){
     this.x += this.vx; this.y += this.vy;
 
-    // Left wall
-    if(this.x-this.r<0){ this.x=this.r; this.vx*=-1; }
-    // Right wall = piston
-    if(this.x+this.r>piston.x){
-      this.x = piston.x-this.r;
-      const oldVx = this.vx;
-      this.vx*=-1;
-      if(!piston.dragging){
-        // realistic momentum transfer: Δv = 2*m*vp/m_piston
-        piston.vx += (2*this.mass*oldVx)/piston.mass;
+    if(this.side === 'left'){
+      // Left chamber particles
+      // Left wall
+      if(this.x-this.r<0){ this.x=this.r; this.vx*=-1; }
+      // Right wall = left side of piston
+      if(this.x+this.r>piston.x){
+        this.x = piston.x-this.r;
+        const oldVx = this.vx;
+        this.vx*=-1;
+        if(!piston.dragging){
+          // Push piston to the right
+          piston.vx += (2*this.mass*oldVx)/piston.mass;
+        }
       }
+    } else {
+      // Right chamber particles
+      // Left wall = right side of piston
+      if(this.x-this.r<piston.x+piston.width){
+        this.x = piston.x+piston.width+this.r;
+        const oldVx = this.vx;
+        this.vx*=-1;
+        if(!piston.dragging){
+          // Push piston to the LEFT (negative direction)
+          piston.vx -= (2*this.mass*Math.abs(oldVx))/piston.mass;
+        }
+      }
+      // Right wall
+      if(this.x+this.r>canvas.width){ this.x=canvas.width-this.r; this.vx*=-1; }
     }
+    
     // Top/Bottom walls
     if(this.y-this.r<0){ this.y=this.r; this.vy*=-1; }
     if(this.y+this.r>canvas.height){ this.y=canvas.height-this.r; this.vy*=-1; }
   }
   draw(){
     const speed = Math.hypot(this.vx,this.vy);
-    const color = `hsl(${Math.min(speed*50,360)},100%,50%)`;
+    const hue = this.side === 'right' ? Math.min(speed*50,360) : Math.min(speed*50+180,360);
+    const color = `hsl(${hue},100%,50%)`;
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
@@ -76,7 +113,8 @@ class Particle {
 }
 
 /* ===== WORLD ===== */
-let particles = [];
+let particlesRight = []; // spawned on right side
+let particlesLeft = [];  // spawned on left side
 
 /* ===== PISTON ===== */
 let piston = {
@@ -95,26 +133,64 @@ canvas.addEventListener("mousedown",e=>{
 });
 canvas.addEventListener("mouseup",e=> piston.dragging=false);
 canvas.addEventListener("mousemove",e=>{
-  if(piston.dragging){ piston.x = Math.min(Math.max(e.clientX,100),canvas.width-20); piston.vx=0; }
+  if(piston.dragging){ 
+    piston.x = Math.min(Math.max(e.clientX,100),canvas.width-100-piston.width); 
+    piston.vx=0; 
+  }
 });
 
 /* ===== PARTICLE FUNCTIONS ===== */
-function addParticles(n){
+function addParticles(n, spawnSide){
+  const targetArray = spawnSide === 'left' ? particlesLeft : particlesRight;
+  
   for(let i=0;i<n;i++){
-    const r = 4 + Math.random()*14; // variable radius
-    const x = Math.random()*(piston.x-20-r);
-    const y = Math.random()*(canvas.height-2*r)+r;
+    const r = 2 + Math.random()*6; // variable radius
+    let x, y;
+    
+    if(spawnSide === 'left'){
+      // Spawn on left side of piston
+      x = r + Math.random()*(piston.x - 150);
+    } else {
+      // Spawn on right side of piston
+      x = piston.x + piston.width + r + Math.random()*100;
+    }
+    
+    y = Math.random()*(canvas.height-2*r)+r;
     const vx = (Math.random()-0.5)*4;
     const vy = (Math.random()-0.5)*4;
-    particles.push(new Particle(x,y,vx,vy,r));
+    targetArray.push(new Particle(x,y,vx,vy,r,spawnSide));
   }
-  countEl.textContent = particles.length;
+  updateCounts();
 }
-function removeParticles(n){ particles.splice(-n,n); countEl.textContent=particles.length; }
-function clearParticles(){ particles=[]; countEl.textContent=0; }
+
+function removeParticles(n, side){
+  if(side === 'left'){
+    particlesLeft.splice(-n,n);
+  } else {
+    particlesRight.splice(-n,n);
+  }
+  updateCounts();
+}
+
+function clearParticles(side){
+  if(side === 'left'){
+    particlesLeft = [];
+  } else {
+    particlesRight = [];
+  }
+  updateCounts();
+}
+
+function updateCounts(){
+  countElLeft.textContent = particlesLeft.length;
+  countElRight.textContent = particlesRight.length;
+}
 
 /* ===== PARTICLE COLLISIONS ===== */
 function collide(a,b){
+  // Only collide if particles are on the same side of the piston
+  if(a.side !== b.side) return;
+  
   const dx = b.x-a.x; const dy = b.y-a.y;
   const dist = Math.hypot(dx,dy);
   if(dist < a.r+b.r){
@@ -151,23 +227,34 @@ function loop(){
   if(!piston.dragging){
     piston.x += piston.vx;
     piston.vx *= 0.95; // damping
-    piston.x = Math.min(Math.max(piston.x,100),canvas.width-20);
+    // Enforce 100px minimum gap on both sides
+    piston.x = Math.min(Math.max(piston.x,100),canvas.width-100-piston.width);
   }
 
   // draw piston
   ctx.fillStyle="gray";
   ctx.fillRect(piston.x,piston.y,piston.width,piston.height);
 
-  // collisions and updates
-  for(let s=0;s<SPEED;s++){
-    for(let i=0;i<particles.length;i++){
-      for(let j=i+1;j<particles.length;j++) collide(particles[i],particles[j]);
-      particles[i].update(piston);
+  // combine all particles for simulation
+  const allParticles = [...particlesRight, ...particlesLeft];
+
+  // collisions and updates - use appropriate speed
+  const maxSpeed = Math.max(SPEED_LEFT, SPEED_RIGHT);
+  for(let s=0;s<maxSpeed;s++){
+    for(let i=0;i<allParticles.length;i++){
+      // Only update if within speed limit for this particle's side
+      const particle = allParticles[i];
+      const speedLimit = particle.side === 'left' ? SPEED_LEFT : SPEED_RIGHT;
+      
+      if(s < speedLimit){
+        for(let j=i+1;j<allParticles.length;j++) collide(particle,allParticles[j]);
+        particle.update(piston);
+      }
     }
   }
 
   // draw particles
-  particles.forEach(p=>p.draw());
+  allParticles.forEach(p=>p.draw());
 
   requestAnimationFrame(loop);
 }
