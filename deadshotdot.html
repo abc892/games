@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Deadshot Aim Dot</title>
+
 <style>
   html, body {
     margin: 0;
@@ -30,11 +31,11 @@
     transform: translate(-50%, -50%);
     z-index: 9999;
     pointer-events: none;
-    display: block;
   }
 </style>
 </head>
-<body>
+
+<body tabindex="0">
 
 <iframe src="https://deadshot.io"></iframe>
 <div class="aim-dot" id="aimDot"></div>
@@ -43,7 +44,11 @@
   const dot = document.getElementById("aimDot");
   let visible = true;
 
-  document.addEventListener("keydown", (e) => {
+  // Force focus so keys work
+  window.focus();
+  document.body.focus();
+
+  window.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
 
     if (key === "t") {
@@ -51,11 +56,11 @@
       dot.style.display = visible ? "block" : "none";
     }
 
-    if (key === "r") dot.style.background = "red";
-    if (key === "b") dot.style.background = "blue";
-    if (key === "y") dot.style.background = "yellow";
-    if (key === "g") dot.style.background = "green";
-  });
+    if (key === "r") dot.style.backgroundColor = "red";
+    if (key === "b") dot.style.backgroundColor = "blue";
+    if (key === "y") dot.style.backgroundColor = "yellow";
+    if (key === "g") dot.style.backgroundColor = "lime";
+  }, true); // 👈 CAPTURE MODE
 </script>
 
 </body>
