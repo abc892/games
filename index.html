@@ -95,6 +95,23 @@
       100% { opacity: 1; }
     }
     .loading { color: #aaa; font-style: italic; }
+
+    /* NEW badge */
+    .new-badge {
+      display: inline-block;
+      background: #ff4444;
+      color: white;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 8px;
+      font-weight: bold;
+      animation: glow 2s infinite;
+    }
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 5px #ff4444; }
+      50% { box-shadow: 0 0 15px #ff4444; }
+    }
   </style>
 </head>
 
@@ -105,10 +122,15 @@
   <h3>📝 Patch Notes</h3>
   <div class="patch-notes-content">
     <strong>Latest Updates:</strong><br>
+    • Added Cosmic Explorer 3D Space Game 🚀<br>
+    • Firebase user authentication & leaderboard<br>
+    • Survival timer & crystal collection<br>
+    • Advanced graphics with shadows & particles<br>
+    <br>
+    <strong>Previous:</strong><br>
     • Added Gravity Ball Space Game 🌌<br>
     • Multiplayer system (Firebase powered)<br>
     • Infinite universe with planets & black hole<br>
-    • Mini-map navigation<br>
     <br>
     <strong>System:</strong><br>
     • Real-time online user counter<br>
@@ -123,13 +145,19 @@
 
 <div class="game-links">
 
-  <!-- Deadshot.io -->
-<div class="game-container">
-  <h2>🎯 Deadshot.io</h2>
-  <p>Deadshot.io game with a centre dot</p>
-  <a href="deadshotdot.html" class="play-btn">Play Deadshot.io</a>
-</div>
+  <!-- Cosmic Explorer -->
+  <div class="game-container">
+    <h2>🚀 Cosmic Explorer <span class="new-badge">NEW</span></h2>
+    <p>Epic 3D space adventure with leaderboards & user accounts</p>
+    <a href="cosmic-explorer-ultimate.html" class="play-btn">Play Cosmic Explorer</a>
+  </div>
 
+  <!-- Deadshot.io -->
+  <div class="game-container">
+    <h2>🎯 Deadshot.io</h2>
+    <p>Deadshot.io game with a centre dot</p>
+    <a href="deadshotdot.html" class="play-btn">Play Deadshot.io</a>
+  </div>
 
   <!-- Car Simulator -->
   <div class="game-container">
@@ -250,5 +278,3 @@
 
 </body>
 </html>
-
-
