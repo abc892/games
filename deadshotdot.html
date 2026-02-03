@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Deadshot.io</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Deadshot Aim Dot</title>
 <style>
   html, body {
     margin: 0;
@@ -21,7 +19,6 @@
     border: none;
   }
 
-  /* Aim Dot */
   .aim-dot {
     position: fixed;
     top: 50%;
@@ -33,10 +30,10 @@
     transform: translate(-50%, -50%);
     z-index: 9999;
     pointer-events: none;
+    display: block;
   }
 </style>
 </head>
-
 <body>
 
 <iframe src="https://deadshot.io"></iframe>
@@ -46,7 +43,7 @@
   const dot = document.getElementById("aimDot");
   let visible = true;
 
-  document.addEventListener("keydown", e => {
+  document.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
 
     if (key === "t") {
