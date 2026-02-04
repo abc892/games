@@ -348,7 +348,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, set, get, update, remove, onValue, query, orderByChild, limitToLast } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getDatabase, ref, set, get, update, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
         
         // Firebase configuration
         const firebaseConfig = {
@@ -592,7 +592,8 @@
             loading.style.display = 'block';
             leaderboardList.innerHTML = '';
             
-            const leaderboardRef = query(ref(database, 'users'), orderByChild('bestTime'), limitToLast(50));
+            // Get all users without using orderByChild to avoid index requirement
+            const leaderboardRef = ref(database, 'users');
             
             get(leaderboardRef).then((snapshot) => {
                 loading.style.display = 'none';
@@ -610,9 +611,11 @@
                         }
                     });
                     
+                    // Sort by best time (highest first) and limit to top 50
                     users.sort((a, b) => b.bestTime - a.bestTime);
+                    const topUsers = users.slice(0, 50);
                     
-                    users.forEach((user, index) => {
+                    topUsers.forEach((user, index) => {
                         const entry = document.createElement('div');
                         entry.className = 'leaderboard-entry';
                         if (user.id === gameState.userId) {
@@ -626,7 +629,7 @@
                         leaderboardList.appendChild(entry);
                     });
                     
-                    if (users.length === 0) {
+                    if (topUsers.length === 0) {
                         leaderboardList.innerHTML = '<div style="text-align: center; color: #0ff; padding: 20px;">No records yet. Be the first!</div>';
                     }
                 } else {
@@ -909,22 +912,9 @@
         
         // Input handling
         const keys = {};
-        const mouse = { x: 0, y: 0, deltaX: 0, deltaY: 0 };
-        let lastMouseX = 0, lastMouseY = 0;
         
         document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
         document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-        
-        document.addEventListener('mousemove', (e) => {
-            const deltaX = e.clientX - lastMouseX;
-            const deltaY = e.clientY - lastMouseY;
-            
-            mouse.deltaX = deltaX * 0.003; // Increased sensitivity
-            mouse.deltaY = deltaY * 0.003;
-            
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-        });
         
         // Game loop
         let lastTime = Date.now();
@@ -990,16 +980,10 @@
             // Rotation
             if (keys['a']) shipGroup.rotation.y += 0.05;
             if (keys['d']) shipGroup.rotation.y -= 0.05;
+            if (keys['t']) shipGroup.rotation.x += 0.05; // Turn up
+            if (keys['g']) shipGroup.rotation.x -= 0.05; // Turn down
             if (keys['q']) shipGroup.rotation.z += 0.05;
             if (keys['e']) shipGroup.rotation.z -= 0.05;
-            
-            // Mouse look (improved sensitivity)
-            shipGroup.rotation.y += mouse.deltaX * 2;
-            shipGroup.rotation.x += mouse.deltaY * 2;
-            
-            // Reset mouse delta
-            mouse.deltaX *= 0.8;
-            mouse.deltaY *= 0.8;
             
             // Clamp pitch
             shipGroup.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, shipGroup.rotation.x));
