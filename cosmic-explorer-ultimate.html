@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosmic Explorer - Ultimate Edition</title>
+    <title>Snake Master - Ultimate Edition</title>
     <style>
         * {
             margin: 0;
@@ -13,14 +13,20 @@
         
         body {
             overflow: hidden;
-            background: #000;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             font-family: 'Courier New', monospace;
         }
         
         #gameCanvas {
             display: block;
-            width: 100vw;
-            height: 100vh;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #0f3460;
+            border: 4px solid #00ff88;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
         }
         
         .screen {
@@ -41,81 +47,88 @@
         }
         
         .menu-container {
-            background: rgba(0, 20, 40, 0.9);
-            border: 2px solid #0ff;
-            border-radius: 15px;
+            background: rgba(15, 52, 96, 0.95);
+            border: 3px solid #00ff88;
+            border-radius: 20px;
             padding: 40px;
             max-width: 500px;
             width: 90%;
-            box-shadow: 0 0 30px #0ff;
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.6);
         }
         
         .menu-title {
-            color: #0ff;
-            font-size: 36px;
+            color: #00ff88;
+            font-size: 42px;
             text-align: center;
             margin-bottom: 30px;
-            text-shadow: 0 0 20px #0ff;
+            text-shadow: 0 0 20px #00ff88;
+            animation: glow 2s infinite;
+        }
+        
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px #00ff88; }
+            50% { text-shadow: 0 0 40px #00ff88, 0 0 60px #00ff88; }
         }
         
         .menu-btn {
             width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            background: linear-gradient(135deg, #0ff, #f0f);
+            padding: 18px;
+            margin: 12px 0;
+            background: linear-gradient(135deg, #00ff88, #00d4aa);
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             color: #000;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
             font-family: 'Courier New', monospace;
+            text-transform: uppercase;
         }
         
         .menu-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 20px #0ff;
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.8);
         }
         
         .menu-btn.danger {
-            background: linear-gradient(135deg, #f00, #f0f);
+            background: linear-gradient(135deg, #ff4757, #ff6348);
         }
         
         input[type="text"] {
             width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            background: rgba(0, 255, 255, 0.1);
-            border: 2px solid #0ff;
-            border-radius: 8px;
-            color: #0ff;
-            font-size: 16px;
+            padding: 18px;
+            margin: 12px 0;
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            color: #00ff88;
+            font-size: 18px;
             font-family: 'Courier New', monospace;
         }
         
         input[type="text"]::placeholder {
-            color: rgba(0, 255, 255, 0.5);
+            color: rgba(0, 255, 136, 0.5);
         }
         
         #hud {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #0ff;
-            font-size: 18px;
-            text-shadow: 0 0 10px #0ff;
+            top: 30px;
+            left: 30px;
+            color: #00ff88;
+            font-size: 24px;
+            text-shadow: 0 0 15px #00ff88;
             z-index: 100;
             pointer-events: none;
         }
         
         #timer {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            color: #ff0;
+            top: 30px;
+            right: 30px;
+            color: #ffd93d;
             font-size: 32px;
-            text-shadow: 0 0 15px #ff0;
+            text-shadow: 0 0 20px #ffd93d;
             z-index: 100;
             pointer-events: none;
             font-weight: bold;
@@ -123,42 +136,28 @@
         
         #pauseBtn {
             position: absolute;
-            top: 80px;
-            right: 20px;
-            padding: 10px 20px;
-            background: rgba(0, 255, 255, 0.3);
-            border: 2px solid #0ff;
-            border-radius: 5px;
-            color: #0ff;
-            font-size: 16px;
+            top: 100px;
+            right: 30px;
+            padding: 12px 30px;
+            background: rgba(0, 255, 136, 0.3);
+            border: 3px solid #00ff88;
+            border-radius: 8px;
+            color: #00ff88;
+            font-size: 18px;
             cursor: pointer;
             z-index: 100;
             font-family: 'Courier New', monospace;
             transition: all 0.3s;
+            font-weight: bold;
         }
         
         #pauseBtn:hover {
-            background: rgba(0, 255, 255, 0.5);
-            box-shadow: 0 0 15px #0ff;
-        }
-        
-        #message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #0ff;
-            font-size: 24px;
-            text-shadow: 0 0 20px #0ff;
-            z-index: 100;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
+            background: rgba(0, 255, 136, 0.5);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
         }
         
         .leaderboard-list {
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
             margin-top: 20px;
         }
@@ -166,39 +165,42 @@
         .leaderboard-entry {
             display: flex;
             justify-content: space-between;
-            padding: 15px;
-            margin: 5px 0;
-            background: rgba(0, 255, 255, 0.1);
-            border: 1px solid #0ff;
-            border-radius: 5px;
-            color: #0ff;
+            padding: 18px;
+            margin: 8px 0;
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            color: #00ff88;
+            font-size: 16px;
         }
         
         .leaderboard-entry.current-user {
-            background: rgba(255, 0, 255, 0.2);
-            border-color: #f0f;
-            color: #f0f;
+            background: rgba(255, 215, 61, 0.2);
+            border-color: #ffd93d;
+            color: #ffd93d;
         }
         
         .rank {
             font-weight: bold;
             margin-right: 15px;
+            font-size: 20px;
         }
         
         .stats-container {
             margin: 20px 0;
-            padding: 20px;
-            background: rgba(0, 255, 255, 0.1);
-            border: 1px solid #0ff;
-            border-radius: 8px;
-            color: #0ff;
+            padding: 25px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            color: #00ff88;
         }
         
         .stat-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+            font-size: 16px;
         }
         
         .stat-row:last-child {
@@ -207,20 +209,20 @@
         
         .loading {
             text-align: center;
-            color: #0ff;
+            color: #00ff88;
             font-size: 18px;
             margin: 20px 0;
         }
         
         .name-change-info {
-            color: #ff0;
-            font-size: 12px;
+            color: #ffd93d;
+            font-size: 14px;
             text-align: center;
             margin-top: 10px;
         }
 
         ::-webkit-scrollbar {
-            width: 10px;
+            width: 12px;
         }
 
         ::-webkit-scrollbar-track {
@@ -228,12 +230,19 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #0ff;
-            border-radius: 5px;
+            background: #00ff88;
+            border-radius: 6px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #0cc;
+            background: #00d4aa;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #00d4aa;
+            font-size: 16px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -243,22 +252,18 @@
     <!-- Welcome Screen -->
     <div id="welcomeScreen" class="screen active">
         <div class="menu-container">
-            <div class="menu-title">COSMIC EXPLORER</div>
-            <div style="color: #0ff; text-align: center; margin-bottom: 20px;">
-                Welcome, Space Explorer!
-            </div>
+            <div class="menu-title">🐍 SNAKE MASTER</div>
+            <div class="subtitle">Enter the Arena</div>
             <input type="text" id="nameInput" placeholder="Enter your name" maxlength="20">
-            <button class="menu-btn" onclick="saveUserName()">START ADVENTURE</button>
+            <button class="menu-btn" onclick="saveUserName()">START GAME</button>
         </div>
     </div>
     
     <!-- Home Screen -->
     <div id="homeScreen" class="screen">
         <div class="menu-container">
-            <div class="menu-title">COSMIC EXPLORER</div>
-            <div style="color: #f0f; text-align: center; margin-bottom: 20px; font-size: 20px;">
-                Welcome back, <span id="welcomeName"></span>!
-            </div>
+            <div class="menu-title">🐍 SNAKE MASTER</div>
+            <div class="subtitle">Welcome back, <span id="welcomeName"></span>!</div>
             <button class="menu-btn" onclick="startGame()">PLAY</button>
             <button class="menu-btn" onclick="showLeaderboard()">LEADERBOARD</button>
             <button class="menu-btn" onclick="showSettings()">SETTINGS</button>
@@ -268,8 +273,9 @@
     <!-- Pause Screen -->
     <div id="pauseScreen" class="screen">
         <div class="menu-container">
-            <div class="menu-title">PAUSED</div>
-            <div style="color: #0ff; text-align: center; margin-bottom: 20px;">
+            <div class="menu-title">⏸ PAUSED</div>
+            <div style="color: #00ff88; text-align: center; margin-bottom: 20px; font-size: 20px;">
+                Score: <span id="pauseScore"></span><br>
                 Time: <span id="pauseTime"></span>s
             </div>
             <button class="menu-btn" onclick="resumeGame()">RESUME</button>
@@ -280,12 +286,13 @@
     <!-- Game Over Screen -->
     <div id="gameOverScreen" class="screen">
         <div class="menu-container">
-            <div class="menu-title">GAME OVER</div>
-            <div style="color: #f00; text-align: center; margin: 20px 0; font-size: 24px;">
-                You survived: <span id="finalTime"></span>s
+            <div class="menu-title">💀 GAME OVER</div>
+            <div style="color: #ff4757; text-align: center; margin: 20px 0; font-size: 28px;">
+                Final Score: <span id="finalScore"></span>
             </div>
-            <div style="color: #0ff; text-align: center; margin-bottom: 20px;">
-                Crystals Collected: <span id="finalCrystals"></span>
+            <div style="color: #00ff88; text-align: center; margin-bottom: 20px; font-size: 18px;">
+                Survival Time: <span id="finalTime"></span>s<br>
+                Snake Length: <span id="finalLength"></span>
             </div>
             <button class="menu-btn" onclick="playAgain()">PLAY AGAIN</button>
             <button class="menu-btn" onclick="backToHome()">HOME</button>
@@ -294,8 +301,9 @@
     
     <!-- Leaderboard Screen -->
     <div id="leaderboardScreen" class="screen">
-        <div class="menu-container" style="max-width: 600px;">
-            <div class="menu-title">LEADERBOARD</div>
+        <div class="menu-container" style="max-width: 650px;">
+            <div class="menu-title">🏆 LEADERBOARD</div>
+            <div class="subtitle">Top Players by Score</div>
             <div class="loading" id="leaderboardLoading">Loading...</div>
             <div class="leaderboard-list" id="leaderboardList"></div>
             <button class="menu-btn" onclick="backToHome()">BACK</button>
@@ -305,23 +313,31 @@
     <!-- Settings Screen -->
     <div id="settingsScreen" class="screen">
         <div class="menu-container">
-            <div class="menu-title">SETTINGS</div>
+            <div class="menu-title">⚙ SETTINGS</div>
             <div class="stats-container">
                 <div class="stat-row">
                     <span>Player Name:</span>
                     <span id="settingsName"></span>
                 </div>
                 <div class="stat-row">
-                    <span>Best Time:</span>
+                    <span>🏆 Highest Score:</span>
+                    <span id="settingsHighScore">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>⏱ Longest Time:</span>
                     <span id="settingsBestTime">0s</span>
                 </div>
                 <div class="stat-row">
-                    <span>Total Crystals:</span>
-                    <span id="settingsTotalCrystals">0</span>
+                    <span>📊 Average Score:</span>
+                    <span id="settingsAvgScore">0</span>
                 </div>
                 <div class="stat-row">
-                    <span>Games Played:</span>
+                    <span>🎮 Games Played:</span>
                     <span id="settingsGamesPlayed">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>📈 Total Score:</span>
+                    <span id="settingsTotalScore">0</span>
                 </div>
             </div>
             <input type="text" id="newNameInput" placeholder="Change your name" maxlength="20">
@@ -334,21 +350,16 @@
     
     <!-- Game HUD -->
     <div id="hud" style="display: none;">
-        <div>VELOCITY: <span id="velocity">0</span></div>
-        <div>FUEL: <span id="fuel">100</span>%</div>
-        <div>HEALTH: <span id="health">100</span>%</div>
-        <div>CRYSTALS: <span id="crystalCount">0</span></div>
+        <div>SCORE: <span id="score">0</span></div>
+        <div>LENGTH: <span id="length">1</span></div>
     </div>
     
     <div id="timer" style="display: none;">0s</div>
-    <div id="fps" style="position: absolute; top: 70px; right: 20px; color: #0f0; font-size: 16px; text-shadow: 0 0 10px #0f0; z-index: 100; pointer-events: none; display: none;">FPS: 60</div>
     <button id="pauseBtn" style="display: none;" onclick="pauseGame()">PAUSE</button>
-    <div id="message"></div>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, set, get, update, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getDatabase, ref, set, get, update, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
         
         // Firebase configuration
         const firebaseConfig = {
@@ -366,47 +377,49 @@
         
         // Game State
         let gameState = {
-            velocity: 0,
-            fuel: 100,
-            health: 100,
-            crystals: 0,
-            maxVelocity: 50,
-            acceleration: 0.2,
-            boostMultiplier: 2,
+            score: 0,
             isPlaying: false,
             isPaused: false,
             startTime: 0,
-            elapsedTime: 0,
             userId: null,
-            userName: null
+            userName: null,
+            snake: [],
+            food: null,
+            direction: null,
+            nextDirection: null
         };
         
-        let scene, camera, renderer, shipGroup, stars, crystals = [], asteroids = [];
-        let particleSystem, particleVelocities = [];
-        let animationId = null;
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20;
+        const tileCount = 30;
+        canvas.width = gridSize * tileCount;
+        canvas.height = gridSize * tileCount;
+        
+        let gameInterval = null;
         
         // User Management
         function generateUserId() {
-            return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            return 'snake_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
         
         function checkExistingUser() {
-            const userId = localStorage.getItem('cosmicExplorerUserId');
+            const userId = localStorage.getItem('snakeMasterUserId');
             if (userId) {
                 gameState.userId = userId;
-                get(ref(database, 'users/' + userId)).then((snapshot) => {
+                get(ref(database, 'snakeUsers/' + userId)).then((snapshot) => {
                     if (snapshot.exists()) {
                         const userData = snapshot.val();
                         gameState.userName = userData.name;
                         showScreen('homeScreen');
                         document.getElementById('welcomeName').textContent = userData.name;
                     } else {
-                        localStorage.removeItem('cosmicExplorerUserId');
+                        localStorage.removeItem('snakeMasterUserId');
                         showScreen('welcomeScreen');
                     }
                 }).catch((error) => {
                     console.error('Firebase Error:', error);
-                    showMessage('⚠️ Database connection error. Please check Firebase rules.', 5000);
                     showScreen('welcomeScreen');
                 });
             } else {
@@ -417,7 +430,7 @@
         window.saveUserName = function() {
             const name = document.getElementById('nameInput').value.trim();
             if (!name) {
-                showMessage('Please enter a name!', 2000);
+                alert('Please enter a name!');
                 return;
             }
             
@@ -427,32 +440,32 @@
             
             const userData = {
                 name: name,
+                highScore: 0,
                 bestTime: 0,
-                totalCrystals: 0,
+                totalScore: 0,
                 gamesPlayed: 0,
                 createdAt: Date.now(),
                 lastNameChange: Date.now()
             };
             
-            set(ref(database, 'users/' + userId), userData).then(() => {
-                localStorage.setItem('cosmicExplorerUserId', userId);
+            set(ref(database, 'snakeUsers/' + userId), userData).then(() => {
+                localStorage.setItem('snakeMasterUserId', userId);
                 document.getElementById('welcomeName').textContent = name;
                 showScreen('homeScreen');
             }).catch((error) => {
                 console.error('Firebase Error:', error);
-                showMessage('⚠️ Database connection error. Check Firebase rules!', 5000);
-                alert('Firebase Error: ' + error.message + '\n\nPlease update your Firebase Realtime Database rules to:\n\n{\n  "rules": {\n    ".read": true,\n    ".write": true\n  }\n}');
+                alert('Database connection error: ' + error.message);
             });
         };
         
         window.changeName = function() {
             const newName = document.getElementById('newNameInput').value.trim();
             if (!newName) {
-                showMessage('Please enter a new name!', 2000);
+                alert('Please enter a new name!');
                 return;
             }
             
-            get(ref(database, 'users/' + gameState.userId)).then((snapshot) => {
+            get(ref(database, 'snakeUsers/' + gameState.userId)).then((snapshot) => {
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     const lastChange = userData.lastNameChange || 0;
@@ -460,11 +473,11 @@
                     
                     if (daysSinceChange < 10) {
                         const daysRemaining = Math.ceil(10 - daysSinceChange);
-                        showMessage(`You can change your name in ${daysRemaining} days!`, 3000);
+                        alert(`You can change your name in ${daysRemaining} days!`);
                         return;
                     }
                     
-                    update(ref(database, 'users/' + gameState.userId), {
+                    update(ref(database, 'snakeUsers/' + gameState.userId), {
                         name: newName,
                         lastNameChange: Date.now()
                     }).then(() => {
@@ -472,30 +485,30 @@
                         document.getElementById('welcomeName').textContent = newName;
                         document.getElementById('settingsName').textContent = newName;
                         document.getElementById('newNameInput').value = '';
-                        showMessage('Name changed successfully!', 2000);
+                        alert('Name changed successfully!');
                         loadSettings();
                     }).catch((error) => {
                         console.error('Firebase Error:', error);
-                        showMessage('Error updating name: ' + error.message, 3000);
+                        alert('Error updating name: ' + error.message);
                     });
                 }
             }).catch((error) => {
                 console.error('Firebase Error:', error);
-                showMessage('Error loading user data: ' + error.message, 3000);
+                alert('Error loading user data: ' + error.message);
             });
         };
         
         window.deleteAccount = function() {
             if (confirm('Are you sure you want to delete your account? This cannot be undone!')) {
-                remove(ref(database, 'users/' + gameState.userId)).then(() => {
-                    localStorage.removeItem('cosmicExplorerUserId');
-                    showMessage('Account deleted!', 2000);
+                remove(ref(database, 'snakeUsers/' + gameState.userId)).then(() => {
+                    localStorage.removeItem('snakeMasterUserId');
+                    alert('Account deleted!');
                     setTimeout(() => {
                         location.reload();
-                    }, 2000);
+                    }, 1000);
                 }).catch((error) => {
                     console.error('Firebase Error:', error);
-                    showMessage('Error deleting account: ' + error.message, 3000);
+                    alert('Error deleting account: ' + error.message);
                 });
             }
         };
@@ -513,7 +526,6 @@
             if (screenId === 'homeScreen') {
                 document.getElementById('hud').style.display = 'none';
                 document.getElementById('timer').style.display = 'none';
-                document.getElementById('fps').style.display = 'none';
                 document.getElementById('pauseBtn').style.display = 'none';
             }
         }
@@ -522,28 +534,25 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('hud').style.display = 'block';
             document.getElementById('timer').style.display = 'block';
-            document.getElementById('fps').style.display = 'block';
             document.getElementById('pauseBtn').style.display = 'block';
             
             initGame();
             gameState.isPlaying = true;
             gameState.isPaused = false;
             gameState.startTime = Date.now();
-            gameState.health = 100;
-            gameState.fuel = 100;
-            gameState.crystals = 0;
-            gameState.velocity = 0;
+            gameState.score = 0;
             
-            if (!animationId) {
-                animate();
-            }
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, 100);
         };
         
         window.pauseGame = function() {
             if (!gameState.isPlaying || gameState.isPaused) return;
             
             gameState.isPaused = true;
+            clearInterval(gameInterval);
             const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+            document.getElementById('pauseScore').textContent = gameState.score;
             document.getElementById('pauseTime').textContent = elapsed;
             showScreen('pauseScreen');
         };
@@ -553,17 +562,14 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('hud').style.display = 'block';
             document.getElementById('timer').style.display = 'block';
-            document.getElementById('fps').style.display = 'block';
             document.getElementById('pauseBtn').style.display = 'block';
+            gameInterval = setInterval(gameLoop, 100);
         };
         
         window.leaveGame = function() {
             gameState.isPlaying = false;
             gameState.isPaused = false;
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
+            if (gameInterval) clearInterval(gameInterval);
             showScreen('homeScreen');
         };
         
@@ -592,8 +598,7 @@
             loading.style.display = 'block';
             leaderboardList.innerHTML = '';
             
-            // Get all users without using orderByChild to avoid index requirement
-            const leaderboardRef = ref(database, 'users');
+            const leaderboardRef = ref(database, 'snakeUsers');
             
             get(leaderboardRef).then((snapshot) => {
                 loading.style.display = 'none';
@@ -602,17 +607,16 @@
                     const users = [];
                     snapshot.forEach((childSnapshot) => {
                         const userData = childSnapshot.val();
-                        if (userData.bestTime > 0) {
+                        if (userData.highScore > 0) {
                             users.push({
                                 id: childSnapshot.key,
                                 name: userData.name,
-                                bestTime: userData.bestTime
+                                highScore: userData.highScore
                             });
                         }
                     });
                     
-                    // Sort by best time (highest first) and limit to top 50
-                    users.sort((a, b) => b.bestTime - a.bestTime);
+                    users.sort((a, b) => b.highScore - a.highScore);
                     const topUsers = users.slice(0, 50);
                     
                     topUsers.forEach((user, index) => {
@@ -624,32 +628,38 @@
                         
                         entry.innerHTML = `
                             <span><span class="rank">#${index + 1}</span>${user.name}</span>
-                            <span>${user.bestTime}s</span>
+                            <span>${user.highScore} points</span>
                         `;
                         leaderboardList.appendChild(entry);
                     });
                     
                     if (topUsers.length === 0) {
-                        leaderboardList.innerHTML = '<div style="text-align: center; color: #0ff; padding: 20px;">No records yet. Be the first!</div>';
+                        leaderboardList.innerHTML = '<div style="text-align: center; color: #00ff88; padding: 20px;">No records yet. Be the first!</div>';
                     }
                 } else {
-                    leaderboardList.innerHTML = '<div style="text-align: center; color: #0ff; padding: 20px;">No records yet. Be the first!</div>';
+                    leaderboardList.innerHTML = '<div style="text-align: center; color: #00ff88; padding: 20px;">No records yet. Be the first!</div>';
                 }
             }).catch((error) => {
                 loading.style.display = 'none';
                 console.error('Firebase Error:', error);
-                leaderboardList.innerHTML = '<div style="text-align: center; color: #f00; padding: 20px;">Error loading leaderboard: ' + error.message + '</div>';
+                leaderboardList.innerHTML = '<div style="text-align: center; color: #ff4757; padding: 20px;">Error loading leaderboard</div>';
             });
         }
         
         function loadSettings() {
-            get(ref(database, 'users/' + gameState.userId)).then((snapshot) => {
+            get(ref(database, 'snakeUsers/' + gameState.userId)).then((snapshot) => {
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     document.getElementById('settingsName').textContent = userData.name;
+                    document.getElementById('settingsHighScore').textContent = userData.highScore || 0;
                     document.getElementById('settingsBestTime').textContent = (userData.bestTime || 0) + 's';
-                    document.getElementById('settingsTotalCrystals').textContent = userData.totalCrystals || 0;
                     document.getElementById('settingsGamesPlayed').textContent = userData.gamesPlayed || 0;
+                    document.getElementById('settingsTotalScore').textContent = userData.totalScore || 0;
+                    
+                    const avgScore = userData.gamesPlayed > 0 
+                        ? Math.round(userData.totalScore / userData.gamesPlayed) 
+                        : 0;
+                    document.getElementById('settingsAvgScore').textContent = avgScore;
                     
                     const lastChange = userData.lastNameChange || 0;
                     const daysSinceChange = (Date.now() - lastChange) / (1000 * 60 * 60 * 24);
@@ -663,31 +673,37 @@
                 }
             }).catch((error) => {
                 console.error('Firebase Error:', error);
-                showMessage('Error loading settings: ' + error.message, 3000);
             });
         }
         
         function gameOver() {
             gameState.isPlaying = false;
+            clearInterval(gameInterval);
+            
             const survivalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
             
+            document.getElementById('finalScore').textContent = gameState.score;
             document.getElementById('finalTime').textContent = survivalTime;
-            document.getElementById('finalCrystals').textContent = gameState.crystals;
+            document.getElementById('finalLength').textContent = gameState.snake.length;
             
             // Update Firebase
-            get(ref(database, 'users/' + gameState.userId)).then((snapshot) => {
+            get(ref(database, 'snakeUsers/' + gameState.userId)).then((snapshot) => {
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     const updates = {
                         gamesPlayed: (userData.gamesPlayed || 0) + 1,
-                        totalCrystals: (userData.totalCrystals || 0) + gameState.crystals
+                        totalScore: (userData.totalScore || 0) + gameState.score
                     };
+                    
+                    if (gameState.score > (userData.highScore || 0)) {
+                        updates.highScore = gameState.score;
+                    }
                     
                     if (survivalTime > (userData.bestTime || 0)) {
                         updates.bestTime = survivalTime;
                     }
                     
-                    update(ref(database, 'users/' + gameState.userId), updates).catch((error) => {
+                    update(ref(database, 'snakeUsers/' + gameState.userId), updates).catch((error) => {
                         console.error('Firebase Error:', error);
                     });
                 }
@@ -698,420 +714,194 @@
             showScreen('gameOverScreen');
         }
         
-        // Show message
-        function showMessage(text, duration = 2000) {
-            const msgEl = document.getElementById('message');
-            msgEl.textContent = text;
-            msgEl.style.opacity = '1';
-            setTimeout(() => {
-                msgEl.style.opacity = '0';
-            }, duration);
-        }
-        
-        // Initialize Game
+        // Snake Game Logic
         function initGame() {
-            // Setup scene
-            if (!scene) {
-                scene = new THREE.Scene();
-                scene.fog = new THREE.FogExp2(0x000000, 0.00015);
-            }
-            
-            // Camera
-            if (!camera) {
-                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
-                camera.position.set(0, 5, 10);
-            }
-            
-            // Renderer
-            if (!renderer) {
-                const canvas = document.getElementById('gameCanvas');
-                renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                renderer.setPixelRatio(window.devicePixelRatio);
-            }
-            
-            // Clear previous objects
-            if (shipGroup) scene.remove(shipGroup);
-            crystals.forEach(c => scene.remove(c));
-            asteroids.forEach(a => scene.remove(a));
-            crystals = [];
-            asteroids = [];
-            
-            // Lighting
-            if (!scene.getObjectByName('ambientLight')) {
-                const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
-                ambientLight.name = 'ambientLight';
-                scene.add(ambientLight);
+            gameState.snake = [{x: 15, y: 15}];
+            gameState.direction = {x: 1, y: 0};
+            gameState.nextDirection = {x: 1, y: 0};
+            spawnFood();
+            updateHUD();
+        }
+        
+        function spawnFood() {
+            let validPosition = false;
+            while (!validPosition) {
+                gameState.food = {
+                    x: Math.floor(Math.random() * tileCount),
+                    y: Math.floor(Math.random() * tileCount)
+                };
                 
-                const sunLight = new THREE.DirectionalLight(0xffffff, 1);
-                sunLight.position.set(100, 100, 100);
-                sunLight.castShadow = true;
-                sunLight.shadow.camera.left = -100;
-                sunLight.shadow.camera.right = 100;
-                sunLight.shadow.camera.top = 100;
-                sunLight.shadow.camera.bottom = -100;
-                sunLight.name = 'sunLight';
-                scene.add(sunLight);
-            }
-            
-            // Create spaceship
-            shipGroup = new THREE.Group();
-            
-            const bodyGeom = new THREE.ConeGeometry(1, 4, 8);
-            const bodyMat = new THREE.MeshPhongMaterial({ 
-                color: 0x00ffff, 
-                emissive: 0x004444,
-                shininess: 100
-            });
-            const body = new THREE.Mesh(bodyGeom, bodyMat);
-            body.rotation.x = Math.PI / 2;
-            body.castShadow = true;
-            shipGroup.add(body);
-            
-            const wingGeom = new THREE.BoxGeometry(6, 0.2, 2);
-            const wingMat = new THREE.MeshPhongMaterial({ 
-                color: 0xff00ff,
-                emissive: 0x440044
-            });
-            const wings = new THREE.Mesh(wingGeom, wingMat);
-            wings.position.z = -0.5;
-            wings.castShadow = true;
-            shipGroup.add(wings);
-            
-            const engineGeom = new THREE.CylinderGeometry(0.3, 0.5, 1, 16);
-            const engineMat = new THREE.MeshBasicMaterial({ 
-                color: 0xff6600,
-                transparent: true,
-                opacity: 0.8
-            });
-            const engine = new THREE.Mesh(engineGeom, engineMat);
-            engine.rotation.x = Math.PI / 2;
-            engine.position.z = 2;
-            engine.name = 'engine';
-            shipGroup.add(engine);
-            
-            shipGroup.position.set(0, 5, 0);
-            scene.add(shipGroup);
-            
-            // Infinite Starfield
-            if (!stars) {
-                const starGeometry = new THREE.BufferGeometry();
-                const starVertices = [];
-                for (let i = 0; i < 5000; i++) {
-                    const x = (Math.random() - 0.5) * 4000;
-                    const y = (Math.random() - 0.5) * 4000;
-                    const z = (Math.random() - 0.5) * 4000;
-                    starVertices.push(x, y, z);
-                }
-                starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-                const starMaterial = new THREE.PointsMaterial({ 
-                    color: 0xffffff, 
-                    size: 2,
-                    transparent: true,
-                    opacity: 0.9
-                });
-                stars = new THREE.Points(starGeometry, starMaterial);
-                scene.add(stars);
-            }
-            
-            // Create crystals
-            const crystalGeom = new THREE.OctahedronGeometry(1.5, 0);
-            for (let i = 0; i < 50; i++) {
-                createCrystal(crystalGeom);
-            }
-            
-            // Create asteroids
-            for (let i = 0; i < 30; i++) {
-                createAsteroid();
-            }
-            
-            // Particle system
-            if (!particleSystem) {
-                const particleGeometry = new THREE.BufferGeometry();
-                const particleCount = 200;
-                const particlePositions = new Float32Array(particleCount * 3);
-                particleVelocities = [];
-                
-                for (let i = 0; i < particleCount; i++) {
-                    particlePositions[i * 3] = 0;
-                    particlePositions[i * 3 + 1] = 0;
-                    particlePositions[i * 3 + 2] = 0;
-                    particleVelocities.push({ x: 0, y: 0, z: 0, life: 0 });
-                }
-                
-                particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-                const particleMaterial = new THREE.PointsMaterial({
-                    color: 0xff6600,
-                    size: 1,
-                    transparent: true,
-                    opacity: 0.9,
-                    blending: THREE.AdditiveBlending
-                });
-                particleSystem = new THREE.Points(particleGeometry, particleMaterial);
-                scene.add(particleSystem);
+                validPosition = !gameState.snake.some(segment => 
+                    segment.x === gameState.food.x && segment.y === gameState.food.y
+                );
             }
         }
         
-        function createCrystal(geom) {
-            const colors = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const crystalMat = new THREE.MeshPhongMaterial({ 
-                color: color,
-                emissive: color,
-                emissiveIntensity: 0.6,
-                shininess: 100,
-                transparent: true,
-                opacity: 0.95
-            });
-            const crystal = new THREE.Mesh(geom, crystalMat);
+        function gameLoop() {
+            if (!gameState.isPlaying || gameState.isPaused) return;
             
-            crystal.position.set(
-                (Math.random() - 0.5) * 400,
-                (Math.random() - 0.5) * 200,
-                (Math.random() - 0.5) * 400
-            );
+            // Update direction
+            gameState.direction = gameState.nextDirection;
             
-            crystal.userData.rotationSpeed = {
-                x: (Math.random() - 0.5) * 0.04,
-                y: (Math.random() - 0.5) * 0.04
+            // Move snake
+            const head = {
+                x: gameState.snake[0].x + gameState.direction.x,
+                y: gameState.snake[0].y + gameState.direction.y
             };
             
-            scene.add(crystal);
-            crystals.push(crystal);
-        }
-        
-        function createAsteroid() {
-            const size = Math.random() * 4 + 1;
-            const asteroidGeom = new THREE.DodecahedronGeometry(size, 0);
-            const asteroidMat = new THREE.MeshPhongMaterial({ 
-                color: 0x666666,
-                flatShading: true
-            });
-            const asteroid = new THREE.Mesh(asteroidGeom, asteroidMat);
-            
-            asteroid.position.set(
-                (Math.random() - 0.5) * 500,
-                (Math.random() - 0.5) * 250,
-                (Math.random() - 0.5) * 500
-            );
-            
-            asteroid.userData.rotationSpeed = {
-                x: (Math.random() - 0.5) * 0.02,
-                y: (Math.random() - 0.5) * 0.02,
-                z: (Math.random() - 0.5) * 0.02
-            };
-            
-            asteroid.castShadow = true;
-            asteroid.receiveShadow = true;
-            
-            scene.add(asteroid);
-            asteroids.push(asteroid);
-        }
-        
-        // Input handling
-        const keys = {};
-        
-        document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
-        document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-        
-        // Game loop
-        let lastTime = Date.now();
-        let particleIndex = 0;
-        let frameCount = 0;
-        let lastFpsUpdate = Date.now();
-        
-        function animate() {
-            if (!gameState.isPlaying) return;
-            
-            animationId = requestAnimationFrame(animate);
-            
-            if (gameState.isPaused) return;
-            
-            const currentTime = Date.now();
-            const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1); // Cap delta for stability
-            lastTime = currentTime;
-            
-            // FPS Counter
-            frameCount++;
-            if (currentTime - lastFpsUpdate > 500) { // Update FPS every 500ms
-                const fps = Math.round(frameCount / ((currentTime - lastFpsUpdate) / 1000));
-                document.getElementById('fps').textContent = 'FPS: ' + fps;
-                frameCount = 0;
-                lastFpsUpdate = currentTime;
-            }
-            
-            // Update timer
-            const elapsed = Math.floor((currentTime - gameState.startTime) / 1000);
-            document.getElementById('timer').textContent = elapsed + 's';
-            
-            // Fuel drain over time (automatic)
-            gameState.fuel = Math.max(0, gameState.fuel - 0.05);
-            
-            // Check fuel and health
-            if (gameState.fuel <= 0 || gameState.health <= 0) {
+            // Check wall collision
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
                 gameOver();
                 return;
             }
             
-            // Ship controls
-            let targetVelocity = 0;
-            const engine = shipGroup.getObjectByName('engine');
-            
-            if (keys['w'] && gameState.fuel > 0) {
-                targetVelocity = gameState.maxVelocity;
-                gameState.fuel = Math.max(0, gameState.fuel - 0.15);
-            } else if (keys['s']) {
-                targetVelocity = -gameState.maxVelocity * 0.5;
+            // Check self collision
+            if (gameState.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver();
+                return;
             }
             
-            if (keys[' '] && gameState.fuel > 5) {
-                targetVelocity *= gameState.boostMultiplier;
-                gameState.fuel = Math.max(0, gameState.fuel - 0.8);
-                if (engine) engine.material.opacity = 1;
+            gameState.snake.unshift(head);
+            
+            // Check food collision
+            if (head.x === gameState.food.x && head.y === gameState.food.y) {
+                gameState.score += 10;
+                spawnFood();
             } else {
-                if (engine) engine.material.opacity = 0.6;
+                gameState.snake.pop();
             }
             
-            // Smooth velocity
-            gameState.velocity += (targetVelocity - gameState.velocity) * 0.15;
-            
-            // Rotation
-            if (keys['a']) shipGroup.rotation.y += 0.05;
-            if (keys['d']) shipGroup.rotation.y -= 0.05;
-            if (keys['t']) shipGroup.rotation.x += 0.05; // Turn up
-            if (keys['g']) shipGroup.rotation.x -= 0.05; // Turn down
-            if (keys['q']) shipGroup.rotation.z += 0.05;
-            if (keys['e']) shipGroup.rotation.z -= 0.05;
-            
-            // Clamp pitch
-            shipGroup.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, shipGroup.rotation.x));
-            
-            // Move ship
-            const direction = new THREE.Vector3(0, 0, -1);
-            direction.applyQuaternion(shipGroup.quaternion);
-            shipGroup.position.addScaledVector(direction, gameState.velocity * deltaTime);
-            
-            // Particle trail
-            if (Math.abs(gameState.velocity) > 2) {
-                const positions = particleSystem.geometry.attributes.position.array;
-                
-                const worldPos = new THREE.Vector3();
-                if (engine) {
-                    engine.getWorldPosition(worldPos);
-                    
-                    positions[particleIndex * 3] = worldPos.x;
-                    positions[particleIndex * 3 + 1] = worldPos.y;
-                    positions[particleIndex * 3 + 2] = worldPos.z;
-                    
-                    particleVelocities[particleIndex].life = 1;
-                    
-                    particleIndex = (particleIndex + 1) % particleVelocities.length;
-                }
-                
-                for (let i = 0; i < particleVelocities.length; i++) {
-                    if (particleVelocities[i].life > 0) {
-                        particleVelocities[i].life -= 0.015;
-                        positions[i * 3 + 1] -= 0.2;
-                    }
-                }
-                
-                particleSystem.geometry.attributes.position.needsUpdate = true;
-            }
-            
-            // Update crystals
-            crystals.forEach((crystal, index) => {
-                crystal.rotation.x += crystal.userData.rotationSpeed.x;
-                crystal.rotation.y += crystal.userData.rotationSpeed.y;
-                
-                const distance = crystal.position.distanceTo(shipGroup.position);
-                if (distance < 3.5) {
-                    scene.remove(crystal);
-                    crystals.splice(index, 1);
-                    gameState.crystals++;
-                    gameState.fuel = Math.min(100, gameState.fuel + 15);
-                    showMessage('+CRYSTAL! FUEL +15%', 1000);
-                    
-                    createCrystal(crystal.geometry);
-                }
-                
-                // Respawn if too far
-                if (distance > 600) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const radius = 300 + Math.random() * 100;
-                    crystal.position.set(
-                        shipGroup.position.x + Math.cos(angle) * radius,
-                        shipGroup.position.y + (Math.random() - 0.5) * 100,
-                        shipGroup.position.z + Math.sin(angle) * radius
-                    );
-                }
-            });
-            
-            // Update asteroids
-            asteroids.forEach((asteroid, index) => {
-                asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
-                asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
-                asteroid.rotation.z += asteroid.userData.rotationSpeed.z;
-                
-                const distance = asteroid.position.distanceTo(shipGroup.position);
-                if (distance < (asteroid.geometry.parameters.radius + 2.5)) {
-                    gameState.health -= 10;
-                    showMessage('COLLISION! -10 HEALTH', 1000);
-                    
-                    const pushDirection = shipGroup.position.clone().sub(asteroid.position).normalize();
-                    shipGroup.position.addScaledVector(pushDirection, 8);
-                    
-                    if (gameState.health <= 0) {
-                        gameOver();
-                        return;
-                    }
-                }
-                
-                // Respawn if too far
-                if (distance > 700) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const radius = 350 + Math.random() * 150;
-                    asteroid.position.set(
-                        shipGroup.position.x + Math.cos(angle) * radius,
-                        shipGroup.position.y + (Math.random() - 0.5) * 150,
-                        shipGroup.position.z + Math.sin(angle) * radius
-                    );
-                }
-            });
-            
-            // Camera follow
-            const cameraOffset = new THREE.Vector3(0, 3, 10);
-            cameraOffset.applyQuaternion(shipGroup.quaternion);
-            camera.position.lerp(shipGroup.position.clone().add(cameraOffset), 0.15);
-            camera.lookAt(shipGroup.position);
-            
-            // Update starfield position to follow ship (infinite effect)
-            stars.position.copy(shipGroup.position);
-            
-            // Update HUD
-            document.getElementById('velocity').textContent = Math.abs(gameState.velocity).toFixed(1);
-            document.getElementById('fuel').textContent = Math.max(0, gameState.fuel).toFixed(0);
-            document.getElementById('health').textContent = Math.max(0, gameState.health).toFixed(0);
-            document.getElementById('crystalCount').textContent = gameState.crystals;
-            
-            renderer.render(scene, camera);
+            updateHUD();
+            draw();
         }
         
-        // Window resize
-        window.addEventListener('resize', () => {
-            if (camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(0, 255, 136, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= tileCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * gridSize, 0);
+                ctx.lineTo(i * gridSize, canvas.height);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i * gridSize);
+                ctx.lineTo(canvas.width, i * gridSize);
+                ctx.stroke();
+            }
+            
+            // Draw snake
+            gameState.snake.forEach((segment, index) => {
+                const gradient = ctx.createLinearGradient(
+                    segment.x * gridSize, segment.y * gridSize,
+                    (segment.x + 1) * gridSize, (segment.y + 1) * gridSize
+                );
+                
+                if (index === 0) {
+                    // Head
+                    gradient.addColorStop(0, '#00ff88');
+                    gradient.addColorStop(1, '#00d4aa');
+                } else {
+                    // Body
+                    const alpha = 1 - (index / gameState.snake.length) * 0.5;
+                    gradient.addColorStop(0, `rgba(0, 255, 136, ${alpha})`);
+                    gradient.addColorStop(1, `rgba(0, 212, 170, ${alpha})`);
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(
+                    segment.x * gridSize + 1,
+                    segment.y * gridSize + 1,
+                    gridSize - 2,
+                    gridSize - 2
+                );
+                
+                // Head eyes
+                if (index === 0) {
+                    ctx.fillStyle = '#000';
+                    const eyeSize = 3;
+                    const eyeOffset = 5;
+                    
+                    if (gameState.direction.x !== 0) {
+                        ctx.fillRect(segment.x * gridSize + eyeOffset, segment.y * gridSize + 4, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x * gridSize + eyeOffset, segment.y * gridSize + 12, eyeSize, eyeSize);
+                    } else {
+                        ctx.fillRect(segment.x * gridSize + 4, segment.y * gridSize + eyeOffset, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x * gridSize + 12, segment.y * gridSize + eyeOffset, eyeSize, eyeSize);
+                    }
+                }
+            });
+            
+            // Draw food with glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ff4757';
+            ctx.fillStyle = '#ff4757';
+            ctx.beginPath();
+            ctx.arc(
+                gameState.food.x * gridSize + gridSize / 2,
+                gameState.food.y * gridSize + gridSize / 2,
+                gridSize / 2 - 2,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        
+        function updateHUD() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('length').textContent = gameState.snake.length;
+            
+            const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+            document.getElementById('timer').textContent = elapsed + 's';
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            
+            const key = e.key.toLowerCase();
+            
+            switch(key) {
+                case 'w':
+                case 'arrowup':
+                    if (gameState.direction.y === 0) {
+                        gameState.nextDirection = {x: 0, y: -1};
+                    }
+                    e.preventDefault();
+                    break;
+                case 's':
+                case 'arrowdown':
+                    if (gameState.direction.y === 0) {
+                        gameState.nextDirection = {x: 0, y: 1};
+                    }
+                    e.preventDefault();
+                    break;
+                case 'a':
+                case 'arrowleft':
+                    if (gameState.direction.x === 0) {
+                        gameState.nextDirection = {x: -1, y: 0};
+                    }
+                    e.preventDefault();
+                    break;
+                case 'd':
+                case 'arrowright':
+                    if (gameState.direction.x === 0) {
+                        gameState.nextDirection = {x: 1, y: 0};
+                    }
+                    e.preventDefault();
+                    break;
             }
         });
         
         // Initialize
         checkExistingUser();
         
-        // Make functions global
-        window.showMessage = showMessage;
     </script>
 </body>
 </html>
