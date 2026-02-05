@@ -40,6 +40,7 @@
             justify-content: center;
             background: rgba(0, 0, 0, 0.95);
             z-index: 200;
+            overflow-y: auto;
         }
         
         .screen.active {
@@ -54,6 +55,7 @@
             max-width: 500px;
             width: 90%;
             box-shadow: 0 0 40px rgba(0, 255, 136, 0.6);
+            margin: 20px;
         }
         
         .menu-title {
@@ -93,6 +95,15 @@
         
         .menu-btn.danger {
             background: linear-gradient(135deg, #ff4757, #ff6348);
+        }
+        
+        .menu-btn.secondary {
+            background: linear-gradient(135deg, #5f27cd, #341f97);
+        }
+        
+        .menu-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         input[type="text"] {
@@ -156,13 +167,13 @@
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
         }
         
-        .leaderboard-list {
+        .leaderboard-list, .player-list, .skin-grid {
             max-height: 450px;
             overflow-y: auto;
             margin-top: 20px;
         }
         
-        .leaderboard-entry {
+        .leaderboard-entry, .player-entry {
             display: flex;
             justify-content: space-between;
             padding: 18px;
@@ -178,6 +189,11 @@
             background: rgba(255, 215, 61, 0.2);
             border-color: #ffd93d;
             color: #ffd93d;
+        }
+        
+        .player-entry.ready {
+            background: rgba(0, 255, 136, 0.3);
+            border-color: #00ff88;
         }
         
         .rank {
@@ -214,13 +230,170 @@
             margin: 20px 0;
         }
         
-        .name-change-info {
-            color: #ffd93d;
-            font-size: 14px;
+        .subtitle {
             text-align: center;
-            margin-top: 10px;
+            color: #00d4aa;
+            font-size: 16px;
+            margin-bottom: 20px;
         }
-
+        
+        .lobby-code {
+            text-align: center;
+            font-size: 36px;
+            color: #ffd93d;
+            background: rgba(255, 217, 61, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid #ffd93d;
+            letter-spacing: 8px;
+        }
+        
+        .coin-display {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd93d;
+            font-size: 28px;
+            text-shadow: 0 0 20px #ffd93d;
+            z-index: 100;
+            pointer-events: none;
+            font-weight: bold;
+        }
+        
+        /* Prize Belt */
+        .prize-belt-container {
+            position: relative;
+            height: 150px;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 3px solid #00ff88;
+            border-radius: 10px;
+        }
+        
+        .prize-belt {
+            display: flex;
+            position: absolute;
+            transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        
+        .prize-item {
+            min-width: 120px;
+            height: 120px;
+            margin: 15px 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            border: 3px solid;
+        }
+        
+        .prize-item.rare {
+            background: rgba(100, 149, 237, 0.3);
+            border-color: #6495ed;
+        }
+        
+        .prize-item.epic {
+            background: rgba(138, 43, 226, 0.3);
+            border-color: #8a2be2;
+        }
+        
+        .prize-item.legendary {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        .prize-selector {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #ff4757;
+            transform: translateX(-50%);
+            box-shadow: 0 0 20px #ff4757;
+        }
+        
+        .spin-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffd93d, #f39c12);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+        
+        .spin-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Skin Grid */
+        .skin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            max-height: 400px;
+        }
+        
+        .skin-card {
+            background: rgba(0, 255, 136, 0.1);
+            border: 3px solid #00ff88;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .skin-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+        
+        .skin-card.equipped {
+            border-color: #ffd93d;
+            background: rgba(255, 217, 61, 0.2);
+        }
+        
+        .skin-card.rare {
+            border-color: #6495ed;
+        }
+        
+        .skin-card.epic {
+            border-color: #8a2be2;
+        }
+        
+        .skin-card.legendary {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .skin-icon {
+            font-size: 50px;
+            margin: 10px 0;
+        }
+        
+        .skin-name {
+            font-size: 12px;
+            color: #00ff88;
+            margin: 5px 0;
+        }
+        
+        .skin-count {
+            font-size: 10px;
+            color: #00d4aa;
+        }
+        
         ::-webkit-scrollbar {
             width: 12px;
         }
@@ -232,17 +405,6 @@
         ::-webkit-scrollbar-thumb {
             background: #00ff88;
             border-radius: 6px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #00d4aa;
-        }
-        
-        .subtitle {
-            text-align: center;
-            color: #00d4aa;
-            font-size: 16px;
-            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -264,9 +426,81 @@
         <div class="menu-container">
             <div class="menu-title">🐍 SNAKE MASTER</div>
             <div class="subtitle">Welcome back, <span id="welcomeName"></span>!</div>
-            <button class="menu-btn" onclick="startGame()">PLAY</button>
+            <div style="text-align: center; color: #ffd93d; font-size: 24px; margin: 15px 0;">
+                💰 Coins: <span id="homeCoins">0</span>
+            </div>
+            <button class="menu-btn" onclick="startGame()">PLAY SOLO</button>
+            <button class="menu-btn secondary" onclick="showMultiplayer()">MULTIPLAYER</button>
+            <button class="menu-btn" onclick="showShop()">🛒 SHOP</button>
+            <button class="menu-btn" onclick="showLocker()">🎨 LOCKER</button>
             <button class="menu-btn" onclick="showLeaderboard()">LEADERBOARD</button>
             <button class="menu-btn" onclick="showSettings()">SETTINGS</button>
+        </div>
+    </div>
+    
+    <!-- Multiplayer Menu -->
+    <div id="multiplayerScreen" class="screen">
+        <div class="menu-container">
+            <div class="menu-title">🎮 MULTIPLAYER</div>
+            <button class="menu-btn" onclick="createLobby()">CREATE LOBBY</button>
+            <input type="text" id="joinCodeInput" placeholder="Enter 6-digit code" maxlength="6">
+            <button class="menu-btn" onclick="joinLobby()">JOIN LOBBY</button>
+            <button class="menu-btn danger" onclick="backToHome()">BACK</button>
+        </div>
+    </div>
+    
+    <!-- Lobby Screen -->
+    <div id="lobbyScreen" class="screen">
+        <div class="menu-container">
+            <div class="menu-title">🎮 LOBBY</div>
+            <div class="lobby-code" id="lobbyCode">------</div>
+            <div class="subtitle">Share this code with friends!</div>
+            <div class="player-list" id="playerList"></div>
+            <button class="menu-btn" id="readyBtn" onclick="toggleReady()">READY</button>
+            <button class="menu-btn danger" onclick="leaveLobby()">LEAVE LOBBY</button>
+        </div>
+    </div>
+    
+    <!-- Shop Screen -->
+    <div id="shopScreen" class="screen">
+        <div class="menu-container">
+            <div class="menu-title">🛒 SHOP</div>
+            <div style="text-align: center; color: #ffd93d; font-size: 24px; margin: 15px 0;">
+                💰 Your Coins: <span id="shopCoins">0</span>
+            </div>
+            <div class="subtitle">Prize Belt - 500 Coins per Spin</div>
+            <div class="prize-belt-container">
+                <div class="prize-selector"></div>
+                <div class="prize-belt" id="prizeBelt"></div>
+            </div>
+            <button class="spin-btn" id="spinBtn" onclick="spinPrizeBelt()">🎰 SPIN (500 COINS)</button>
+            <div id="spinResult" style="text-align: center; color: #00ff88; font-size: 18px; margin: 10px 0;"></div>
+            <button class="menu-btn" onclick="backToHome()">BACK</button>
+        </div>
+    </div>
+    
+    <!-- Locker Screen -->
+    <div id="lockerScreen" class="screen">
+        <div class="menu-container" style="max-width: 700px;">
+            <div class="menu-title">🎨 LOCKER</div>
+            <div class="subtitle">Click to equip a skin</div>
+            <div class="skin-grid" id="skinGrid"></div>
+            <button class="menu-btn" onclick="backToHome()">BACK</button>
+        </div>
+    </div>
+    
+    <!-- Victory Screen -->
+    <div id="victoryScreen" class="screen">
+        <div class="menu-container">
+            <div class="menu-title">👑 VICTORY!</div>
+            <div style="color: #ffd93d; text-align: center; margin: 30px 0; font-size: 32px;">
+                YOU ARE THE CHAMPION!
+            </div>
+            <div style="color: #00ff88; text-align: center; margin-bottom: 20px; font-size: 20px;">
+                Final Score: <span id="victoryScore"></span><br>
+                Final Length: <span id="victoryLength"></span>
+            </div>
+            <button class="menu-btn" onclick="backToHome()">HOME</button>
         </div>
     </div>
     
@@ -279,7 +513,7 @@
                 Time: <span id="pauseTime"></span>s
             </div>
             <button class="menu-btn" onclick="resumeGame()">RESUME</button>
-            <button class="menu-btn danger" onclick="leaveGame()">LEAVE (LOSE PROGRESS)</button>
+            <button class="menu-btn danger" onclick="leaveGame()">LEAVE</button>
         </div>
     </div>
     
@@ -292,7 +526,8 @@
             </div>
             <div style="color: #00ff88; text-align: center; margin-bottom: 20px; font-size: 18px;">
                 Survival Time: <span id="finalTime"></span>s<br>
-                Snake Length: <span id="finalLength"></span>
+                Snake Length: <span id="finalLength"></span><br>
+                Coins Earned: <span id="coinsEarned"></span>
             </div>
             <button class="menu-btn" onclick="playAgain()">PLAY AGAIN</button>
             <button class="menu-btn" onclick="backToHome()">HOME</button>
@@ -332,16 +567,16 @@
                     <span id="settingsAvgScore">0</span>
                 </div>
                 <div class="stat-row">
+                    <span>💰 Total Coins:</span>
+                    <span id="settingsCoins">0</span>
+                </div>
+                <div class="stat-row">
                     <span>🎮 Games Played:</span>
                     <span id="settingsGamesPlayed">0</span>
                 </div>
-                <div class="stat-row">
-                    <span>📈 Total Score:</span>
-                    <span id="settingsTotalScore">0</span>
-                </div>
             </div>
             <input type="text" id="newNameInput" placeholder="Change your name" maxlength="20">
-            <div class="name-change-info" id="nameChangeInfo"></div>
+            <div class="subtitle" id="nameChangeInfo"></div>
             <button class="menu-btn" onclick="changeName()">CHANGE NAME</button>
             <button class="menu-btn danger" onclick="deleteAccount()">DELETE ACCOUNT</button>
             <button class="menu-btn" onclick="backToHome()">BACK</button>
@@ -354,14 +589,14 @@
         <div>LENGTH: <span id="length">1</span></div>
     </div>
     
+    <div id="coinDisplay" class="coin-display" style="display: none;">💰 <span id="coins">0</span></div>
     <div id="timer" style="display: none;">0s</div>
     <button id="pauseBtn" style="display: none;" onclick="pauseGame()">PAUSE</button>
     
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, set, get, update, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getDatabase, ref, set, get, update, remove, onValue, onDisconnect } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
         
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
             authDomain: "games-c3e27.firebaseapp.com",
@@ -375,33 +610,70 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         
+        // Skin definitions
+        const SKINS = {
+            default: { name: 'Classic', emoji: '🟢', rarity: 'common', color: '#00ff88' },
+            rainbow: { name: 'Rainbow', emoji: '🌈', rarity: 'rare', color: '#ff6b6b' },
+            fire: { name: 'Fire', emoji: '🔥', rarity: 'rare', color: '#ff4757' },
+            ice: { name: 'Ice', emoji: '❄️', rarity: 'rare', color: '#48dbfb' },
+            electric: { name: 'Electric', emoji: '⚡', rarity: 'rare', color: '#ffd93d' },
+            toxic: { name: 'Toxic', emoji: '☢️', rarity: 'rare', color: '#a3cb38' },
+            crystal: { name: 'Crystal', emoji: '💎', rarity: 'rare', color: '#4bcffa' },
+            galaxy: { name: 'Galaxy', emoji: '🌌', rarity: 'rare', color: '#5f27cd' },
+            dragon: { name: 'Dragon', emoji: '🐉', rarity: 'epic', color: '#ff6348' },
+            crown: { name: 'Crown', emoji: '👑', rarity: 'epic', color: '#ffd700' },
+            legendary: { name: 'Legendary', emoji: '✨', rarity: 'legendary', color: '#ffd700' }
+        };
+        
+        const PLAYER_COLORS = [
+            '#00ff88', '#ff4757', '#ffd93d', '#5f27cd', 
+            '#00d2d3', '#ff6348', '#48dbfb', '#ff9ff3',
+            '#54a0ff', '#00d2d3'
+        ];
+        
         // Game State
         let gameState = {
             score: 0,
+            coins: 0,
+            foodEaten: 0,
             isPlaying: false,
             isPaused: false,
+            isMultiplayer: false,
             startTime: 0,
             userId: null,
             userName: null,
             snake: [],
             food: null,
             direction: null,
-            nextDirection: null
+            nextDirection: null,
+            currentLobby: null,
+            playerColor: null,
+            equippedSkin: 'default',
+            alivePlayers: 0
         };
         
-        // Canvas setup
+        let otherPlayers = {};
+        let lobbyListener = null;
+        
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const gridSize = 20;
-        const tileCount = 30;
-        canvas.width = gridSize * tileCount;
-        canvas.height = gridSize * tileCount;
-        
+        let tileCount = 30;
         let gameInterval = null;
+        
+        function setCanvasSize(multiplayer = false) {
+            tileCount = multiplayer ? 60 : 30;
+            canvas.width = gridSize * tileCount;
+            canvas.height = gridSize * tileCount;
+        }
         
         // User Management
         function generateUserId() {
             return 'snake_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        function generateLobbyCode() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
         }
         
         function checkExistingUser() {
@@ -412,16 +684,16 @@
                     if (snapshot.exists()) {
                         const userData = snapshot.val();
                         gameState.userName = userData.name;
+                        gameState.coins = userData.coins || 0;
+                        gameState.equippedSkin = userData.equippedSkin || 'default';
                         showScreen('homeScreen');
                         document.getElementById('welcomeName').textContent = userData.name;
+                        document.getElementById('homeCoins').textContent = gameState.coins;
                     } else {
                         localStorage.removeItem('snakeMasterUserId');
                         showScreen('welcomeScreen');
                     }
-                }).catch((error) => {
-                    console.error('Firebase Error:', error);
-                    showScreen('welcomeScreen');
-                });
+                }).catch(() => showScreen('welcomeScreen'));
             } else {
                 showScreen('welcomeScreen');
             }
@@ -429,125 +701,105 @@
         
         window.saveUserName = function() {
             const name = document.getElementById('nameInput').value.trim();
-            if (!name) {
-                alert('Please enter a name!');
-                return;
-            }
+            if (!name) { alert('Please enter a name!'); return; }
             
             const userId = generateUserId();
             gameState.userId = userId;
             gameState.userName = name;
             
             const userData = {
-                name: name,
-                highScore: 0,
-                bestTime: 0,
-                totalScore: 0,
-                gamesPlayed: 0,
-                createdAt: Date.now(),
-                lastNameChange: Date.now()
+                name, highScore: 0, bestTime: 0, totalScore: 0,
+                gamesPlayed: 0, coins: 0, equippedSkin: 'default',
+                skins: { default: 1 }, createdAt: Date.now(), lastNameChange: Date.now()
             };
             
             set(ref(database, 'snakeUsers/' + userId), userData).then(() => {
                 localStorage.setItem('snakeMasterUserId', userId);
                 document.getElementById('welcomeName').textContent = name;
+                document.getElementById('homeCoins').textContent = 0;
                 showScreen('homeScreen');
-            }).catch((error) => {
-                console.error('Firebase Error:', error);
-                alert('Database connection error: ' + error.message);
-            });
+            }).catch(err => alert('Database error: ' + err.message));
         };
         
         window.changeName = function() {
             const newName = document.getElementById('newNameInput').value.trim();
-            if (!newName) {
-                alert('Please enter a new name!');
-                return;
-            }
+            if (!newName) { alert('Please enter a new name!'); return; }
             
             get(ref(database, 'snakeUsers/' + gameState.userId)).then((snapshot) => {
-                if (snapshot.exists()) {
-                    const userData = snapshot.val();
-                    const lastChange = userData.lastNameChange || 0;
-                    const daysSinceChange = (Date.now() - lastChange) / (1000 * 60 * 60 * 24);
-                    
-                    if (daysSinceChange < 10) {
-                        const daysRemaining = Math.ceil(10 - daysSinceChange);
-                        alert(`You can change your name in ${daysRemaining} days!`);
-                        return;
-                    }
-                    
-                    update(ref(database, 'snakeUsers/' + gameState.userId), {
-                        name: newName,
-                        lastNameChange: Date.now()
-                    }).then(() => {
-                        gameState.userName = newName;
-                        document.getElementById('welcomeName').textContent = newName;
-                        document.getElementById('settingsName').textContent = newName;
-                        document.getElementById('newNameInput').value = '';
-                        alert('Name changed successfully!');
-                        loadSettings();
-                    }).catch((error) => {
-                        console.error('Firebase Error:', error);
-                        alert('Error updating name: ' + error.message);
-                    });
+                const userData = snapshot.val();
+                const daysSince = (Date.now() - (userData.lastNameChange || 0)) / (1000 * 60 * 60 * 24);
+                
+                if (daysSince < 10) {
+                    alert(`You can change your name in ${Math.ceil(10 - daysSince)} days!`);
+                    return;
                 }
-            }).catch((error) => {
-                console.error('Firebase Error:', error);
-                alert('Error loading user data: ' + error.message);
+                
+                update(ref(database, 'snakeUsers/' + gameState.userId), {
+                    name: newName, lastNameChange: Date.now()
+                }).then(() => {
+                    gameState.userName = newName;
+                    document.getElementById('welcomeName').textContent = newName;
+                    document.getElementById('settingsName').textContent = newName;
+                    document.getElementById('newNameInput').value = '';
+                    alert('Name changed!');
+                    loadSettings();
+                });
             });
         };
         
         window.deleteAccount = function() {
-            if (confirm('Are you sure you want to delete your account? This cannot be undone!')) {
+            if (confirm('Delete account? Cannot be undone!')) {
                 remove(ref(database, 'snakeUsers/' + gameState.userId)).then(() => {
                     localStorage.removeItem('snakeMasterUserId');
-                    alert('Account deleted!');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                }).catch((error) => {
-                    console.error('Firebase Error:', error);
-                    alert('Error deleting account: ' + error.message);
+                    location.reload();
                 });
             }
         };
         
-        // Screen Management
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             if (screenId) {
                 const screen = document.getElementById(screenId);
-                if (screen) {
-                    screen.classList.add('active');
-                }
+                if (screen) screen.classList.add('active');
             }
             
             if (screenId === 'homeScreen') {
                 document.getElementById('hud').style.display = 'none';
                 document.getElementById('timer').style.display = 'none';
+                document.getElementById('coinDisplay').style.display = 'none';
                 document.getElementById('pauseBtn').style.display = 'none';
             }
         }
         
         window.startGame = function() {
+            gameState.isMultiplayer = false;
+            setCanvasSize(false);
+            gameState.playerColor = SKINS[gameState.equippedSkin].color;
+            startGameCommon();
+        };
+        
+        function startGameCommon() {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('hud').style.display = 'block';
             document.getElementById('timer').style.display = 'block';
-            document.getElementById('pauseBtn').style.display = 'block';
+            document.getElementById('coinDisplay').style.display = 'block';
+            if (!gameState.isMultiplayer) document.getElementById('pauseBtn').style.display = 'block';
             
             initGame();
             gameState.isPlaying = true;
             gameState.isPaused = false;
             gameState.startTime = Date.now();
             gameState.score = 0;
+            gameState.foodEaten = 0;
+            
+            document.getElementById('coins').textContent = gameState.coins;
             
             if (gameInterval) clearInterval(gameInterval);
             gameInterval = setInterval(gameLoop, 100);
-        };
+        }
         
         window.pauseGame = function() {
-            if (!gameState.isPlaying || gameState.isPaused) return;
+            if (!gameState.isPlaying || gameState.isPaused || gameState.isMultiplayer) return;
             
             gameState.isPaused = true;
             clearInterval(gameInterval);
@@ -562,117 +814,338 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('hud').style.display = 'block';
             document.getElementById('timer').style.display = 'block';
+            document.getElementById('coinDisplay').style.display = 'block';
             document.getElementById('pauseBtn').style.display = 'block';
             gameInterval = setInterval(gameLoop, 100);
         };
         
         window.leaveGame = function() {
             gameState.isPlaying = false;
-            gameState.isPaused = false;
             if (gameInterval) clearInterval(gameInterval);
+            
+            if (gameState.isMultiplayer && gameState.currentLobby) {
+                remove(ref(database, `lobbies/${gameState.currentLobby}/players/${gameState.userId}`));
+                if (lobbyListener) lobbyListener();
+                gameState.currentLobby = null;
+            }
             showScreen('homeScreen');
         };
         
-        window.playAgain = function() {
-            startGame();
-        };
-        
+        window.playAgain = function() { startGame(); };
         window.backToHome = function() {
+            if (gameState.currentLobby && lobbyListener) {
+                remove(ref(database, `lobbies/${gameState.currentLobby}/players/${gameState.userId}`));
+                lobbyListener();
+                gameState.currentLobby = null;
+            }
             showScreen('homeScreen');
         };
+        window.showMultiplayer = function() { showScreen('multiplayerScreen'); };
         
-        window.showLeaderboard = function() {
-            showScreen('leaderboardScreen');
-            loadLeaderboard();
+        window.createLobby = function() {
+            const lobbyCode = generateLobbyCode();
+            gameState.currentLobby = lobbyCode;
+            gameState.playerColor = PLAYER_COLORS[0];
+            
+            set(ref(database, `lobbies/${lobbyCode}`), {
+                code: lobbyCode, host: gameState.userId, createdAt: Date.now(),
+                gameStarted: false, players: {
+                    [gameState.userId]: {
+                        name: gameState.userName, ready: false,
+                        color: gameState.playerColor, skin: gameState.equippedSkin, alive: false
+                    }
+                }
+            }).then(() => {
+                onDisconnect(ref(database, `lobbies/${lobbyCode}/players/${gameState.userId}`)).remove();
+                showLobbyScreen(lobbyCode);
+            });
         };
         
-        window.showSettings = function() {
-            showScreen('settingsScreen');
-            loadSettings();
+        window.joinLobby = function() {
+            const code = document.getElementById('joinCodeInput').value.trim();
+            if (code.length !== 6) { alert('Enter 6-digit code!'); return; }
+            
+            get(ref(database, `lobbies/${code}`)).then((snapshot) => {
+                if (!snapshot.exists()) { alert('Lobby not found!'); return; }
+                
+                const lobby = snapshot.val();
+                const playerCount = Object.keys(lobby.players || {}).length;
+                
+                if (playerCount >= 10) { alert('Lobby full!'); return; }
+                
+                gameState.currentLobby = code;
+                gameState.playerColor = PLAYER_COLORS[playerCount];
+                
+                update(ref(database, `lobbies/${code}/players/${gameState.userId}`), {
+                    name: gameState.userName, ready: false,
+                    color: gameState.playerColor, skin: gameState.equippedSkin, alive: false
+                }).then(() => {
+                    onDisconnect(ref(database, `lobbies/${code}/players/${gameState.userId}`)).remove();
+                    showLobbyScreen(code);
+                });
+            });
         };
+        
+        function showLobbyScreen(code) {
+            document.getElementById('lobbyCode').textContent = code;
+            showScreen('lobbyScreen');
+            
+            lobbyListener = onValue(ref(database, `lobbies/${code}`), (snapshot) => {
+                if (!snapshot.exists()) { alert('Lobby closed!'); showScreen('homeScreen'); return; }
+                
+                const lobby = snapshot.val();
+                updatePlayerList(lobby.players);
+                
+                if (lobby.gameStarted && !lobby.players[gameState.userId].alive) {
+                    document.getElementById('readyBtn').textContent = 'GAME IN PROGRESS';
+                    document.getElementById('readyBtn').disabled = true;
+                } else if (lobby.gameStarted && lobby.players[gameState.userId].alive) {
+                    gameState.isMultiplayer = true;
+                    setCanvasSize(true);
+                    startMultiplayerGame(lobby);
+                }
+            });
+        }
+        
+        function updatePlayerList(players) {
+            const list = document.getElementById('playerList');
+            list.innerHTML = '';
+            
+            Object.entries(players).forEach(([id, player]) => {
+                const entry = document.createElement('div');
+                entry.className = 'player-entry' + (player.ready ? ' ready' : '');
+                entry.innerHTML = `
+                    <span style="color: ${player.color}">⬤ ${player.name}</span>
+                    <span>${player.ready ? '✓ READY' : '✗ NOT READY'}</span>
+                `;
+                list.appendChild(entry);
+            });
+        }
+        
+        window.toggleReady = function() {
+            get(ref(database, `lobbies/${gameState.currentLobby}/players/${gameState.userId}`)).then((snapshot) => {
+                const currentReady = snapshot.val().ready;
+                update(ref(database, `lobbies/${gameState.currentLobby}/players/${gameState.userId}`), 
+                    { ready: !currentReady }).then(() => {
+                    document.getElementById('readyBtn').textContent = !currentReady ? 'UNREADY' : 'READY';
+                    checkAllReady();
+                });
+            });
+        };
+        
+        function checkAllReady() {
+            get(ref(database, `lobbies/${gameState.currentLobby}`)).then((snapshot) => {
+                const lobby = snapshot.val();
+                const players = lobby.players;
+                const allReady = Object.values(players).every(p => p.ready);
+                
+                if (allReady && Object.keys(players).length >= 1) {
+                    const updates = {};
+                    Object.keys(players).forEach(id => {
+                        updates[`lobbies/${gameState.currentLobby}/players/${id}/alive`] = true;
+                    });
+                    updates[`lobbies/${gameState.currentLobby}/gameStarted`] = true;
+                    update(ref(database), updates);
+                }
+            });
+        }
+        
+        window.leaveLobby = function() {
+            if (gameState.currentLobby) {
+                remove(ref(database, `lobbies/${gameState.currentLobby}/players/${gameState.userId}`));
+                if (lobbyListener) lobbyListener();
+                gameState.currentLobby = null;
+            }
+            showScreen('multiplayerScreen');
+        };
+        
+        function startMultiplayerGame(lobby) {
+            if (lobbyListener) lobbyListener();
+            startGameCommon();
+            
+            onValue(ref(database, `lobbies/${gameState.currentLobby}/players`), (snapshot) => {
+                if (!snapshot.exists()) return;
+                
+                otherPlayers = {};
+                let aliveCount = 0;
+                
+                snapshot.forEach((child) => {
+                    const player = child.val();
+                    if (child.key !== gameState.userId) otherPlayers[child.key] = player;
+                    if (player.alive) aliveCount++;
+                });
+                
+                if (aliveCount === 1 && gameState.isPlaying) victory();
+            });
+            
+            onValue(ref(database, `lobbies/${gameState.currentLobby}/food`), (snapshot) => {
+                if (snapshot.exists()) gameState.food = snapshot.val();
+            });
+        }
+        
+        window.showLeaderboard = function() { showScreen('leaderboardScreen'); loadLeaderboard(); };
+        window.showSettings = function() { showScreen('settingsScreen'); loadSettings(); };
+        window.showShop = function() {
+            showScreen('shopScreen');
+            document.getElementById('shopCoins').textContent = gameState.coins;
+            initializePrizeBelt();
+        };
+        window.showLocker = function() { showScreen('lockerScreen'); loadLocker(); };
+        
+        function initializePrizeBelt() {
+            const belt = document.getElementById('prizeBelt');
+            belt.innerHTML = '';
+            
+            const skinKeys = Object.keys(SKINS).filter(k => k !== 'default');
+            for (let i = 0; i < 50; i++) {
+                const randomSkin = skinKeys[Math.floor(Math.random() * skinKeys.length)];
+                const skin = SKINS[randomSkin];
+                
+                const item = document.createElement('div');
+                item.className = `prize-item ${skin.rarity}`;
+                item.textContent = skin.emoji;
+                item.dataset.skinId = randomSkin;
+                belt.appendChild(item);
+            }
+        }
+        
+        window.spinPrizeBelt = function() {
+            if (gameState.coins < 500) { alert('Need 500 coins!'); return; }
+            
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true;
+            
+            gameState.coins -= 500;
+            update(ref(database, `snakeUsers/${gameState.userId}`), { coins: gameState.coins });
+            document.getElementById('shopCoins').textContent = gameState.coins;
+            document.getElementById('homeCoins').textContent = gameState.coins;
+            
+            const rand = Math.random() * 100;
+            let wonSkinId;
+            
+            if (rand < 3) wonSkinId = 'legendary';
+            else if (rand < 30) {
+                const epics = Object.keys(SKINS).filter(k => SKINS[k].rarity === 'epic');
+                wonSkinId = epics[Math.floor(Math.random() * epics.length)];
+            } else {
+                const rares = Object.keys(SKINS).filter(k => SKINS[k].rarity === 'rare');
+                wonSkinId = rares[Math.floor(Math.random() * rares.length)];
+            }
+            
+            const belt = document.getElementById('prizeBelt');
+            const items = belt.querySelectorAll('.prize-item');
+            let winIndex = -1;
+            for (let i = items.length - 10; i < items.length; i++) {
+                if (items[i].dataset.skinId === wonSkinId) {
+                    winIndex = i;
+                    break;
+                }
+            }
+            
+            if (winIndex === -1) {
+                items[items.length - 5].dataset.skinId = wonSkinId;
+                items[items.length - 5].textContent = SKINS[wonSkinId].emoji;
+                items[items.length - 5].className = `prize-item ${SKINS[wonSkinId].rarity}`;
+                winIndex = items.length - 5;
+            }
+            
+            belt.style.transform = `translateX(${-(winIndex * 140 - 300)}px)`;
+            
+            setTimeout(() => {
+                get(ref(database, `snakeUsers/${gameState.userId}/skins`)).then((snapshot) => {
+                    const skins = snapshot.val() || {};
+                    skins[wonSkinId] = (skins[wonSkinId] || 0) + 1;
+                    update(ref(database, `snakeUsers/${gameState.userId}`), { skins });
+                    
+                    const wonSkin = SKINS[wonSkinId];
+                    document.getElementById('spinResult').innerHTML = 
+                        `🎉 Won: ${wonSkin.emoji} ${wonSkin.name} (${wonSkin.rarity.toUpperCase()})!`;
+                    
+                    btn.disabled = false;
+                    belt.style.transform = 'translateX(0)';
+                    initializePrizeBelt();
+                });
+            }, 3000);
+        };
+        
+        function loadLocker() {
+            get(ref(database, `snakeUsers/${gameState.userId}`)).then((snapshot) => {
+                const userData = snapshot.val();
+                const skins = userData.skins || { default: 1 };
+                const equipped = userData.equippedSkin || 'default';
+                
+                const grid = document.getElementById('skinGrid');
+                grid.innerHTML = '';
+                
+                Object.entries(skins).forEach(([skinId, count]) => {
+                    const skin = SKINS[skinId];
+                    const card = document.createElement('div');
+                    card.className = `skin-card ${skin.rarity}` + (skinId === equipped ? ' equipped' : '');
+                    card.innerHTML = `
+                        <div class="skin-icon">${skin.emoji}</div>
+                        <div class="skin-name">${skin.name}</div>
+                        <div class="skin-count">x${count}</div>
+                        ${skinId === equipped ? '<div style="color: #ffd93d;">✓ EQUIPPED</div>' : ''}
+                    `;
+                    card.onclick = () => equipSkin(skinId);
+                    grid.appendChild(card);
+                });
+            });
+        }
+        
+        function equipSkin(skinId) {
+            gameState.equippedSkin = skinId;
+            update(ref(database, `snakeUsers/${gameState.userId}`), { equippedSkin: skinId }).then(() => loadLocker());
+        }
         
         function loadLeaderboard() {
-            const leaderboardList = document.getElementById('leaderboardList');
+            const list = document.getElementById('leaderboardList');
             const loading = document.getElementById('leaderboardLoading');
-            
             loading.style.display = 'block';
-            leaderboardList.innerHTML = '';
+            list.innerHTML = '';
             
-            const leaderboardRef = ref(database, 'snakeUsers');
-            
-            get(leaderboardRef).then((snapshot) => {
+            get(ref(database, 'snakeUsers')).then((snapshot) => {
                 loading.style.display = 'none';
-                
-                if (snapshot.exists()) {
-                    const users = [];
-                    snapshot.forEach((childSnapshot) => {
-                        const userData = childSnapshot.val();
-                        if (userData.highScore > 0) {
-                            users.push({
-                                id: childSnapshot.key,
-                                name: userData.name,
-                                highScore: userData.highScore
-                            });
-                        }
-                    });
-                    
-                    users.sort((a, b) => b.highScore - a.highScore);
-                    const topUsers = users.slice(0, 50);
-                    
-                    topUsers.forEach((user, index) => {
-                        const entry = document.createElement('div');
-                        entry.className = 'leaderboard-entry';
-                        if (user.id === gameState.userId) {
-                            entry.classList.add('current-user');
-                        }
-                        
-                        entry.innerHTML = `
-                            <span><span class="rank">#${index + 1}</span>${user.name}</span>
-                            <span>${user.highScore} points</span>
-                        `;
-                        leaderboardList.appendChild(entry);
-                    });
-                    
-                    if (topUsers.length === 0) {
-                        leaderboardList.innerHTML = '<div style="text-align: center; color: #00ff88; padding: 20px;">No records yet. Be the first!</div>';
-                    }
-                } else {
-                    leaderboardList.innerHTML = '<div style="text-align: center; color: #00ff88; padding: 20px;">No records yet. Be the first!</div>';
+                if (!snapshot.exists()) {
+                    list.innerHTML = '<div style="text-align: center; color: #00ff88; padding: 20px;">No records yet!</div>';
+                    return;
                 }
-            }).catch((error) => {
-                loading.style.display = 'none';
-                console.error('Firebase Error:', error);
-                leaderboardList.innerHTML = '<div style="text-align: center; color: #ff4757; padding: 20px;">Error loading leaderboard</div>';
+                
+                const users = [];
+                snapshot.forEach((child) => {
+                    const userData = child.val();
+                    if (userData.highScore > 0) users.push({
+                        id: child.key, name: userData.name, highScore: userData.highScore
+                    });
+                });
+                
+                users.sort((a, b) => b.highScore - a.highScore).slice(0, 50).forEach((user, index) => {
+                    const entry = document.createElement('div');
+                    entry.className = 'leaderboard-entry' + (user.id === gameState.userId ? ' current-user' : '');
+                    entry.innerHTML = `
+                        <span><span class="rank">#${index + 1}</span>${user.name}</span>
+                        <span>${user.highScore} pts</span>
+                    `;
+                    list.appendChild(entry);
+                });
             });
         }
         
         function loadSettings() {
-            get(ref(database, 'snakeUsers/' + gameState.userId)).then((snapshot) => {
-                if (snapshot.exists()) {
-                    const userData = snapshot.val();
-                    document.getElementById('settingsName').textContent = userData.name;
-                    document.getElementById('settingsHighScore').textContent = userData.highScore || 0;
-                    document.getElementById('settingsBestTime').textContent = (userData.bestTime || 0) + 's';
-                    document.getElementById('settingsGamesPlayed').textContent = userData.gamesPlayed || 0;
-                    document.getElementById('settingsTotalScore').textContent = userData.totalScore || 0;
-                    
-                    const avgScore = userData.gamesPlayed > 0 
-                        ? Math.round(userData.totalScore / userData.gamesPlayed) 
-                        : 0;
-                    document.getElementById('settingsAvgScore').textContent = avgScore;
-                    
-                    const lastChange = userData.lastNameChange || 0;
-                    const daysSinceChange = (Date.now() - lastChange) / (1000 * 60 * 60 * 24);
-                    const daysRemaining = Math.max(0, Math.ceil(10 - daysSinceChange));
-                    
-                    if (daysRemaining > 0) {
-                        document.getElementById('nameChangeInfo').textContent = `Name can be changed in ${daysRemaining} days`;
-                    } else {
-                        document.getElementById('nameChangeInfo').textContent = 'Name change available!';
-                    }
-                }
-            }).catch((error) => {
-                console.error('Firebase Error:', error);
+            get(ref(database, `snakeUsers/${gameState.userId}`)).then((snapshot) => {
+                const d = snapshot.val();
+                document.getElementById('settingsName').textContent = d.name;
+                document.getElementById('settingsHighScore').textContent = d.highScore || 0;
+                document.getElementById('settingsBestTime').textContent = (d.bestTime || 0) + 's';
+                document.getElementById('settingsGamesPlayed').textContent = d.gamesPlayed || 0;
+                document.getElementById('settingsCoins').textContent = d.coins || 0;
+                document.getElementById('settingsAvgScore').textContent = 
+                    d.gamesPlayed > 0 ? Math.round(d.totalScore / d.gamesPlayed) : 0;
+                
+                const daysSince = (Date.now() - (d.lastNameChange || 0)) / (1000 * 60 * 60 * 24);
+                const daysRem = Math.max(0, Math.ceil(10 - daysSince));
+                document.getElementById('nameChangeInfo').textContent = 
+                    daysRem > 0 ? `Name change in ${daysRem} days` : 'Name change available!';
             });
         }
         
@@ -681,42 +1154,50 @@
             clearInterval(gameInterval);
             
             const survivalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const coinsEarned = gameState.foodEaten;
+            gameState.coins += coinsEarned;
             
             document.getElementById('finalScore').textContent = gameState.score;
             document.getElementById('finalTime').textContent = survivalTime;
             document.getElementById('finalLength').textContent = gameState.snake.length;
+            document.getElementById('coinsEarned').textContent = coinsEarned;
             
-            // Update Firebase
-            get(ref(database, 'snakeUsers/' + gameState.userId)).then((snapshot) => {
-                if (snapshot.exists()) {
-                    const userData = snapshot.val();
-                    const updates = {
-                        gamesPlayed: (userData.gamesPlayed || 0) + 1,
-                        totalScore: (userData.totalScore || 0) + gameState.score
-                    };
-                    
-                    if (gameState.score > (userData.highScore || 0)) {
-                        updates.highScore = gameState.score;
-                    }
-                    
-                    if (survivalTime > (userData.bestTime || 0)) {
-                        updates.bestTime = survivalTime;
-                    }
-                    
-                    update(ref(database, 'snakeUsers/' + gameState.userId), updates).catch((error) => {
-                        console.error('Firebase Error:', error);
-                    });
-                }
-            }).catch((error) => {
-                console.error('Firebase Error:', error);
+            get(ref(database, `snakeUsers/${gameState.userId}`)).then((snapshot) => {
+                const d = snapshot.val();
+                const updates = {
+                    gamesPlayed: (d.gamesPlayed || 0) + 1,
+                    totalScore: (d.totalScore || 0) + gameState.score,
+                    coins: gameState.coins
+                };
+                if (gameState.score > (d.highScore || 0)) updates.highScore = gameState.score;
+                if (survivalTime > (d.bestTime || 0)) updates.bestTime = survivalTime;
+                update(ref(database, `snakeUsers/${gameState.userId}`), updates);
             });
             
-            showScreen('gameOverScreen');
+            if (gameState.isMultiplayer) {
+                update(ref(database, `lobbies/${gameState.currentLobby}/players/${gameState.userId}`), { alive: false });
+                showScreen('homeScreen');
+            } else {
+                showScreen('gameOverScreen');
+            }
         }
         
-        // Snake Game Logic
+        function victory() {
+            gameState.isPlaying = false;
+            clearInterval(gameInterval);
+            
+            document.getElementById('victoryScore').textContent = gameState.score;
+            document.getElementById('victoryLength').textContent = gameState.snake.length;
+            
+            const coinsEarned = gameState.foodEaten;
+            gameState.coins += coinsEarned;
+            update(ref(database, `snakeUsers/${gameState.userId}`), { coins: gameState.coins });
+            
+            showScreen('victoryScreen');
+        }
+        
         function initGame() {
-            gameState.snake = [{x: 15, y: 15}];
+            gameState.snake = [{x: Math.floor(tileCount/2), y: Math.floor(tileCount/2)}];
             gameState.direction = {x: 1, y: 0};
             gameState.nextDirection = {x: 1, y: 0};
             spawnFood();
@@ -724,51 +1205,54 @@
         }
         
         function spawnFood() {
-            let validPosition = false;
-            while (!validPosition) {
+            let valid = false;
+            while (!valid) {
                 gameState.food = {
                     x: Math.floor(Math.random() * tileCount),
                     y: Math.floor(Math.random() * tileCount)
                 };
-                
-                validPosition = !gameState.snake.some(segment => 
-                    segment.x === gameState.food.x && segment.y === gameState.food.y
-                );
+                valid = !gameState.snake.some(s => s.x === gameState.food.x && s.y === gameState.food.y);
+            }
+            if (gameState.isMultiplayer) {
+                set(ref(database, `lobbies/${gameState.currentLobby}/food`), gameState.food);
             }
         }
         
         function gameLoop() {
             if (!gameState.isPlaying || gameState.isPaused) return;
             
-            // Update direction
             gameState.direction = gameState.nextDirection;
-            
-            // Move snake
             const head = {
                 x: gameState.snake[0].x + gameState.direction.x,
                 y: gameState.snake[0].y + gameState.direction.y
             };
             
-            // Check wall collision
             if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
                 gameOver();
                 return;
             }
             
-            // Check self collision
-            if (gameState.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            if (gameState.snake.some(s => s.x === head.x && s.y === head.y)) {
                 gameOver();
                 return;
             }
             
             gameState.snake.unshift(head);
             
-            // Check food collision
             if (head.x === gameState.food.x && head.y === gameState.food.y) {
                 gameState.score += 10;
+                gameState.foodEaten++;
+                gameState.coins++;
+                document.getElementById('coins').textContent = gameState.coins;
                 spawnFood();
             } else {
                 gameState.snake.pop();
+            }
+            
+            if (gameState.isMultiplayer) {
+                update(ref(database, `lobbies/${gameState.currentLobby}/players/${gameState.userId}`), {
+                    snake: gameState.snake, score: gameState.score
+                });
             }
             
             updateHUD();
@@ -776,11 +1260,9 @@
         }
         
         function draw() {
-            // Clear canvas
             ctx.fillStyle = '#0f3460';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw grid
             ctx.strokeStyle = 'rgba(0, 255, 136, 0.1)';
             ctx.lineWidth = 1;
             for (let i = 0; i <= tileCount; i++) {
@@ -795,49 +1277,49 @@
                 ctx.stroke();
             }
             
-            // Draw snake
-            gameState.snake.forEach((segment, index) => {
-                const gradient = ctx.createLinearGradient(
-                    segment.x * gridSize, segment.y * gridSize,
-                    (segment.x + 1) * gridSize, (segment.y + 1) * gridSize
-                );
-                
-                if (index === 0) {
-                    // Head
-                    gradient.addColorStop(0, '#00ff88');
-                    gradient.addColorStop(1, '#00d4aa');
-                } else {
-                    // Body
-                    const alpha = 1 - (index / gameState.snake.length) * 0.5;
-                    gradient.addColorStop(0, `rgba(0, 255, 136, ${alpha})`);
-                    gradient.addColorStop(1, `rgba(0, 212, 170, ${alpha})`);
-                }
-                
-                ctx.fillStyle = gradient;
-                ctx.fillRect(
-                    segment.x * gridSize + 1,
-                    segment.y * gridSize + 1,
-                    gridSize - 2,
-                    gridSize - 2
-                );
-                
-                // Head eyes
-                if (index === 0) {
-                    ctx.fillStyle = '#000';
-                    const eyeSize = 3;
-                    const eyeOffset = 5;
+            if (gameState.isMultiplayer) {
+                Object.entries(otherPlayers).forEach(([id, player]) => {
+                    if (!player.snake || !player.alive) return;
                     
+                    player.snake.forEach((s) => {
+                        ctx.fillStyle = player.color;
+                        ctx.fillRect(s.x * gridSize + 1, s.y * gridSize + 1, gridSize - 2, gridSize - 2);
+                    });
+                    
+                    if (player.snake[0]) {
+                        ctx.fillStyle = player.color;
+                        ctx.font = '10px Courier';
+                        ctx.fillText(player.name, player.snake[0].x * gridSize, player.snake[0].y * gridSize - 5);
+                    }
+                });
+            }
+            
+            gameState.snake.forEach((s, i) => {
+                ctx.fillStyle = gameState.playerColor || '#00ff88';
+                ctx.globalAlpha = 1 - (i / gameState.snake.length) * 0.5;
+                ctx.fillRect(s.x * gridSize + 1, s.y * gridSize + 1, gridSize - 2, gridSize - 2);
+                
+                if (i === 0) {
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = '#000';
+                    const e = 3, o = 5;
                     if (gameState.direction.x !== 0) {
-                        ctx.fillRect(segment.x * gridSize + eyeOffset, segment.y * gridSize + 4, eyeSize, eyeSize);
-                        ctx.fillRect(segment.x * gridSize + eyeOffset, segment.y * gridSize + 12, eyeSize, eyeSize);
+                        ctx.fillRect(s.x * gridSize + o, s.y * gridSize + 4, e, e);
+                        ctx.fillRect(s.x * gridSize + o, s.y * gridSize + 12, e, e);
                     } else {
-                        ctx.fillRect(segment.x * gridSize + 4, segment.y * gridSize + eyeOffset, eyeSize, eyeSize);
-                        ctx.fillRect(segment.x * gridSize + 12, segment.y * gridSize + eyeOffset, eyeSize, eyeSize);
+                        ctx.fillRect(s.x * gridSize + 4, s.y * gridSize + o, e, e);
+                        ctx.fillRect(s.x * gridSize + 12, s.y * gridSize + o, e, e);
                     }
                 }
             });
+            ctx.globalAlpha = 1;
             
-            // Draw food with glow
+            if (gameState.isMultiplayer && gameState.snake[0]) {
+                ctx.fillStyle = gameState.playerColor;
+                ctx.font = '10px Courier';
+                ctx.fillText(gameState.userName, gameState.snake[0].x * gridSize, gameState.snake[0].y * gridSize - 5);
+            }
+            
             ctx.shadowBlur = 20;
             ctx.shadowColor = '#ff4757';
             ctx.fillStyle = '#ff4757';
@@ -845,9 +1327,7 @@
             ctx.arc(
                 gameState.food.x * gridSize + gridSize / 2,
                 gameState.food.y * gridSize + gridSize / 2,
-                gridSize / 2 - 2,
-                0,
-                Math.PI * 2
+                gridSize / 2 - 2, 0, Math.PI * 2
             );
             ctx.fill();
             ctx.shadowBlur = 0;
@@ -856,52 +1336,29 @@
         function updateHUD() {
             document.getElementById('score').textContent = gameState.score;
             document.getElementById('length').textContent = gameState.snake.length;
-            
-            const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-            document.getElementById('timer').textContent = elapsed + 's';
+            document.getElementById('timer').textContent = 
+                Math.floor((Date.now() - gameState.startTime) / 1000) + 's';
         }
         
-        // Keyboard controls
         document.addEventListener('keydown', (e) => {
             if (!gameState.isPlaying || gameState.isPaused) return;
-            
-            const key = e.key.toLowerCase();
-            
-            switch(key) {
-                case 'w':
-                case 'arrowup':
-                    if (gameState.direction.y === 0) {
-                        gameState.nextDirection = {x: 0, y: -1};
-                    }
-                    e.preventDefault();
-                    break;
-                case 's':
-                case 'arrowdown':
-                    if (gameState.direction.y === 0) {
-                        gameState.nextDirection = {x: 0, y: 1};
-                    }
-                    e.preventDefault();
-                    break;
-                case 'a':
-                case 'arrowleft':
-                    if (gameState.direction.x === 0) {
-                        gameState.nextDirection = {x: -1, y: 0};
-                    }
-                    e.preventDefault();
-                    break;
-                case 'd':
-                case 'arrowright':
-                    if (gameState.direction.x === 0) {
-                        gameState.nextDirection = {x: 1, y: 0};
-                    }
-                    e.preventDefault();
-                    break;
+            const k = e.key.toLowerCase();
+            if ((k === 'w' || k === 'arrowup') && gameState.direction.y === 0) {
+                gameState.nextDirection = {x: 0, y: -1};
+                e.preventDefault();
+            } else if ((k === 's' || k === 'arrowdown') && gameState.direction.y === 0) {
+                gameState.nextDirection = {x: 0, y: 1};
+                e.preventDefault();
+            } else if ((k === 'a' || k === 'arrowleft') && gameState.direction.x === 0) {
+                gameState.nextDirection = {x: -1, y: 0};
+                e.preventDefault();
+            } else if ((k === 'd' || k === 'arrowright') && gameState.direction.x === 0) {
+                gameState.nextDirection = {x: 1, y: 0};
+                e.preventDefault();
             }
         });
         
-        // Initialize
         checkExistingUser();
-        
     </script>
 </body>
 </html>
