@@ -275,6 +275,10 @@
         .prize-belt {
             display: flex;
             position: absolute;
+            transition: none;
+        }
+        
+        .prize-belt.spinning {
             transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
         
@@ -315,6 +319,7 @@
             background: #ff4757;
             transform: translateX(-50%);
             box-shadow: 0 0 20px #ff4757;
+            z-index: 10;
         }
         
         .spin-btn {
@@ -334,6 +339,117 @@
         .spin-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+        
+        /* Skin Reveal Overlay */
+        .skin-reveal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+        }
+        
+        .skin-reveal-overlay.active {
+            display: flex;
+        }
+        
+        .skin-reveal-card {
+            background: rgba(15, 52, 96, 0.95);
+            border: 3px solid #00ff88;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            animation: popIn 0.5s ease-out;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .skin-reveal-card.rare {
+            border-color: #6495ed;
+            box-shadow: 0 0 40px rgba(100, 149, 237, 0.6);
+        }
+        
+        .skin-reveal-card.epic {
+            border-color: #8a2be2;
+            box-shadow: 0 0 40px rgba(138, 43, 226, 0.6);
+        }
+        
+        .skin-reveal-card.legendary {
+            border-color: #ffd700;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+            animation: popIn 0.5s ease-out, legendaryGlow 2s infinite;
+        }
+        
+        @keyframes legendaryGlow {
+            0%, 100% { box-shadow: 0 0 60px rgba(255, 215, 0, 0.8); }
+            50% { box-shadow: 0 0 80px rgba(255, 215, 0, 1); }
+        }
+        
+        .skin-reveal-emoji {
+            font-size: 150px;
+            margin: 20px 0;
+        }
+        
+        .skin-reveal-name {
+            font-size: 36px;
+            color: #00ff88;
+            margin: 20px 0;
+        }
+        
+        .skin-reveal-rarity {
+            font-size: 24px;
+            margin: 10px 0;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        
+        .skin-reveal-rarity.rare {
+            color: #6495ed;
+        }
+        
+        .skin-reveal-rarity.epic {
+            color: #8a2be2;
+        }
+        
+        .skin-reveal-rarity.legendary {
+            color: #ffd700;
+        }
+        
+        .skin-reveal-btns {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .skin-reveal-btns button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .skin-reveal-btns .equip-btn {
+            background: linear-gradient(135deg, #00ff88, #00d4aa);
+            color: #000;
+        }
+        
+        .skin-reveal-btns .cancel-btn {
+            background: linear-gradient(135deg, #555, #333);
+            color: #fff;
         }
         
         /* Skin Grid */
@@ -392,6 +508,18 @@
         .skin-count {
             font-size: 10px;
             color: #00d4aa;
+        }
+        
+        .extra-life-indicator {
+            position: absolute;
+            top: 150px;
+            right: 30px;
+            color: #ffd700;
+            font-size: 24px;
+            text-shadow: 0 0 20px #ffd700;
+            z-index: 100;
+            pointer-events: none;
+            font-weight: bold;
         }
         
         ::-webkit-scrollbar {
@@ -474,8 +602,20 @@
                 <div class="prize-belt" id="prizeBelt"></div>
             </div>
             <button class="spin-btn" id="spinBtn" onclick="spinPrizeBelt()">🎰 SPIN (500 COINS)</button>
-            <div id="spinResult" style="text-align: center; color: #00ff88; font-size: 18px; margin: 10px 0;"></div>
             <button class="menu-btn" onclick="backToHome()">BACK</button>
+        </div>
+    </div>
+    
+    <!-- Skin Reveal Overlay -->
+    <div class="skin-reveal-overlay" id="skinRevealOverlay">
+        <div class="skin-reveal-card" id="skinRevealCard">
+            <div class="skin-reveal-emoji" id="revealEmoji"></div>
+            <div class="skin-reveal-name" id="revealName"></div>
+            <div class="skin-reveal-rarity" id="revealRarity"></div>
+            <div class="skin-reveal-btns">
+                <button class="equip-btn" onclick="equipRevealedSkin()">EQUIP</button>
+                <button class="cancel-btn" onclick="closeReveal()">CANCEL</button>
+            </div>
         </div>
     </div>
     
@@ -590,6 +730,7 @@
     </div>
     
     <div id="coinDisplay" class="coin-display" style="display: none;">💰 <span id="coins">0</span></div>
+    <div id="extraLifeIndicator" class="extra-life-indicator" style="display: none;">❤️ EXTRA LIFE</div>
     <div id="timer" style="display: none;">0s</div>
     <button id="pauseBtn" style="display: none;" onclick="pauseGame()">PAUSE</button>
     
@@ -610,19 +751,52 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         
-        // Skin definitions
+        // Skin definitions with visual properties
         const SKINS = {
-            default: { name: 'Classic', emoji: '🟢', rarity: 'common', color: '#00ff88' },
-            rainbow: { name: 'Rainbow', emoji: '🌈', rarity: 'rare', color: '#ff6b6b' },
-            fire: { name: 'Fire', emoji: '🔥', rarity: 'rare', color: '#ff4757' },
-            ice: { name: 'Ice', emoji: '❄️', rarity: 'rare', color: '#48dbfb' },
-            electric: { name: 'Electric', emoji: '⚡', rarity: 'rare', color: '#ffd93d' },
-            toxic: { name: 'Toxic', emoji: '☢️', rarity: 'rare', color: '#a3cb38' },
-            crystal: { name: 'Crystal', emoji: '💎', rarity: 'rare', color: '#4bcffa' },
-            galaxy: { name: 'Galaxy', emoji: '🌌', rarity: 'rare', color: '#5f27cd' },
-            dragon: { name: 'Dragon', emoji: '🐉', rarity: 'epic', color: '#ff6348' },
-            crown: { name: 'Crown', emoji: '👑', rarity: 'epic', color: '#ffd700' },
-            legendary: { name: 'Legendary', emoji: '✨', rarity: 'legendary', color: '#ffd700' }
+            default: { 
+                name: 'Classic', emoji: '🟢', rarity: 'common', color: '#00ff88',
+                pattern: 'solid', glow: false
+            },
+            rainbow: { 
+                name: 'Rainbow', emoji: '🌈', rarity: 'rare', color: '#ff6b6b',
+                pattern: 'rainbow', glow: true
+            },
+            fire: { 
+                name: 'Fire', emoji: '🔥', rarity: 'rare', color: '#ff4757',
+                pattern: 'gradient', glow: true, gradient: ['#ff4757', '#ff6348']
+            },
+            ice: { 
+                name: 'Ice', emoji: '❄️', rarity: 'rare', color: '#48dbfb',
+                pattern: 'solid', glow: true
+            },
+            electric: { 
+                name: 'Electric', emoji: '⚡', rarity: 'rare', color: '#ffd93d',
+                pattern: 'solid', glow: true
+            },
+            toxic: { 
+                name: 'Toxic', emoji: '☢️', rarity: 'rare', color: '#a3cb38',
+                pattern: 'solid', glow: true
+            },
+            crystal: { 
+                name: 'Crystal', emoji: '💎', rarity: 'rare', color: '#4bcffa',
+                pattern: 'gradient', glow: true, gradient: ['#4bcffa', '#00d2d3']
+            },
+            galaxy: { 
+                name: 'Galaxy', emoji: '🌌', rarity: 'rare', color: '#5f27cd',
+                pattern: 'stars', glow: true
+            },
+            dragon: { 
+                name: 'Dragon', emoji: '🐉', rarity: 'epic', color: '#ff6348',
+                pattern: 'scales', glow: true
+            },
+            crown: { 
+                name: 'Crown', emoji: '👑', rarity: 'epic', color: '#ffd700',
+                pattern: 'gradient', glow: true, gradient: ['#ffd700', '#ffed4e']
+            },
+            legendary: { 
+                name: 'Legendary', emoji: '✨', rarity: 'legendary', color: '#ffd700',
+                pattern: 'rainbow', glow: true, extraLife: true
+            }
         };
         
         const PLAYER_COLORS = [
@@ -649,17 +823,21 @@
             currentLobby: null,
             playerColor: null,
             equippedSkin: 'default',
-            alivePlayers: 0
+            alivePlayers: 0,
+            hasExtraLife: false,
+            usedExtraLife: false
         };
         
         let otherPlayers = {};
         let lobbyListener = null;
+        let wonSkinId = null;
         
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const gridSize = 20;
         let tileCount = 30;
         let gameInterval = null;
+        let rainbowHue = 0;
         
         function setCanvasSize(multiplayer = false) {
             tileCount = multiplayer ? 60 : 30;
@@ -667,7 +845,6 @@
             canvas.height = gridSize * tileCount;
         }
         
-        // User Management
         function generateUserId() {
             return 'snake_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
@@ -768,6 +945,7 @@
                 document.getElementById('timer').style.display = 'none';
                 document.getElementById('coinDisplay').style.display = 'none';
                 document.getElementById('pauseBtn').style.display = 'none';
+                document.getElementById('extraLifeIndicator').style.display = 'none';
             }
         }
         
@@ -775,6 +953,8 @@
             gameState.isMultiplayer = false;
             setCanvasSize(false);
             gameState.playerColor = SKINS[gameState.equippedSkin].color;
+            gameState.hasExtraLife = SKINS[gameState.equippedSkin].extraLife || false;
+            gameState.usedExtraLife = false;
             startGameCommon();
         };
         
@@ -784,6 +964,10 @@
             document.getElementById('timer').style.display = 'block';
             document.getElementById('coinDisplay').style.display = 'block';
             if (!gameState.isMultiplayer) document.getElementById('pauseBtn').style.display = 'block';
+            
+            if (gameState.hasExtraLife && !gameState.usedExtraLife) {
+                document.getElementById('extraLifeIndicator').style.display = 'block';
+            }
             
             initGame();
             gameState.isPlaying = true;
@@ -816,6 +1000,9 @@
             document.getElementById('timer').style.display = 'block';
             document.getElementById('coinDisplay').style.display = 'block';
             document.getElementById('pauseBtn').style.display = 'block';
+            if (gameState.hasExtraLife && !gameState.usedExtraLife) {
+                document.getElementById('extraLifeIndicator').style.display = 'block';
+            }
             gameInterval = setInterval(gameLoop, 100);
         };
         
@@ -888,6 +1075,8 @@
         
         function showLobbyScreen(code) {
             document.getElementById('lobbyCode').textContent = code;
+            document.getElementById('readyBtn').disabled = false;
+            document.getElementById('readyBtn').textContent = 'READY';
             showScreen('lobbyScreen');
             
             lobbyListener = onValue(ref(database, `lobbies/${code}`), (snapshot) => {
@@ -901,6 +1090,8 @@
                     document.getElementById('readyBtn').disabled = true;
                 } else if (lobby.gameStarted && lobby.players[gameState.userId].alive) {
                     gameState.isMultiplayer = true;
+                    gameState.hasExtraLife = SKINS[gameState.equippedSkin].extraLife || false;
+                    gameState.usedExtraLife = false;
                     setCanvasSize(true);
                     startMultiplayerGame(lobby);
                 }
@@ -940,11 +1131,15 @@
                 const allReady = Object.values(players).every(p => p.ready);
                 
                 if (allReady && Object.keys(players).length >= 1) {
+                    // Reset game started state and mark all players alive
                     const updates = {};
+                    updates[`lobbies/${gameState.currentLobby}/gameStarted`] = true;
+                    
                     Object.keys(players).forEach(id => {
                         updates[`lobbies/${gameState.currentLobby}/players/${id}/alive`] = true;
+                        updates[`lobbies/${gameState.currentLobby}/players/${id}/ready`] = false;
                     });
-                    updates[`lobbies/${gameState.currentLobby}/gameStarted`] = true;
+                    
                     update(ref(database), updates);
                 }
             });
@@ -995,6 +1190,8 @@
         function initializePrizeBelt() {
             const belt = document.getElementById('prizeBelt');
             belt.innerHTML = '';
+            belt.classList.remove('spinning');
+            belt.style.transform = 'translateX(0)';
             
             const skinKeys = Object.keys(SKINS).filter(k => k !== 'default');
             for (let i = 0; i < 50; i++) {
@@ -1021,7 +1218,6 @@
             document.getElementById('homeCoins').textContent = gameState.coins;
             
             const rand = Math.random() * 100;
-            let wonSkinId;
             
             if (rand < 3) wonSkinId = 'legendary';
             else if (rand < 30) {
@@ -1034,22 +1230,19 @@
             
             const belt = document.getElementById('prizeBelt');
             const items = belt.querySelectorAll('.prize-item');
-            let winIndex = -1;
-            for (let i = items.length - 10; i < items.length; i++) {
-                if (items[i].dataset.skinId === wonSkinId) {
-                    winIndex = i;
-                    break;
-                }
-            }
             
-            if (winIndex === -1) {
-                items[items.length - 5].dataset.skinId = wonSkinId;
-                items[items.length - 5].textContent = SKINS[wonSkinId].emoji;
-                items[items.length - 5].className = `prize-item ${SKINS[wonSkinId].rarity}`;
-                winIndex = items.length - 5;
-            }
+            // Place winning item at position that will land on selector
+            const targetIndex = 25; // Middle of belt
+            items[targetIndex].dataset.skinId = wonSkinId;
+            items[targetIndex].textContent = SKINS[wonSkinId].emoji;
+            items[targetIndex].className = `prize-item ${SKINS[wonSkinId].rarity}`;
             
-            belt.style.transform = `translateX(${-(winIndex * 140 - 300)}px)`;
+            // Calculate scroll to land selector on winning item
+            const containerWidth = belt.parentElement.offsetWidth;
+            const scrollAmount = -(targetIndex * 140 - containerWidth / 2 + 60);
+            
+            belt.classList.add('spinning');
+            belt.style.transform = `translateX(${scrollAmount}px)`;
             
             setTimeout(() => {
                 get(ref(database, `snakeUsers/${gameState.userId}/skins`)).then((snapshot) => {
@@ -1057,15 +1250,37 @@
                     skins[wonSkinId] = (skins[wonSkinId] || 0) + 1;
                     update(ref(database, `snakeUsers/${gameState.userId}`), { skins });
                     
-                    const wonSkin = SKINS[wonSkinId];
-                    document.getElementById('spinResult').innerHTML = 
-                        `🎉 Won: ${wonSkin.emoji} ${wonSkin.name} (${wonSkin.rarity.toUpperCase()})!`;
-                    
+                    showSkinReveal(wonSkinId);
                     btn.disabled = false;
-                    belt.style.transform = 'translateX(0)';
-                    initializePrizeBelt();
                 });
             }, 3000);
+        };
+        
+        function showSkinReveal(skinId) {
+            const skin = SKINS[skinId];
+            const overlay = document.getElementById('skinRevealOverlay');
+            const card = document.getElementById('skinRevealCard');
+            
+            card.className = `skin-reveal-card ${skin.rarity}`;
+            document.getElementById('revealEmoji').textContent = skin.emoji;
+            document.getElementById('revealName').textContent = skin.name;
+            
+            const rarityEl = document.getElementById('revealRarity');
+            rarityEl.textContent = skin.rarity;
+            rarityEl.className = `skin-reveal-rarity ${skin.rarity}`;
+            
+            overlay.classList.add('active');
+        }
+        
+        window.equipRevealedSkin = function() {
+            gameState.equippedSkin = wonSkinId;
+            update(ref(database, `snakeUsers/${gameState.userId}`), { equippedSkin: wonSkinId }).then(() => {
+                closeReveal();
+            });
+        };
+        
+        window.closeReveal = function() {
+            document.getElementById('skinRevealOverlay').classList.remove('active');
         };
         
         function loadLocker() {
@@ -1150,6 +1365,17 @@
         }
         
         function gameOver() {
+            // Check for extra life (legendary skin)
+            if (gameState.hasExtraLife && !gameState.usedExtraLife) {
+                gameState.usedExtraLife = true;
+                gameState.snake = [{x: Math.floor(tileCount/2), y: Math.floor(tileCount/2)}];
+                gameState.direction = {x: 1, y: 0};
+                gameState.nextDirection = {x: 1, y: 0};
+                document.getElementById('extraLifeIndicator').style.display = 'none';
+                alert('🌟 LEGENDARY EXTRA LIFE USED! 🌟');
+                return; // Don't end game, continue playing
+            }
+            
             gameState.isPlaying = false;
             clearInterval(gameInterval);
             
@@ -1221,6 +1447,8 @@
         function gameLoop() {
             if (!gameState.isPlaying || gameState.isPaused) return;
             
+            rainbowHue = (rainbowHue + 2) % 360;
+            
             gameState.direction = gameState.nextDirection;
             const head = {
                 x: gameState.snake[0].x + gameState.direction.x,
@@ -1259,6 +1487,47 @@
             draw();
         }
         
+        function drawSnakeSegment(x, y, index, totalLength, skin) {
+            const skinData = SKINS[skin] || SKINS.default;
+            
+            if (skinData.pattern === 'rainbow') {
+                const hue = (rainbowHue + index * 10) % 360;
+                ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+            } else if (skinData.pattern === 'gradient' && skinData.gradient) {
+                const gradient = ctx.createLinearGradient(
+                    x * gridSize, y * gridSize,
+                    (x + 1) * gridSize, (y + 1) * gridSize
+                );
+                gradient.addColorStop(0, skinData.gradient[0]);
+                gradient.addColorStop(1, skinData.gradient[1]);
+                ctx.fillStyle = gradient;
+            } else {
+                const alpha = 1 - (index / totalLength) * 0.5;
+                ctx.fillStyle = skinData.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+            }
+            
+            if (skinData.glow) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = skinData.color;
+            }
+            
+            ctx.fillRect(x * gridSize + 1, y * gridSize + 1, gridSize - 2, gridSize - 2);
+            
+            // Pattern overlays
+            if (skinData.pattern === 'scales' && index > 0) {
+                ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x * gridSize + gridSize/2, y * gridSize + gridSize/2, gridSize/3, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (skinData.pattern === 'stars' && index % 2 === 0) {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x * gridSize + gridSize/2 - 1, y * gridSize + gridSize/2 - 1, 2, 2);
+            }
+            
+            ctx.shadowBlur = 0;
+        }
+        
         function draw() {
             ctx.fillStyle = '#0f3460';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1281,9 +1550,8 @@
                 Object.entries(otherPlayers).forEach(([id, player]) => {
                     if (!player.snake || !player.alive) return;
                     
-                    player.snake.forEach((s) => {
-                        ctx.fillStyle = player.color;
-                        ctx.fillRect(s.x * gridSize + 1, s.y * gridSize + 1, gridSize - 2, gridSize - 2);
+                    player.snake.forEach((s, i) => {
+                        drawSnakeSegment(s.x, s.y, i, player.snake.length, player.skin);
                     });
                     
                     if (player.snake[0]) {
@@ -1295,9 +1563,7 @@
             }
             
             gameState.snake.forEach((s, i) => {
-                ctx.fillStyle = gameState.playerColor || '#00ff88';
-                ctx.globalAlpha = 1 - (i / gameState.snake.length) * 0.5;
-                ctx.fillRect(s.x * gridSize + 1, s.y * gridSize + 1, gridSize - 2, gridSize - 2);
+                drawSnakeSegment(s.x, s.y, i, gameState.snake.length, gameState.equippedSkin);
                 
                 if (i === 0) {
                     ctx.globalAlpha = 1;
