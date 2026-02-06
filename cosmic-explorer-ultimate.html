@@ -522,6 +522,13 @@
             font-weight: bold;
         }
         
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            25% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+            75% { opacity: 0.4; }
+        }
+        
         ::-webkit-scrollbar {
             width: 12px;
         }
@@ -825,12 +832,15 @@
             equippedSkin: 'default',
             alivePlayers: 0,
             hasExtraLife: false,
-            usedExtraLife: false
+            usedExtraLife: false,
+            isReviving: false,
+            reviveFlickerCount: 0
         };
         
         let otherPlayers = {};
         let lobbyListener = null;
         let wonSkinId = null;
+        let savedSnakeLength = 0;
         
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -955,6 +965,8 @@
             gameState.playerColor = SKINS[gameState.equippedSkin].color;
             gameState.hasExtraLife = SKINS[gameState.equippedSkin].extraLife || false;
             gameState.usedExtraLife = false;
+            gameState.isReviving = false;
+            gameState.reviveFlickerCount = 0;
             startGameCommon();
         };
         
@@ -1092,6 +1104,8 @@
                     gameState.isMultiplayer = true;
                     gameState.hasExtraLife = SKINS[gameState.equippedSkin].extraLife || false;
                     gameState.usedExtraLife = false;
+                    gameState.isReviving = false;
+                    gameState.reviveFlickerCount = 0;
                     setCanvasSize(true);
                     startMultiplayerGame(lobby);
                 }
@@ -1131,7 +1145,6 @@
                 const allReady = Object.values(players).every(p => p.ready);
                 
                 if (allReady && Object.keys(players).length >= 1) {
-                    // Reset game started state and mark all players alive
                     const updates = {};
                     updates[`lobbies/${gameState.currentLobby}/gameStarted`] = true;
                     
@@ -1191,6 +1204,7 @@
             const belt = document.getElementById('prizeBelt');
             belt.innerHTML = '';
             belt.classList.remove('spinning');
+            belt.style.transition = 'none';
             belt.style.transform = 'translateX(0)';
             
             const skinKeys = Object.keys(SKINS).filter(k => k !== 'default');
@@ -1228,18 +1242,26 @@
                 wonSkinId = rares[Math.floor(Math.random() * rares.length)];
             }
             
+            // Reinitialize belt for new spin
+            initializePrizeBelt();
+            
             const belt = document.getElementById('prizeBelt');
             const items = belt.querySelectorAll('.prize-item');
             
-            // Place winning item at position that will land on selector
-            const targetIndex = 25; // Middle of belt
+            // Choose random position between indices 20-30
+            const targetIndex = 20 + Math.floor(Math.random() * 11);
+            
             items[targetIndex].dataset.skinId = wonSkinId;
             items[targetIndex].textContent = SKINS[wonSkinId].emoji;
             items[targetIndex].className = `prize-item ${SKINS[wonSkinId].rarity}`;
             
-            // Calculate scroll to land selector on winning item
             const containerWidth = belt.parentElement.offsetWidth;
-            const scrollAmount = -(targetIndex * 140 - containerWidth / 2 + 60);
+            // Random offset within the item to make it less centered
+            const randomOffset = (Math.random() - 0.5) * 80; // -40 to +40 pixels
+            const scrollAmount = -(targetIndex * 140 - containerWidth / 2 + 60 + randomOffset);
+            
+            // Force reflow to ensure animation works
+            belt.offsetHeight;
             
             belt.classList.add('spinning');
             belt.style.transform = `translateX(${scrollAmount}px)`;
@@ -1368,12 +1390,24 @@
             // Check for extra life (legendary skin)
             if (gameState.hasExtraLife && !gameState.usedExtraLife) {
                 gameState.usedExtraLife = true;
-                gameState.snake = [{x: Math.floor(tileCount/2), y: Math.floor(tileCount/2)}];
+                gameState.isReviving = true;
+                gameState.reviveFlickerCount = 0;
+                savedSnakeLength = gameState.snake.length; // Save current length
+                
+                // Respawn at center with same length
+                const centerX = Math.floor(tileCount / 2);
+                const centerY = Math.floor(tileCount / 2);
+                gameState.snake = [];
+                
+                for (let i = 0; i < savedSnakeLength; i++) {
+                    gameState.snake.push({x: centerX - i, y: centerY});
+                }
+                
                 gameState.direction = {x: 1, y: 0};
                 gameState.nextDirection = {x: 1, y: 0};
                 document.getElementById('extraLifeIndicator').style.display = 'none';
-                alert('🌟 LEGENDARY EXTRA LIFE USED! 🌟');
-                return; // Don't end game, continue playing
+                
+                return; // Don't end game, continue playing with flickering effect
             }
             
             gameState.isPlaying = false;
@@ -1449,6 +1483,14 @@
             
             rainbowHue = (rainbowHue + 2) % 360;
             
+            // Handle revival flickering
+            if (gameState.isReviving) {
+                gameState.reviveFlickerCount++;
+                if (gameState.reviveFlickerCount > 20) { // Stop flickering after 2 seconds
+                    gameState.isReviving = false;
+                }
+            }
+            
             gameState.direction = gameState.nextDirection;
             const head = {
                 x: gameState.snake[0].x + gameState.direction.x,
@@ -1488,6 +1530,11 @@
         }
         
         function drawSnakeSegment(x, y, index, totalLength, skin) {
+            // Flickering effect during revival
+            if (gameState.isReviving && Math.floor(gameState.reviveFlickerCount / 2) % 2 === 0) {
+                return; // Skip drawing to create flicker
+            }
+            
             const skinData = SKINS[skin] || SKINS.default;
             
             if (skinData.pattern === 'rainbow') {
@@ -1513,7 +1560,6 @@
             
             ctx.fillRect(x * gridSize + 1, y * gridSize + 1, gridSize - 2, gridSize - 2);
             
-            // Pattern overlays
             if (skinData.pattern === 'scales' && index > 0) {
                 ctx.strokeStyle = 'rgba(0,0,0,0.3)';
                 ctx.lineWidth = 2;
@@ -1565,7 +1611,7 @@
             gameState.snake.forEach((s, i) => {
                 drawSnakeSegment(s.x, s.y, i, gameState.snake.length, gameState.equippedSkin);
                 
-                if (i === 0) {
+                if (i === 0 && (!gameState.isReviving || Math.floor(gameState.reviveFlickerCount / 2) % 2 === 1)) {
                     ctx.globalAlpha = 1;
                     ctx.fillStyle = '#000';
                     const e = 3, o = 5;
