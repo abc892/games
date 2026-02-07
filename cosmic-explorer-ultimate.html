@@ -275,11 +275,6 @@
         .prize-belt {
             display: flex;
             position: absolute;
-            transition: none;
-        }
-        
-        .prize-belt.spinning {
-            transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
         
         .prize-item {
@@ -522,13 +517,6 @@
             font-weight: bold;
         }
         
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            25% { opacity: 0.3; }
-            50% { opacity: 0.7; }
-            75% { opacity: 0.4; }
-        }
-        
         ::-webkit-scrollbar {
             width: 12px;
         }
@@ -736,7 +724,7 @@
         <div>LENGTH: <span id="length">1</span></div>
     </div>
     
-    <div id="coinDisplay" class="coin-display" style="display: none;">💰 <span id="coins">0</span></div>
+    <div id="coinDisplay" class="coin-display" style="display: none;">💰 Food: <span id="foodCounter">0</span></div>
     <div id="extraLifeIndicator" class="extra-life-indicator" style="display: none;">❤️ EXTRA LIFE</div>
     <div id="timer" style="display: none;">0s</div>
     <button id="pauseBtn" style="display: none;" onclick="pauseGame()">PAUSE</button>
@@ -758,64 +746,25 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         
-        // Skin definitions with visual properties
+        // Skin definitions
         const SKINS = {
-            default: { 
-                name: 'Classic', emoji: '🟢', rarity: 'common', color: '#00ff88',
-                pattern: 'solid', glow: false
-            },
-            rainbow: { 
-                name: 'Rainbow', emoji: '🌈', rarity: 'rare', color: '#ff6b6b',
-                pattern: 'rainbow', glow: true
-            },
-            fire: { 
-                name: 'Fire', emoji: '🔥', rarity: 'rare', color: '#ff4757',
-                pattern: 'gradient', glow: true, gradient: ['#ff4757', '#ff6348']
-            },
-            ice: { 
-                name: 'Ice', emoji: '❄️', rarity: 'rare', color: '#48dbfb',
-                pattern: 'solid', glow: true
-            },
-            electric: { 
-                name: 'Electric', emoji: '⚡', rarity: 'rare', color: '#ffd93d',
-                pattern: 'solid', glow: true
-            },
-            toxic: { 
-                name: 'Toxic', emoji: '☢️', rarity: 'rare', color: '#a3cb38',
-                pattern: 'solid', glow: true
-            },
-            crystal: { 
-                name: 'Crystal', emoji: '💎', rarity: 'rare', color: '#4bcffa',
-                pattern: 'gradient', glow: true, gradient: ['#4bcffa', '#00d2d3']
-            },
-            galaxy: { 
-                name: 'Galaxy', emoji: '🌌', rarity: 'rare', color: '#5f27cd',
-                pattern: 'stars', glow: true
-            },
-            dragon: { 
-                name: 'Dragon', emoji: '🐉', rarity: 'epic', color: '#ff6348',
-                pattern: 'scales', glow: true
-            },
-            crown: { 
-                name: 'Crown', emoji: '👑', rarity: 'epic', color: '#ffd700',
-                pattern: 'gradient', glow: true, gradient: ['#ffd700', '#ffed4e']
-            },
-            legendary: { 
-                name: 'Legendary', emoji: '✨', rarity: 'legendary', color: '#ffd700',
-                pattern: 'rainbow', glow: true, extraLife: true
-            }
+            default: { name: 'Classic', emoji: '🟢', rarity: 'common', color: '#00ff88', pattern: 'solid', glow: false },
+            rainbow: { name: 'Rainbow', emoji: '🌈', rarity: 'rare', color: '#ff6b6b', pattern: 'rainbow', glow: true },
+            fire: { name: 'Fire', emoji: '🔥', rarity: 'rare', color: '#ff4757', pattern: 'gradient', glow: true, gradient: ['#ff4757', '#ff6348'] },
+            ice: { name: 'Ice', emoji: '❄️', rarity: 'rare', color: '#48dbfb', pattern: 'solid', glow: true },
+            electric: { name: 'Electric', emoji: '⚡', rarity: 'rare', color: '#ffd93d', pattern: 'solid', glow: true },
+            toxic: { name: 'Toxic', emoji: '☢️', rarity: 'rare', color: '#a3cb38', pattern: 'solid', glow: true },
+            crystal: { name: 'Crystal', emoji: '💎', rarity: 'rare', color: '#4bcffa', pattern: 'gradient', glow: true, gradient: ['#4bcffa', '#00d2d3'] },
+            galaxy: { name: 'Galaxy', emoji: '🌌', rarity: 'rare', color: '#5f27cd', pattern: 'stars', glow: true },
+            dragon: { name: 'Dragon', emoji: '🐉', rarity: 'epic', color: '#ff6348', pattern: 'scales', glow: true },
+            crown: { name: 'Crown', emoji: '👑', rarity: 'epic', color: '#ffd700', pattern: 'gradient', glow: true, gradient: ['#ffd700', '#ffed4e'] },
+            legendary: { name: 'Legendary', emoji: '✨', rarity: 'legendary', color: '#ffd700', pattern: 'rainbow', glow: true, extraLife: true }
         };
         
-        const PLAYER_COLORS = [
-            '#00ff88', '#ff4757', '#ffd93d', '#5f27cd', 
-            '#00d2d3', '#ff6348', '#48dbfb', '#ff9ff3',
-            '#54a0ff', '#00d2d3'
-        ];
+        const PLAYER_COLORS = ['#00ff88', '#ff4757', '#ffd93d', '#5f27cd', '#00d2d3', '#ff6348', '#48dbfb', '#ff9ff3', '#54a0ff', '#00d2d3'];
         
-        // Game State
         let gameState = {
             score: 0,
-            coins: 0,
             foodEaten: 0,
             isPlaying: false,
             isPaused: false,
@@ -863,6 +812,14 @@
             return Math.floor(100000 + Math.random() * 900000).toString();
         }
         
+        async function refreshCoins() {
+            const snapshot = await get(ref(database, `snakeUsers/${gameState.userId}/coins`));
+            const freshCoins = snapshot.val() || 0;
+            document.getElementById('homeCoins').textContent = freshCoins;
+            document.getElementById('shopCoins').textContent = freshCoins;
+            return freshCoins;
+        }
+        
         function checkExistingUser() {
             const userId = localStorage.getItem('snakeMasterUserId');
             if (userId) {
@@ -871,11 +828,10 @@
                     if (snapshot.exists()) {
                         const userData = snapshot.val();
                         gameState.userName = userData.name;
-                        gameState.coins = userData.coins || 0;
                         gameState.equippedSkin = userData.equippedSkin || 'default';
                         showScreen('homeScreen');
                         document.getElementById('welcomeName').textContent = userData.name;
-                        document.getElementById('homeCoins').textContent = gameState.coins;
+                        document.getElementById('homeCoins').textContent = userData.coins || 0;
                     } else {
                         localStorage.removeItem('snakeMasterUserId');
                         showScreen('welcomeScreen');
@@ -894,13 +850,11 @@
             gameState.userId = userId;
             gameState.userName = name;
             
-            const userData = {
+            set(ref(database, 'snakeUsers/' + userId), {
                 name, highScore: 0, bestTime: 0, totalScore: 0,
                 gamesPlayed: 0, coins: 0, equippedSkin: 'default',
                 skins: { default: 1 }, createdAt: Date.now(), lastNameChange: Date.now()
-            };
-            
-            set(ref(database, 'snakeUsers/' + userId), userData).then(() => {
+            }).then(() => {
                 localStorage.setItem('snakeMasterUserId', userId);
                 document.getElementById('welcomeName').textContent = name;
                 document.getElementById('homeCoins').textContent = 0;
@@ -956,6 +910,7 @@
                 document.getElementById('coinDisplay').style.display = 'none';
                 document.getElementById('pauseBtn').style.display = 'none';
                 document.getElementById('extraLifeIndicator').style.display = 'none';
+                refreshCoins();
             }
         }
         
@@ -967,6 +922,7 @@
             gameState.usedExtraLife = false;
             gameState.isReviving = false;
             gameState.reviveFlickerCount = 0;
+            gameState.foodEaten = 0;
             startGameCommon();
         };
         
@@ -986,9 +942,8 @@
             gameState.isPaused = false;
             gameState.startTime = Date.now();
             gameState.score = 0;
-            gameState.foodEaten = 0;
             
-            document.getElementById('coins').textContent = gameState.coins;
+            document.getElementById('foodCounter').textContent = 0;
             
             if (gameInterval) clearInterval(gameInterval);
             gameInterval = setInterval(gameLoop, 100);
@@ -1106,6 +1061,7 @@
                     gameState.usedExtraLife = false;
                     gameState.isReviving = false;
                     gameState.reviveFlickerCount = 0;
+                    gameState.foodEaten = 0;
                     setCanvasSize(true);
                     startMultiplayerGame(lobby);
                 }
@@ -1193,9 +1149,9 @@
         
         window.showLeaderboard = function() { showScreen('leaderboardScreen'); loadLeaderboard(); };
         window.showSettings = function() { showScreen('settingsScreen'); loadSettings(); };
-        window.showShop = function() {
+        window.showShop = async function() {
+            await refreshCoins();
             showScreen('shopScreen');
-            document.getElementById('shopCoins').textContent = gameState.coins;
             initializePrizeBelt();
         };
         window.showLocker = function() { showScreen('lockerScreen'); loadLocker(); };
@@ -1203,7 +1159,6 @@
         function initializePrizeBelt() {
             const belt = document.getElementById('prizeBelt');
             belt.innerHTML = '';
-            belt.classList.remove('spinning');
             belt.style.transition = 'none';
             belt.style.transform = 'translateX(0)';
             
@@ -1220,16 +1175,21 @@
             }
         }
         
-        window.spinPrizeBelt = function() {
-            if (gameState.coins < 500) { alert('Need 500 coins!'); return; }
+        window.spinPrizeBelt = async function() {
+            const freshCoins = await refreshCoins();
+            
+            if (freshCoins < 500) { 
+                alert('Not enough coins! You need 500 coins.'); 
+                return; 
+            }
             
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
             
-            gameState.coins -= 500;
-            update(ref(database, `snakeUsers/${gameState.userId}`), { coins: gameState.coins });
-            document.getElementById('shopCoins').textContent = gameState.coins;
-            document.getElementById('homeCoins').textContent = gameState.coins;
+            const newCoinAmount = freshCoins - 500;
+            await update(ref(database, `snakeUsers/${gameState.userId}`), { coins: newCoinAmount });
+            document.getElementById('shopCoins').textContent = newCoinAmount;
+            document.getElementById('homeCoins').textContent = newCoinAmount;
             
             const rand = Math.random() * 100;
             
@@ -1242,13 +1202,11 @@
                 wonSkinId = rares[Math.floor(Math.random() * rares.length)];
             }
             
-            // Reinitialize belt for new spin
             initializePrizeBelt();
             
             const belt = document.getElementById('prizeBelt');
             const items = belt.querySelectorAll('.prize-item');
             
-            // Choose random position between indices 20-30
             const targetIndex = 20 + Math.floor(Math.random() * 11);
             
             items[targetIndex].dataset.skinId = wonSkinId;
@@ -1256,25 +1214,25 @@
             items[targetIndex].className = `prize-item ${SKINS[wonSkinId].rarity}`;
             
             const containerWidth = belt.parentElement.offsetWidth;
-            // Random offset within the item to make it less centered
-            const randomOffset = (Math.random() - 0.5) * 80; // -40 to +40 pixels
+            const randomOffset = (Math.random() - 0.5) * 80;
             const scrollAmount = -(targetIndex * 140 - containerWidth / 2 + 60 + randomOffset);
             
-            // Force reflow to ensure animation works
-            belt.offsetHeight;
-            
-            belt.classList.add('spinning');
-            belt.style.transform = `translateX(${scrollAmount}px)`;
-            
-            setTimeout(() => {
-                get(ref(database, `snakeUsers/${gameState.userId}/skins`)).then((snapshot) => {
-                    const skins = snapshot.val() || {};
-                    skins[wonSkinId] = (skins[wonSkinId] || 0) + 1;
-                    update(ref(database, `snakeUsers/${gameState.userId}`), { skins });
-                    
-                    showSkinReveal(wonSkinId);
-                    btn.disabled = false;
+            // Double requestAnimationFrame to ensure DOM update
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    belt.style.transition = 'transform 3s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                    belt.style.transform = `translateX(${scrollAmount}px)`;
                 });
+            });
+            
+            setTimeout(async () => {
+                const snapshot = await get(ref(database, `snakeUsers/${gameState.userId}/skins`));
+                const skins = snapshot.val() || {};
+                skins[wonSkinId] = (skins[wonSkinId] || 0) + 1;
+                await update(ref(database, `snakeUsers/${gameState.userId}`), { skins });
+                
+                showSkinReveal(wonSkinId);
+                btn.disabled = false;
             }, 3000);
         };
         
@@ -1386,15 +1344,13 @@
             });
         }
         
-        function gameOver() {
-            // Check for extra life (legendary skin)
+        async function gameOver() {
             if (gameState.hasExtraLife && !gameState.usedExtraLife) {
                 gameState.usedExtraLife = true;
                 gameState.isReviving = true;
                 gameState.reviveFlickerCount = 0;
-                savedSnakeLength = gameState.snake.length; // Save current length
+                savedSnakeLength = gameState.snake.length;
                 
-                // Respawn at center with same length
                 const centerX = Math.floor(tileCount / 2);
                 const centerY = Math.floor(tileCount / 2);
                 gameState.snake = [];
@@ -1407,7 +1363,7 @@
                 gameState.nextDirection = {x: 1, y: 0};
                 document.getElementById('extraLifeIndicator').style.display = 'none';
                 
-                return; // Don't end game, continue playing with flickering effect
+                return;
             }
             
             gameState.isPlaying = false;
@@ -1415,24 +1371,27 @@
             
             const survivalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
             const coinsEarned = gameState.foodEaten;
-            gameState.coins += coinsEarned;
+            
+            // Get fresh coin count and add earned coins
+            const snapshot = await get(ref(database, `snakeUsers/${gameState.userId}`));
+            const userData = snapshot.val();
+            const currentCoins = userData.coins || 0;
+            const newCoinTotal = currentCoins + coinsEarned;
             
             document.getElementById('finalScore').textContent = gameState.score;
             document.getElementById('finalTime').textContent = survivalTime;
             document.getElementById('finalLength').textContent = gameState.snake.length;
             document.getElementById('coinsEarned').textContent = coinsEarned;
             
-            get(ref(database, `snakeUsers/${gameState.userId}`)).then((snapshot) => {
-                const d = snapshot.val();
-                const updates = {
-                    gamesPlayed: (d.gamesPlayed || 0) + 1,
-                    totalScore: (d.totalScore || 0) + gameState.score,
-                    coins: gameState.coins
-                };
-                if (gameState.score > (d.highScore || 0)) updates.highScore = gameState.score;
-                if (survivalTime > (d.bestTime || 0)) updates.bestTime = survivalTime;
-                update(ref(database, `snakeUsers/${gameState.userId}`), updates);
-            });
+            const updates = {
+                gamesPlayed: (userData.gamesPlayed || 0) + 1,
+                totalScore: (userData.totalScore || 0) + gameState.score,
+                coins: newCoinTotal
+            };
+            if (gameState.score > (userData.highScore || 0)) updates.highScore = gameState.score;
+            if (survivalTime > (userData.bestTime || 0)) updates.bestTime = survivalTime;
+            
+            await update(ref(database, `snakeUsers/${gameState.userId}`), updates);
             
             if (gameState.isMultiplayer) {
                 update(ref(database, `lobbies/${gameState.currentLobby}/players/${gameState.userId}`), { alive: false });
@@ -1442,7 +1401,7 @@
             }
         }
         
-        function victory() {
+        async function victory() {
             gameState.isPlaying = false;
             clearInterval(gameInterval);
             
@@ -1450,8 +1409,10 @@
             document.getElementById('victoryLength').textContent = gameState.snake.length;
             
             const coinsEarned = gameState.foodEaten;
-            gameState.coins += coinsEarned;
-            update(ref(database, `snakeUsers/${gameState.userId}`), { coins: gameState.coins });
+            const snapshot = await get(ref(database, `snakeUsers/${gameState.userId}/coins`));
+            const currentCoins = snapshot.val() || 0;
+            const newTotal = currentCoins + coinsEarned;
+            await update(ref(database, `snakeUsers/${gameState.userId}`), { coins: newTotal });
             
             showScreen('victoryScreen');
         }
@@ -1483,10 +1444,9 @@
             
             rainbowHue = (rainbowHue + 2) % 360;
             
-            // Handle revival flickering
             if (gameState.isReviving) {
                 gameState.reviveFlickerCount++;
-                if (gameState.reviveFlickerCount > 20) { // Stop flickering after 2 seconds
+                if (gameState.reviveFlickerCount > 20) {
                     gameState.isReviving = false;
                 }
             }
@@ -1512,8 +1472,7 @@
             if (head.x === gameState.food.x && head.y === gameState.food.y) {
                 gameState.score += 10;
                 gameState.foodEaten++;
-                gameState.coins++;
-                document.getElementById('coins').textContent = gameState.coins;
+                document.getElementById('foodCounter').textContent = gameState.foodEaten;
                 spawnFood();
             } else {
                 gameState.snake.pop();
@@ -1530,9 +1489,8 @@
         }
         
         function drawSnakeSegment(x, y, index, totalLength, skin) {
-            // Flickering effect during revival
             if (gameState.isReviving && Math.floor(gameState.reviveFlickerCount / 2) % 2 === 0) {
-                return; // Skip drawing to create flicker
+                return;
             }
             
             const skinData = SKINS[skin] || SKINS.default;
