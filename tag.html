@@ -415,6 +415,7 @@
     let teleporters = [];
     let teleportCooldown = 0;
     let lastTagTime = 0;
+    let tagCooldowns = {}; // Track cooldown between specific player pairs
     let isHost = false;
     let isTabVisible = true;
 
@@ -925,13 +926,18 @@
     function startHostTimer() {
       if (hostTimerInterval) clearInterval(hostTimerInterval);
       
+      console.log('Host timer started');
+      
       hostTimerInterval = setInterval(() => {
         if (timer > 0 && gameStarted && !gameOver) {
           timer--;
           database.ref(`tagGame/lobbies/${currentLobby}`).update({ timer });
+          console.log('Timer:', timer);
           
           if (timer === 0) {
+            console.log('Timer reached 0 - ending game');
             clearInterval(hostTimerInterval);
+            hostTimerInterval = null;
             endGame();
           }
         }
@@ -939,7 +945,7 @@
     }
 
     function endGame() {
-      if (!isHost) return;
+      if (!isHost || !currentLobby) return;
       
       console.log('Host ending game...');
       
@@ -947,6 +953,8 @@
       database.ref(`tagGame/lobbies/${currentLobby}`).update({
         gameStarted: false,
         gameEnded: true
+      }).then(() => {
+        console.log('Game ended signal sent to Firebase');
       });
       
       if (hostTimerInterval) {
@@ -969,6 +977,11 @@
       if (hostTimerInterval) {
         clearInterval(hostTimerInterval);
         hostTimerInterval = null;
+      }
+      
+      // Stop listening to player updates during game over
+      if (currentLobby) {
+        database.ref(`tagGame/lobbies/${currentLobby}/players`).off('value');
       }
       
       // Find winner
@@ -1486,32 +1499,56 @@
         if (itPlayer) {
           const otherLocalPlayers = players.filter(p => !p.isIt);
           for (const otherPlayer of otherLocalPlayers) {
-            if (detectPlayerTag(itPlayer, otherPlayer) && Date.now() - lastTagTime > 1000) {
-              itPlayer.isIt = false;
-              otherPlayer.isIt = true;
-              lastTagTime = Date.now();
-              break;
+            const tagKey = `${players.indexOf(itPlayer)}-${players.indexOf(otherPlayer)}`;
+            const now = Date.now();
+            
+            // Check if this specific pair has a cooldown
+            if (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000) {
+              if (detectPlayerTag(itPlayer, otherPlayer)) {
+                itPlayer.isIt = false;
+                otherPlayer.isIt = true;
+                tagCooldowns[tagKey] = now;
+                lastTagTime = now;
+                console.log('Tag!', itPlayer.color, '→', otherPlayer.color);
+                break;
+              }
             }
           }
         }
 
         if (smartCircle) {
+          const now = Date.now();
+          
           if (smartCircle.isIt) {
-            for (const player of players) {
-              if (player && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
-                smartCircle.isIt = false;
-                player.isIt = true;
-                lastTagTime = Date.now();
-                break;
+            for (let i = 0; i < players.length; i++) {
+              const player = players[i];
+              const tagKey = `circle-${i}`;
+              
+              if (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000) {
+                if (player && detectCirclePlayerTag(smartCircle, player)) {
+                  smartCircle.isIt = false;
+                  player.isIt = true;
+                  tagCooldowns[tagKey] = now;
+                  lastTagTime = now;
+                  console.log('Circle tagged player', i);
+                  break;
+                }
               }
             }
           } else {
-            for (const player of players) {
-              if (player && player.isIt && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
-                player.isIt = false;
-                smartCircle.isIt = true;
-                lastTagTime = Date.now();
-                break;
+            for (let i = 0; i < players.length; i++) {
+              const player = players[i];
+              const tagKey = `${i}-circle`;
+              
+              if (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000) {
+                if (player && player.isIt && detectCirclePlayerTag(smartCircle, player)) {
+                  player.isIt = false;
+                  smartCircle.isIt = true;
+                  tagCooldowns[tagKey] = now;
+                  lastTagTime = now;
+                  console.log('Player', i, 'tagged circle');
+                  break;
+                }
               }
             }
           }
@@ -1527,6 +1564,11 @@
           gameOver = true;
           gameStarted = false;
           
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+          
           let winner = '';
           const itPlayer = players.find(p => p.isIt);
           if (itPlayer) {
@@ -1541,29 +1583,40 @@
           document.getElementById('gameOverBtn').onclick = goToModeSelect;
         }
       } else {
-        // Multiplayer tag detection
+        // Multiplayer tag detection with intelligent cooldown
         const itPlayer = players[0];
+        const now = Date.now();
         
         if (itPlayer && itPlayer.isIt) {
           Object.entries(otherPlayers).forEach(([id, otherPlayer]) => {
-            const collision = (
-              itPlayer.x < otherPlayer.x + 30 &&
-              itPlayer.x + itPlayer.w > otherPlayer.x &&
-              itPlayer.y < otherPlayer.y + 30 &&
-              itPlayer.y + itPlayer.h > otherPlayer.y
-            );
+            const tagKey = `${userId}-${id}`;
             
-            if (collision && Date.now() - lastTagTime > 1000) {
-              itPlayer.isIt = false;
-              database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ isIt: false });
-              database.ref(`tagGame/lobbies/${currentLobby}/players/${id}`).update({ isIt: true });
-              lastTagTime = Date.now();
+            // Check cooldown for this specific pair
+            if (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000) {
+              const collision = (
+                itPlayer.x < otherPlayer.x + 30 &&
+                itPlayer.x + itPlayer.w > otherPlayer.x &&
+                itPlayer.y < otherPlayer.y + 30 &&
+                itPlayer.y + itPlayer.h > otherPlayer.y
+              );
+              
+              if (collision) {
+                console.log('Tagged:', id);
+                itPlayer.isIt = false;
+                database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ isIt: false });
+                database.ref(`tagGame/lobbies/${currentLobby}/players/${id}`).update({ isIt: true });
+                tagCooldowns[tagKey] = now;
+                lastTagTime = now;
+              }
             }
           });
         }
         
+        // Check if other players tag us
         Object.entries(otherPlayers).forEach(([id, otherPlayer]) => {
-          if (otherPlayer.isIt && players[0]) {
+          const tagKey = `${id}-${userId}`;
+          
+          if (otherPlayer.isIt && players[0] && (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000)) {
             const collision = (
               players[0].x < otherPlayer.x + 30 &&
               players[0].x + players[0].w > otherPlayer.x &&
@@ -1571,11 +1624,13 @@
               players[0].y + players[0].h > otherPlayer.y
             );
             
-            if (collision && Date.now() - lastTagTime > 1000) {
+            if (collision) {
+              console.log('Got tagged by:', id);
               players[0].isIt = true;
               database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ isIt: true });
               database.ref(`tagGame/lobbies/${currentLobby}/players/${id}`).update({ isIt: false });
-              lastTagTime = Date.now();
+              tagCooldowns[tagKey] = now;
+              lastTagTime = now;
             }
           }
         });
