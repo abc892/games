@@ -85,7 +85,7 @@
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
       border: 2px solid gold;
     }
-    #setup-screen, #time-setup, #mode-select-screen, #multiplayer-screen, #lobby-screen {
+    #setup-screen, #time-setup, #mode-select-screen, #name-screen, #lobby-screen {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -98,7 +98,7 @@
       color: white;
       width: 400px;
     }
-    #multiplayer-screen, #lobby-screen {
+    #lobby-screen {
       width: 500px;
     }
     #countdown {
@@ -144,6 +144,10 @@
     button:hover {
       background: #45a049;
     }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     .toggle-btn {
       background: #555;
     }
@@ -167,7 +171,7 @@
       border-radius: 5px;
       border: 1px solid #ccc;
       margin: 10px 0;
-      width: 100px;
+      width: 200px;
     }
     .mode-container {
       margin-top: 20px;
@@ -241,6 +245,10 @@
       background: rgba(0, 255, 136, 0.3);
       border-color: #00ff88;
     }
+    .player-entry.current-user {
+      background: rgba(255, 215, 0, 0.15);
+      border-color: #ffd700;
+    }
   </style>
 </head>
 <body>
@@ -248,27 +256,41 @@
     <button id="home-btn" style="display: none;">🏠 Home</button>
     <div id="ui" style="display: none;">Time: 0</div>
     <button id="pause-btn" style="display: none;">Pause</button>
+    
     <div id="gameOver">
       <h2>Game Over!</h2>
       <div id="winner-text" style="color:gold; font-weight:bold; margin: 20px 0; font-size: 24px;"></div>
       <div style="margin: 20px 0;">
-        <p id="gameOverMessage">Press SPACEBAR or click the button</p>
-        <button class="retry-btn" id="gameOverBtn">🔄 Play Again</button>
+        <p>Returning to lobby...</p>
+        <button class="retry-btn" id="gameOverBtn">🔙 Back to Lobby</button>
       </div>
     </div>
+    
     <div id="countdown"></div>
+    
     <div id="pause-menu">
       <h2>Game Paused</h2>
       <button id="resumeBtn">Resume Game</button>
       <button id="leaveBtn">Leave Game</button>
     </div>
     
-    <div id="mode-select-screen">
+    <!-- Name Entry Screen -->
+    <div id="name-screen">
+      <h2>Welcome to Arena Tag!</h2>
+      <p>Enter your name to continue</p>
+      <input type="text" id="nameInput" placeholder="Your Name" maxlength="20">
+      <button id="nameSubmitBtn">Continue</button>
+    </div>
+    
+    <!-- Mode Selection Screen -->
+    <div id="mode-select-screen" style="display: none;">
       <h2>Select Game Mode</h2>
+      <p style="color: #00ff88;">Welcome, <span id="playerNameDisplay"></span>!</p>
       <button id="soloBtn">Solo/Local Multiplayer</button>
       <button id="onlineBtn">Online Multiplayer</button>
     </div>
     
+    <!-- Setup Screen (Solo/Local) -->
     <div id="setup-screen" style="display: none;">
       <h2>Select Number of Players</h2>
       <button class="player-btn" data-players="1">1 Player</button>
@@ -284,13 +306,14 @@
       <button class="back-btn" id="setupBackBtn">Back</button>
     </div>
     
+    <!-- Time Setup Screen (Solo/Local) -->
     <div id="time-setup" style="display: none;">
       <button class="back-btn" id="timeBackBtn">Back</button>
       <h2>Game Setup</h2>
       
       <div>
         <h3>Time Limit (Seconds)</h3>
-        <input type="number" id="time-input" min="10" max="300" value="30">
+        <input type="number" id="time-input" min="10" max="300" value="30" style="width: 100px;">
       </div>
       
       <div>
@@ -311,14 +334,7 @@
       <button id="startGameBtn">Start Game</button>
     </div>
     
-    <div id="multiplayer-screen" style="display: none;">
-      <h2>Online Multiplayer</h2>
-      <button id="createLobbyBtn">Create Lobby</button>
-      <input type="text" id="joinCodeInput" placeholder="Enter 6-digit code" maxlength="6" style="width: 200px;">
-      <button id="joinLobbyBtn">Join Lobby</button>
-      <button class="back-btn" id="multiBackBtn">Back</button>
-    </div>
-    
+    <!-- Lobby Screen -->
     <div id="lobby-screen" style="display: none;">
       <h2>Lobby</h2>
       <div class="lobby-code" id="lobbyCode">------</div>
@@ -331,7 +347,13 @@
       
       <div class="player-list" id="playerList"></div>
       
-      <button id="readyBtn">READY</button>
+      <div style="margin-top: 20px;">
+        <button id="readyBtn">READY</button>
+        <button id="createLobbyBtn" style="display: none;">Create New Lobby</button>
+        <button id="joinLobbyBtn" style="display: none;">Join Lobby</button>
+        <input type="text" id="joinCodeInput" placeholder="Enter 6-digit code" maxlength="6" style="width: 200px; display: none;">
+      </div>
+      
       <button class="back-btn" style="position: relative; left: 0; top: 0; margin-top: 10px;" id="leaveLobbyBtn">Leave Lobby</button>
     </div>
     
@@ -342,6 +364,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   
   <script>
+    console.log('🎮 Arena Tag initializing...');
+    
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
@@ -355,6 +379,7 @@
     
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    console.log('✅ Firebase initialized');
 
     // Game variables
     const canvas = document.getElementById('gameCanvas');
@@ -362,6 +387,8 @@
     const keys = {};
     const keyState = {};
     
+    let playerName = '';
+    let userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     let players = [];
     let smartCircle = null;
     let numPlayers = 2;
@@ -371,10 +398,9 @@
     let selectedBackground = 1;
     let bluffsEnabled = true;
     let currentPlatforms = [];
-    let isMultiplayer = false;
     let currentLobby = null;
     let lobbyListener = null;
-    let userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    let timerListener = null;
     let otherPlayers = {};
     let playerRef = null;
     let timer = 0;
@@ -384,15 +410,8 @@
     let teleporters = [];
     let teleportCooldown = 0;
     let lastTagTime = 0;
-    let powerUps = [];
-    let immunitySpawnTimer = 0;
-    let timeSlowSpawnTimer = 0;
-    let speedBoostSpawnTimer = 0;
-    let activeEffects = {
-      immunity: [],
-      timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
-      speedBoost: []
-    };
+    let isHost = false;
+    let isTabVisible = true;
 
     const gravity = 0.5;
     const PLAYER_COLORS = ['red', 'green', 'blue', 'yellow', 'purple', 'orange', 'cyan', 'magenta', 'lime', 'pink'];
@@ -411,16 +430,32 @@
     
     const bouncePad = { x: 30, y: 650, w: 50, h: 12 };
 
-    // Event Listeners
+    // Tab visibility detection
+    document.addEventListener('visibilitychange', function() {
+      isTabVisible = !document.hidden;
+      
+      if (!isTabVisible && currentLobby) {
+        // User switched tab - unready them
+        database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).once('value', (snapshot) => {
+          if (snapshot.exists() && snapshot.val().ready) {
+            database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ ready: false });
+            const readyBtn = document.getElementById('readyBtn');
+            if (readyBtn) {
+              readyBtn.textContent = 'READY';
+              readyBtn.disabled = false;
+            }
+          }
+        });
+      }
+    });
+
+    // Keyboard events
     document.addEventListener('keydown', e => {
       keys[e.key] = true;
       if (!keyState[e.key]) {
         keyState[e.key] = { pressed: true, justPressed: true };
       } else {
         keyState[e.key].justPressed = true;
-      }
-      if (e.key === ' ' && gameOver) {
-        document.getElementById('gameOverBtn').click();
       }
     });
     
@@ -431,9 +466,9 @@
       }
     });
 
-    // Navigation
+    // Navigation functions
     function hideAllScreens() {
-      ['mode-select-screen', 'setup-screen', 'time-setup', 'multiplayer-screen', 'lobby-screen'].forEach(id => {
+      ['name-screen', 'mode-select-screen', 'setup-screen', 'time-setup', 'lobby-screen'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
       document.getElementById('gameOver').style.display = 'none';
@@ -443,28 +478,75 @@
     function goToModeSelect() {
       hideAllScreens();
       document.getElementById('mode-select-screen').style.display = 'block';
+      document.getElementById('playerNameDisplay').textContent = playerName;
       if (animationId) cancelAnimationFrame(animationId);
       gameStarted = false;
       gameOver = false;
     }
 
-    // Button event listeners
+    // Name entry
+    document.getElementById('nameSubmitBtn').addEventListener('click', () => {
+      const name = document.getElementById('nameInput').value.trim();
+      if (!name) {
+        alert('Please enter your name!');
+        return;
+      }
+      playerName = name;
+      console.log('✅ Player name set:', playerName);
+      goToModeSelect();
+    });
+
+    document.getElementById('nameInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('nameSubmitBtn').click();
+      }
+    });
+
+    // Mode selection
     document.getElementById('soloBtn').addEventListener('click', () => {
       hideAllScreens();
       document.getElementById('setup-screen').style.display = 'block';
-      isMultiplayer = false;
     });
 
     document.getElementById('onlineBtn').addEventListener('click', () => {
-      hideAllScreens();
-      document.getElementById('multiplayer-screen').style.display = 'block';
-      isMultiplayer = true;
+      showLobbyCreation();
     });
 
-    document.getElementById('setupBackBtn').addEventListener('click', goToModeSelect);
-    document.getElementById('multiBackBtn').addEventListener('click', goToModeSelect);
-    document.getElementById('home-btn').addEventListener('click', goToModeSelect);
+    function showLobbyCreation() {
+      const lobbyCode = Math.floor(100000 + Math.random() * 900000).toString();
+      currentLobby = lobbyCode;
+      isHost = true;
+      
+      console.log('Creating lobby:', lobbyCode);
+      
+      database.ref(`tagGame/lobbies/${lobbyCode}`).set({
+        code: lobbyCode,
+        host: userId,
+        createdAt: Date.now(),
+        gameStarted: false,
+        gameEnded: false,
+        gameDuration: 30,
+        timer: 30,
+        players: {
+          [userId]: {
+            name: playerName,
+            ready: false,
+            color: PLAYER_COLORS[0],
+            isIt: false,
+            x: 100,
+            y: 100,
+            vx: 0,
+            vy: 0
+          }
+        }
+      }).then(() => {
+        playerRef = database.ref(`tagGame/lobbies/${lobbyCode}/players/${userId}`);
+        playerRef.onDisconnect().remove();
+        showLobbyScreen(lobbyCode);
+      });
+    }
 
+    // Player buttons
     document.querySelectorAll('.player-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         numPlayers = parseInt(btn.dataset.players);
@@ -486,6 +568,7 @@
       });
     });
 
+    document.getElementById('setupBackBtn').addEventListener('click', goToModeSelect);
     document.getElementById('timeBackBtn').addEventListener('click', () => {
       hideAllScreens();
       document.getElementById('setup-screen').style.display = 'block';
@@ -495,6 +578,13 @@
       robotToggle.textContent = 'OFF';
       robotToggle.disabled = false;
       robotToggle.style.opacity = '1';
+    });
+
+    document.getElementById('home-btn').addEventListener('click', () => {
+      if (currentLobby) {
+        leaveLobby();
+      }
+      goToModeSelect();
     });
 
     document.getElementById('robot-toggle').addEventListener('click', function() {
@@ -517,161 +607,7 @@
       });
     });
 
-    document.getElementById('pause-btn').addEventListener('click', () => {
-      if (!gameStarted || gameOver || isMultiplayer) return;
-      gamePaused = true;
-      cancelAnimationFrame(animationId);
-      document.getElementById('pause-menu').style.display = 'block';
-    });
-
-    document.getElementById('resumeBtn').addEventListener('click', () => {
-      gamePaused = false;
-      document.getElementById('pause-menu').style.display = 'none';
-      gameLoop();
-    });
-
-    document.getElementById('leaveBtn').addEventListener('click', () => {
-      gamePaused = false;
-      gameStarted = false;
-      gameOver = false;
-      document.getElementById('pause-menu').style.display = 'none';
-      document.getElementById('pause-btn').style.display = 'none';
-      document.getElementById('ui').style.display = 'none';
-      document.getElementById('home-btn').style.display = 'none';
-      if (animationId) cancelAnimationFrame(animationId);
-      
-      if (isMultiplayer && currentLobby) {
-        returnToLobby();
-      } else {
-        goToModeSelect();
-      }
-    });
-
-    document.getElementById('gameOverBtn').addEventListener('click', () => {
-      if (isMultiplayer) {
-        returnToLobby();
-      } else {
-        resetToSetup();
-      }
-    });
-
-    function resetToSetup() {
-      gameOver = false;
-      document.getElementById('gameOver').style.display = 'none';
-      hideAllScreens();
-      document.getElementById('setup-screen').style.display = 'block';
-      document.getElementById('pause-btn').style.display = 'none';
-      document.getElementById('ui').style.display = 'none';
-      document.getElementById('home-btn').style.display = 'none';
-      
-      robotMode = false;
-      const robotToggle = document.getElementById('robot-toggle');
-      robotToggle.classList.remove('active');
-      robotToggle.textContent = 'OFF';
-      robotToggle.disabled = false;
-      robotToggle.style.opacity = '1';
-    }
-
-    function returnToLobby() {
-      gameOver = false;
-      gameStarted = false;
-      document.getElementById('gameOver').style.display = 'none';
-      document.getElementById('pause-btn').style.display = 'none';
-      document.getElementById('ui').style.display = 'none';
-      document.getElementById('home-btn').style.display = 'none';
-      if (animationId) cancelAnimationFrame(animationId);
-      
-      if (currentLobby) {
-        database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({ ready: false });
-        database.ref(`tagLobbies/${currentLobby}`).once('value', (snapshot) => {
-          if (snapshot.exists() && snapshot.val().host === userId) {
-            database.ref(`tagLobbies/${currentLobby}`).update({ gameStarted: false });
-          }
-        });
-        
-        hideAllScreens();
-        document.getElementById('lobby-screen').style.display = 'block';
-        document.getElementById('readyBtn').disabled = false;
-        document.getElementById('readyBtn').textContent = 'READY';
-      }
-    }
-
-    // Multiplayer functions
-    document.getElementById('createLobbyBtn').addEventListener('click', () => {
-      const lobbyCode = Math.floor(100000 + Math.random() * 900000).toString();
-      currentLobby = lobbyCode;
-      
-      database.ref(`tagLobbies/${lobbyCode}`).set({
-        code: lobbyCode,
-        host: userId,
-        createdAt: Date.now(),
-        gameStarted: false,
-        gameDuration: 30,
-        players: {
-          [userId]: {
-            name: 'Player ' + userId.substr(-4),
-            ready: false,
-            color: PLAYER_COLORS[0],
-            isIt: false,
-            x: 100,
-            y: 100,
-            vx: 0,
-            vy: 0
-          }
-        }
-      }).then(() => {
-        playerRef = database.ref(`tagLobbies/${lobbyCode}/players/${userId}`);
-        playerRef.onDisconnect().remove();
-        showLobbyScreen(lobbyCode);
-      });
-    });
-
-    document.getElementById('joinLobbyBtn').addEventListener('click', () => {
-      const code = document.getElementById('joinCodeInput').value.trim();
-      if (code.length !== 6) {
-        alert('Enter 6-digit code!');
-        return;
-      }
-      
-      database.ref(`tagLobbies/${code}`).once('value', (snapshot) => {
-        if (!snapshot.exists()) {
-          alert('Lobby not found!');
-          return;
-        }
-        
-        const lobby = snapshot.val();
-        const playerCount = Object.keys(lobby.players || {}).length;
-        
-        if (playerCount >= 10) {
-          alert('Lobby full!');
-          return;
-        }
-        
-        currentLobby = code;
-        const startPositions = [
-          { x: 100, y: 100 }, { x: 1000, y: 100 }, { x: 100, y: 500 }, { x: 1000, y: 500 },
-          { x: 550, y: 300 }, { x: 300, y: 200 }, { x: 800, y: 200 }, { x: 550, y: 500 },
-          { x: 200, y: 350 }, { x: 900, y: 350 }
-        ];
-        const pos = startPositions[playerCount % startPositions.length];
-        
-        database.ref(`tagLobbies/${code}/players/${userId}`).update({
-          name: 'Player ' + userId.substr(-4),
-          ready: false,
-          color: PLAYER_COLORS[playerCount % PLAYER_COLORS.length],
-          isIt: false,
-          x: pos.x,
-          y: pos.y,
-          vx: 0,
-          vy: 0
-        }).then(() => {
-          playerRef = database.ref(`tagLobbies/${code}/players/${userId}`);
-          playerRef.onDisconnect().remove();
-          showLobbyScreen(code);
-        });
-      });
-    });
-
+    // Lobby functions
     function showLobbyScreen(code) {
       document.getElementById('lobbyCode').textContent = code;
       document.getElementById('readyBtn').disabled = false;
@@ -680,8 +616,10 @@
       hideAllScreens();
       document.getElementById('lobby-screen').style.display = 'block';
       
-      lobbyListener = database.ref(`tagLobbies/${code}`).on('value', (snapshot) => {
+      // Listen for lobby updates
+      lobbyListener = database.ref(`tagGame/lobbies/${code}`).on('value', (snapshot) => {
         if (!snapshot.exists()) {
+          console.log('Lobby closed');
           alert('Lobby closed!');
           goToModeSelect();
           return;
@@ -691,8 +629,24 @@
         updatePlayerList(lobby.players);
         document.getElementById('lobby-time-input').value = lobby.gameDuration || 30;
         
-        if (lobby.gameStarted && !gameStarted) {
+        // Game started
+        if (lobby.gameStarted && !gameStarted && !lobby.gameEnded) {
+          console.log('Game starting...');
           startMultiplayerGame(lobby);
+        }
+        
+        // Game ended - all players return to lobby
+        if (lobby.gameEnded && gameStarted) {
+          console.log('Game ended signal received');
+          endGameForAll();
+        }
+      });
+      
+      // Listen for timer updates during game
+      timerListener = database.ref(`tagGame/lobbies/${code}/timer`).on('value', (snapshot) => {
+        if (snapshot.exists() && gameStarted) {
+          timer = snapshot.val();
+          document.getElementById('ui').textContent = `Time: ${timer}`;
         }
       });
     }
@@ -703,19 +657,26 @@
       
       Object.entries(players).forEach(([id, player]) => {
         const entry = document.createElement('div');
-        entry.className = 'player-entry' + (player.ready ? ' ready' : '');
+        const isCurrentUser = id === userId;
+        entry.className = 'player-entry' + 
+                         (player.ready ? ' ready' : '') +
+                         (isCurrentUser ? ' current-user' : '');
         entry.innerHTML = `
-          <span style="color: ${player.color}">⬤ ${player.name}</span>
-          <span>${player.ready ? '✓ READY' : '✗ NOT READY'}</span>
+          <span style="color: ${player.color}; font-weight: 700;">⬤ ${player.name}</span>
+          <span style="font-weight: 700;">${player.ready ? '✓ READY' : '✗ NOT READY'}</span>
         `;
         list.appendChild(entry);
       });
     }
 
     document.getElementById('readyBtn').addEventListener('click', () => {
-      database.ref(`tagLobbies/${currentLobby}/players/${userId}`).once('value', (snapshot) => {
+      if (!currentLobby) return;
+      
+      database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).once('value', (snapshot) => {
+        if (!snapshot.exists()) return;
+        
         const currentReady = snapshot.val().ready;
-        database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({
+        database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({
           ready: !currentReady
         }).then(() => {
           document.getElementById('readyBtn').textContent = !currentReady ? 'UNREADY' : 'READY';
@@ -725,75 +686,96 @@
     });
 
     document.getElementById('lobby-time-input').addEventListener('change', function() {
-      database.ref(`tagLobbies/${currentLobby}`).once('value', (snapshot) => {
-        if (snapshot.exists() && snapshot.val().host === userId) {
-          database.ref(`tagLobbies/${currentLobby}`).update({
-            gameDuration: parseInt(this.value)
-          });
-        }
+      if (!isHost || !currentLobby) return;
+      
+      database.ref(`tagGame/lobbies/${currentLobby}`).update({
+        gameDuration: parseInt(this.value),
+        timer: parseInt(this.value)
       });
     });
 
     function checkAllReady() {
-      database.ref(`tagLobbies/${currentLobby}`).once('value', (snapshot) => {
+      if (!isHost) return;
+      
+      database.ref(`tagGame/lobbies/${currentLobby}`).once('value', (snapshot) => {
         const lobby = snapshot.val();
-        if (lobby.host !== userId) return;
-        
         const players = lobby.players;
         const allReady = Object.values(players).every(p => p.ready);
         const playerCount = Object.keys(players).length;
         
+        console.log('Check ready:', { allReady, playerCount });
+        
         if (allReady && playerCount >= 2) {
+          console.log('Starting game - all players ready!');
+          
           const playerIds = Object.keys(players);
           const randomIndex = Math.floor(Math.random() * playerIds.length);
           const itPlayerId = playerIds[randomIndex];
           
           const updates = {};
-          updates[`tagLobbies/${currentLobby}/gameStarted`] = true;
-          updates[`tagLobbies/${currentLobby}/gameStartTime`] = Date.now();
+          updates[`tagGame/lobbies/${currentLobby}/gameStarted`] = true;
+          updates[`tagGame/lobbies/${currentLobby}/gameEnded`] = false;
+          updates[`tagGame/lobbies/${currentLobby}/gameStartTime`] = Date.now();
           
           playerIds.forEach(id => {
-            updates[`tagLobbies/${currentLobby}/players/${id}/isIt`] = (id === itPlayerId);
-            updates[`tagLobbies/${currentLobby}/players/${id}/ready`] = false;
+            updates[`tagGame/lobbies/${currentLobby}/players/${id}/isIt`] = (id === itPlayerId);
+            updates[`tagGame/lobbies/${currentLobby}/players/${id}/ready`] = false;
           });
           
           randomizePlatforms();
-          updates[`tagLobbies/${currentLobby}/platforms`] = currentPlatforms;
+          updates[`tagGame/lobbies/${currentLobby}/platforms`] = currentPlatforms;
           
           database.ref().update(updates);
         }
       });
     }
 
-    document.getElementById('leaveLobbyBtn').addEventListener('click', () => {
+    document.getElementById('leaveLobbyBtn').addEventListener('click', leaveLobby);
+
+    function leaveLobby() {
+      console.log('Leaving lobby...');
+      
       if (currentLobby && playerRef) {
+        // Remove player
         playerRef.remove().then(() => {
-          database.ref(`tagLobbies/${currentLobby}/players`).once('value', (snapshot) => {
-            if (!snapshot.exists() || Object.keys(snapshot.val()).length === 0) {
-              database.ref(`tagLobbies/${currentLobby}`).remove();
+          // Check if lobby is empty
+          database.ref(`tagGame/lobbies/${currentLobby}/players`).once('value', (snapshot) => {
+            if (!snapshot.exists() || Object.keys(snapshot.val() || {}).length === 0) {
+              // Delete empty lobby
+              database.ref(`tagGame/lobbies/${currentLobby}`).remove();
+              console.log('Deleted empty lobby');
             }
           });
         });
         
+        // Remove listeners
         if (lobbyListener) {
-          database.ref(`tagLobbies/${currentLobby}`).off('value', lobbyListener);
+          database.ref(`tagGame/lobbies/${currentLobby}`).off('value', lobbyListener);
           lobbyListener = null;
+        }
+        if (timerListener) {
+          database.ref(`tagGame/lobbies/${currentLobby}/timer`).off('value', timerListener);
+          timerListener = null;
         }
         
         playerRef = null;
         currentLobby = null;
+        isHost = false;
       }
+      
       goToModeSelect();
-    });
+    }
 
+    // Game start
     function startMultiplayerGame(lobby) {
+      console.log('Starting multiplayer game...');
+      
       if (lobbyListener) {
-        database.ref(`tagLobbies/${currentLobby}`).off('value', lobbyListener);
+        database.ref(`tagGame/lobbies/${currentLobby}`).off('value', lobbyListener);
         lobbyListener = null;
       }
       
-      isMultiplayer = true;
-      timer = lobby.gameDuration || 30;
+      timer = lobby.timer || lobby.gameDuration || 30;
       
       if (lobby.platforms) {
         currentPlatforms = lobby.platforms;
@@ -829,12 +811,12 @@
       gameOver = false;
       frameCount = 0;
       lastTagTime = 0;
-      powerUps = [];
       smartCircle = null;
       
       spawnTeleporters();
       
-      database.ref(`tagLobbies/${currentLobby}/players`).on('value', (snapshot) => {
+      // Listen for other players
+      database.ref(`tagGame/lobbies/${currentLobby}/players`).on('value', (snapshot) => {
         if (!snapshot.exists()) return;
         
         otherPlayers = {};
@@ -846,6 +828,11 @@
           }
         });
       });
+      
+      // Host manages timer
+      if (isHost) {
+        startHostTimer();
+      }
       
       let countdown = 3;
       const countdownDisplay = document.getElementById('countdown');
@@ -868,8 +855,106 @@
       }, 1000);
     }
 
+    let hostTimerInterval = null;
+
+    function startHostTimer() {
+      if (hostTimerInterval) clearInterval(hostTimerInterval);
+      
+      hostTimerInterval = setInterval(() => {
+        if (timer > 0 && gameStarted && !gameOver) {
+          timer--;
+          database.ref(`tagGame/lobbies/${currentLobby}`).update({ timer });
+          
+          if (timer === 0) {
+            clearInterval(hostTimerInterval);
+            endGame();
+          }
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      if (!isHost) return;
+      
+      console.log('Host ending game...');
+      
+      // Signal all players that game ended
+      database.ref(`tagGame/lobbies/${currentLobby}`).update({
+        gameStarted: false,
+        gameEnded: true
+      });
+      
+      if (hostTimerInterval) {
+        clearInterval(hostTimerInterval);
+        hostTimerInterval = null;
+      }
+    }
+
+    function endGameForAll() {
+      console.log('Ending game for all players...');
+      
+      gameStarted = false;
+      gameOver = true;
+      
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      
+      if (hostTimerInterval) {
+        clearInterval(hostTimerInterval);
+        hostTimerInterval = null;
+      }
+      
+      // Find winner
+      let winner = '';
+      const itPlayer = players.find(p => p.isIt);
+      
+      if (itPlayer) {
+        winner = `${playerName} (You) was IT!`;
+      } else {
+        Object.entries(otherPlayers).forEach(([id, player]) => {
+          if (player.isIt) {
+            winner = `${player.name} was IT!`;
+          }
+        });
+      }
+      
+      document.getElementById('winner-text').textContent = winner;
+      document.getElementById('gameOver').style.display = 'block';
+      document.getElementById('pause-btn').style.display = 'none';
+      document.getElementById('ui').style.display = 'none';
+      document.getElementById('home-btn').style.display = 'none';
+    }
+
+    document.getElementById('gameOverBtn').addEventListener('click', () => {
+      document.getElementById('gameOver').style.display = 'none';
+      
+      if (currentLobby) {
+        // Reset for next game
+        database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ ready: false });
+        
+        if (isHost) {
+          database.ref(`tagGame/lobbies/${currentLobby}`).update({
+            gameEnded: false,
+            timer: document.getElementById('lobby-time-input').value || 30
+          });
+        }
+        
+        hideAllScreens();
+        document.getElementById('lobby-screen').style.display = 'block';
+        document.getElementById('readyBtn').disabled = false;
+        document.getElementById('readyBtn').textContent = 'READY';
+        
+        // Re-enable lobby listener
+        showLobbyScreen(currentLobby);
+      }
+    });
+
     // Solo game start
-    document.getElementById('startGameBtn').addEventListener('click', () => {
+    document.getElementById('startGameBtn').addEventListener('click', startSoloGame);
+
+    function startSoloGame() {
       const timeLimit = parseInt(document.getElementById('time-input').value);
       if (isNaN(timeLimit) || timeLimit < 10) {
         alert("Please enter a valid time limit (minimum 10 seconds)");
@@ -896,11 +981,6 @@
       gameOver = false;
       frameCount = 0;
       lastTagTime = 0;
-      powerUps = [];
-      immunitySpawnTimer = 0;
-      timeSlowSpawnTimer = 0;
-      speedBoostSpawnTimer = 0;
-      activeEffects = { immunity: [], timeSlow: { active: false, endTime: 0, slowedPlayers: [] }, speedBoost: [] };
       
       const colors = ['red', 'green', 'blue', 'yellow'];
       const startPositions = [
@@ -959,7 +1039,7 @@
           }, 500);
         }
       }, 1000);
-    });
+    }
 
     function randomizePlatforms() {
       currentPlatforms = basePlatforms.map(platform => {
@@ -988,26 +1068,7 @@
       ];
     }
 
-    // Power-ups (keeping them simple for now - you can expand these)
-    function updatePowerUps() {
-      if (!gameStarted || gamePaused || !bluffsEnabled || isMultiplayer) return;
-      // Power-up logic here (abbreviated for space)
-    }
-
-    function hasImmunity(entity) {
-      return activeEffects.immunity.some(effect => effect.entity === entity);
-    }
-
-    function isPlayerSlowed(player) {
-      if (!activeEffects.timeSlow.active) return false;
-      return activeEffects.timeSlow.slowedPlayers.includes(player);
-    }
-
-    function hasSpeedBoost(entity) {
-      return activeEffects.speedBoost.some(effect => effect.entity === entity);
-    }
-
-    // Smart circle logic
+    // Smart circle update
     function updateSmartCircle() {
       if (!smartCircle || !gameStarted || gamePaused) return;
       
@@ -1015,9 +1076,6 @@
       
       let target = null;
       let minDistance = Infinity;
-      
-      const speedMultiplier = hasSpeedBoost(smartCircle) ? 1.5 : 1;
-      const finalSpeed = smartCircle.speed * speedMultiplier;
       
       if (smartCircle.isIt) {
         for (const player of players) {
@@ -1056,8 +1114,8 @@
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 0) {
-          smartCircle.vx = (dx / distance) * finalSpeed;
-          smartCircle.vy = (dy / distance) * finalSpeed;
+          smartCircle.vx = (dx / distance) * smartCircle.speed;
+          smartCircle.vy = (dy / distance) * smartCircle.speed;
         }
       }
       
@@ -1072,10 +1130,8 @@
     function updatePlayer(p) {
       if (!gameStarted || gamePaused) return;
       
-      const speedMultiplier = 1;
-      
-      if (keys[p.controls.left]) p.vx = -4 * speedMultiplier;
-      else if (keys[p.controls.right]) p.vx = 4 * speedMultiplier;
+      if (keys[p.controls.left]) p.vx = -4;
+      else if (keys[p.controls.right]) p.vx = 4;
       else p.vx = 0;
 
       const currentTime = Date.now();
@@ -1109,17 +1165,40 @@
         p.vy = 0;
       }
 
+      // Platform collision - FIXED to prevent going through from below
       currentPlatforms.forEach(pl => {
+        // Landing on top
         if (p.vy >= 0 && 
             p.x < pl.x + pl.w &&
             p.x + p.w > pl.x &&
             p.y + p.h >= pl.y &&
-            p.y + p.h <= pl.y + pl.h + 5) {
+            p.y + p.h <= pl.y + pl.h + 10) {
           p.y = pl.y - p.h;
           p.vy = 0;
         }
+        
+        // Hitting from below - CRITICAL FIX
+        if (p.vy < 0 && 
+            p.x < pl.x + pl.w &&
+            p.x + p.w > pl.x &&
+            p.y <= pl.y + pl.h &&
+            p.y + p.h >= pl.y) {
+          p.y = pl.y + pl.h;
+          p.vy = 0;
+        }
+        
+        // Side collision
+        if (p.x + p.w > pl.x && p.x < pl.x + pl.w &&
+            p.y + p.h > pl.y && p.y < pl.y + pl.h) {
+          if (p.vx > 0) {
+            p.x = pl.x - p.w;
+          } else if (p.vx < 0) {
+            p.x = pl.x + pl.w;
+          }
+        }
       });
 
+      // Bounce pad
       if (p.x < bouncePad.x + bouncePad.w &&
           p.x + p.w > bouncePad.x &&
           p.y + p.h >= bouncePad.y &&
@@ -1127,7 +1206,8 @@
         p.vy = -20;
       }
 
-      if (teleporters[0].active && teleporters[1].active) {
+      // Teleporters
+      if (teleporters[0] && teleporters[0].active && teleporters[1] && teleporters[1].active) {
         for (let i = 0; i < teleporters.length; i++) {
           const tp = teleporters[i];
           const dx = (p.x + p.w/2) - tp.x;
@@ -1151,9 +1231,13 @@
       p.x = Math.max(0, Math.min(canvas.width - p.w, p.x));
       p.y = Math.min(canvas.height - p.h, p.y);
       
-      if (isMultiplayer && p.isLocal && frameCount % 3 === 0) {
-        database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({
-          x: p.x, y: p.y, vx: p.vx, vy: p.vy
+      // Sync position in multiplayer
+      if (currentLobby && p.isLocal && frameCount % 3 === 0) {
+        database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({
+          x: Math.round(p.x),
+          y: Math.round(p.y),
+          vx: Math.round(p.vx),
+          vy: Math.round(p.vy)
         });
       }
     }
@@ -1171,7 +1255,6 @@
     }
 
     function detectPlayerTag(p1, p2) {
-      if (hasImmunity(p2)) return false;
       return (
         p1.x < p2.x + p2.w &&
         p1.x + p1.w > p2.x &&
@@ -1181,7 +1264,7 @@
     }
 
     function detectCirclePlayerTag(circle, player) {
-      if (!circle || !player || hasImmunity(player)) return false;
+      if (!circle || !player) return false;
       
       const dx = (player.x + player.w/2) - circle.x;
       const dy = (player.y + player.h/2) - circle.y;
@@ -1207,37 +1290,6 @@
       ctx.shadowBlur = 10;
       ctx.fill();
       ctx.shadowBlur = 0;
-    }
-
-    function showGameOver() {
-      let winner = '';
-      const itPlayer = players.find(p => p.isIt);
-      
-      if (itPlayer) {
-        winner = `${itPlayer.color.toUpperCase()} player was IT!`;
-      } else if (smartCircle && smartCircle.isIt) {
-        winner = 'SMART CIRCLE was IT!';
-      }
-      
-      if (isMultiplayer) {
-        Object.entries(otherPlayers).forEach(([id, player]) => {
-          if (player.isIt) {
-            winner = `${player.name} was IT!`;
-          }
-        });
-      }
-      
-      document.getElementById('winner-text').textContent = winner;
-      
-      if (isMultiplayer) {
-        document.getElementById('gameOverMessage').textContent = 'Press SPACEBAR or click to return to lobby';
-        document.getElementById('gameOverBtn').textContent = '🔙 Back to Lobby';
-      } else {
-        document.getElementById('gameOverMessage').textContent = 'Press SPACEBAR or click the button to play again';
-        document.getElementById('gameOverBtn').textContent = '🔄 Play Again';
-      }
-      
-      document.getElementById('gameOver').style.display = 'block';
     }
 
     function drawPlatforms() {
@@ -1271,7 +1323,7 @@
         if (p.isIt) drawTagIndicator(p);
       });
       
-      if (isMultiplayer) {
+      if (currentLobby) {
         Object.entries(otherPlayers).forEach(([id, player]) => {
           ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
           ctx.fillRect(player.x + 3, player.y + 3, 30, 30);
@@ -1316,7 +1368,7 @@
 
     function drawTeleporters() {
       teleporters.forEach(tp => {
-        if (tp.active) {
+        if (tp && tp.active) {
           ctx.beginPath();
           ctx.arc(tp.x, tp.y, tp.radius + 3, 0, Math.PI * 2);
           ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
@@ -1341,10 +1393,7 @@
 
     // Game loop
     function gameLoop() {
-      if (gameOver) {
-        showGameOver();
-        return;
-      }
+      if (gameOver || !gameStarted) return;
       
       if (gamePaused) return;
 
@@ -1353,12 +1402,11 @@
 
       drawPlatforms();
 
-      if (!teleporters[0].active && frameCount - teleportCooldown > 300) {
+      if (teleporters[0] && !teleporters[0].active && frameCount - teleportCooldown > 300) {
         spawnTeleporters();
       }
 
       drawTeleporters();
-      updatePowerUps();
 
       players.forEach(p => updatePlayer(p));
       drawPlayers();
@@ -1366,44 +1414,72 @@
       updateSmartCircle();
       drawSmartCircle();
 
-      const itPlayer = players.find(p => p.isIt);
-      
-      if (itPlayer && !isMultiplayer) {
-        const otherLocalPlayers = players.filter(p => !p.isIt);
-        for (const otherPlayer of otherLocalPlayers) {
-          if (detectPlayerTag(itPlayer, otherPlayer) && Date.now() - lastTagTime > 1000) {
-            itPlayer.isIt = false;
-            otherPlayer.isIt = true;
-            lastTagTime = Date.now();
-            break;
-          }
-        }
-      }
-
-      if (smartCircle && !isMultiplayer) {
-        if (smartCircle.isIt) {
-          for (const player of players) {
-            if (player && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
-              smartCircle.isIt = false;
-              player.isIt = true;
-              lastTagTime = Date.now();
-              break;
-            }
-          }
-        } else {
-          for (const player of players) {
-            if (player && player.isIt && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
-              player.isIt = false;
-              smartCircle.isIt = true;
-              lastTagTime = Date.now();
-              break;
-            }
-          }
-        }
-      }
-      
-      if (isMultiplayer) {
+      // Tag detection for solo
+      if (!currentLobby) {
+        const itPlayer = players.find(p => p.isIt);
+        
         if (itPlayer) {
+          const otherLocalPlayers = players.filter(p => !p.isIt);
+          for (const otherPlayer of otherLocalPlayers) {
+            if (detectPlayerTag(itPlayer, otherPlayer) && Date.now() - lastTagTime > 1000) {
+              itPlayer.isIt = false;
+              otherPlayer.isIt = true;
+              lastTagTime = Date.now();
+              break;
+            }
+          }
+        }
+
+        if (smartCircle) {
+          if (smartCircle.isIt) {
+            for (const player of players) {
+              if (player && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
+                smartCircle.isIt = false;
+                player.isIt = true;
+                lastTagTime = Date.now();
+                break;
+              }
+            }
+          } else {
+            for (const player of players) {
+              if (player && player.isIt && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
+                player.isIt = false;
+                smartCircle.isIt = true;
+                lastTagTime = Date.now();
+                break;
+              }
+            }
+          }
+        }
+        
+        // Solo timer
+        if (frameCount % 60 === 0 && timer > 0) {
+          timer--;
+          document.getElementById('ui').textContent = `Time: ${timer}`;
+        }
+
+        if (timer === 0 && !gameOver) {
+          gameOver = true;
+          gameStarted = false;
+          
+          let winner = '';
+          const itPlayer = players.find(p => p.isIt);
+          if (itPlayer) {
+            winner = `${itPlayer.color.toUpperCase()} player was IT!`;
+          } else if (smartCircle && smartCircle.isIt) {
+            winner = 'SMART CIRCLE was IT!';
+          }
+          
+          document.getElementById('winner-text').textContent = winner;
+          document.getElementById('gameOver').style.display = 'block';
+          document.getElementById('gameOverBtn').textContent = '🏠 Home';
+          document.getElementById('gameOverBtn').onclick = goToModeSelect;
+        }
+      } else {
+        // Multiplayer tag detection
+        const itPlayer = players[0];
+        
+        if (itPlayer && itPlayer.isIt) {
           Object.entries(otherPlayers).forEach(([id, otherPlayer]) => {
             const collision = (
               itPlayer.x < otherPlayer.x + 30 &&
@@ -1414,8 +1490,8 @@
             
             if (collision && Date.now() - lastTagTime > 1000) {
               itPlayer.isIt = false;
-              database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({ isIt: false });
-              database.ref(`tagLobbies/${currentLobby}/players/${id}`).update({ isIt: true });
+              database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ isIt: false });
+              database.ref(`tagGame/lobbies/${currentLobby}/players/${id}`).update({ isIt: true });
               lastTagTime = Date.now();
             }
           });
@@ -1432,25 +1508,18 @@
             
             if (collision && Date.now() - lastTagTime > 1000) {
               players[0].isIt = true;
-              database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({ isIt: true });
-              database.ref(`tagLobbies/${currentLobby}/players/${id}`).update({ isIt: false });
+              database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ isIt: true });
+              database.ref(`tagGame/lobbies/${currentLobby}/players/${id}`).update({ isIt: false });
               lastTagTime = Date.now();
             }
           }
         });
       }
 
-      if (frameCount % 60 === 0 && timer > 0) {
-        timer--;
-        document.getElementById('ui').textContent = `Time: ${timer}`;
-      }
-
-      if (timer === 0 && !gameOver) {
-        gameOver = true;
-      }
-
       animationId = requestAnimationFrame(gameLoop);
     }
+
+    console.log('✅ Game initialized - Enter your name to start!');
   </script>
 </body>
 </html>
