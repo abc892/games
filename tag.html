@@ -2,526 +2,347 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arena Tag Showdown - Multiplayer</title>
+  <title>Arena Tag Showdown</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
     body {
+      margin: 0;
       overflow: hidden;
-      font-family: 'Rajdhani', sans-serif;
-      background: #0a0e27;
+      font-family: 'Arial', sans-serif;
+      background: #1a1a2e;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      color: #fff;
     }
-    
     .game-container {
       position: relative;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
-    
     canvas {
       display: block;
-      border: 4px solid #00ffff;
-      box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), inset 0 0 20px rgba(0, 255, 255, 0.2);
-      border-radius: 12px;
-      background: linear-gradient(135deg, #1a1a3e 0%, #0f0f23 100%);
+      border: 4px solid #fff;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
     }
-    
-    /* Screens */
-    .screen {
+    #ui {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(10, 14, 39, 0.98);
-      z-index: 200;
-      overflow-y: auto;
+      top: 10px;
+      left: 150px;
+      font-size: 18px;
+      color: #fff;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px 15px;
+      border-radius: 20px;
     }
-    
-    .screen.active {
-      display: flex;
-      animation: fadeIn 0.3s ease-out;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    .menu-container {
-      background: linear-gradient(135deg, rgba(20, 30, 60, 0.95), rgba(10, 15, 35, 0.95));
-      border: 3px solid #00ffff;
-      border-radius: 24px;
-      padding: 50px 40px;
-      max-width: 600px;
-      width: 90%;
-      box-shadow: 0 0 60px rgba(0, 255, 255, 0.4), inset 0 0 30px rgba(0, 255, 255, 0.05);
-      margin: 20px;
-    }
-    
-    .menu-title {
-      font-family: 'Orbitron', sans-serif;
-      color: #00ffff;
-      font-size: 56px;
-      font-weight: 900;
-      text-align: center;
-      margin-bottom: 15px;
-      text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff;
-      animation: titlePulse 3s infinite;
-      letter-spacing: 4px;
-    }
-    
-    @keyframes titlePulse {
-      0%, 100% { text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff; }
-      50% { text-shadow: 0 0 40px #00ffff, 0 0 80px #00ffff, 0 0 100px #00ffff; }
-    }
-    
-    .subtitle {
-      text-align: center;
-      color: #00d4ff;
-      font-size: 20px;
-      margin-bottom: 30px;
-      font-weight: 300;
-      letter-spacing: 2px;
-    }
-    
-    .menu-btn {
-      width: 100%;
-      padding: 20px;
-      margin: 15px 0;
-      background: linear-gradient(135deg, #00ffff, #00b8d4);
+    #home-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #0077cc;
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: 0.3s;
+      z-index: 15;
+      display: block;
       border: none;
-      border-radius: 12px;
-      color: #0a0e27;
-      font-size: 22px;
-      font-weight: 700;
       cursor: pointer;
-      transition: all 0.3s;
-      font-family: 'Orbitron', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      position: relative;
-      overflow: hidden;
     }
-    
-    .menu-btn::before {
-      content: '';
+    #home-btn:hover {
+      background: #005fa3;
+    }
+    #pause-btn {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.5);
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
-    }
-    
-    .menu-btn:hover::before {
-      width: 300px;
-      height: 300px;
-    }
-    
-    .menu-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 40px rgba(0, 255, 255, 0.5);
-    }
-    
-    .menu-btn.danger {
-      background: linear-gradient(135deg, #ff4757, #ee5a6f);
-    }
-    
-    .menu-btn.secondary {
-      background: linear-gradient(135deg, #a29bfe, #6c5ce7);
-    }
-    
-    .menu-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    input[type="text"], input[type="number"] {
-      width: 100%;
-      padding: 20px;
-      margin: 15px 0;
-      background: rgba(0, 255, 255, 0.05);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      color: #00ffff;
-      font-size: 20px;
-      font-family: 'Rajdhani', sans-serif;
-      font-weight: 500;
-      transition: all 0.3s;
-    }
-    
-    input:focus {
-      outline: none;
-      border-color: #00ffff;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-      background: rgba(0, 255, 255, 0.1);
-    }
-    
-    input::placeholder {
-      color: rgba(0, 255, 255, 0.5);
-    }
-    
-    /* HUD */
-    #hud {
-      position: absolute;
-      top: 30px;
-      left: 30px;
-      color: #00ffff;
-      font-size: 28px;
-      text-shadow: 0 0 20px #00ffff;
-      z-index: 100;
-      pointer-events: none;
-      font-weight: 700;
-      font-family: 'Orbitron', sans-serif;
-    }
-    
-    #timer {
-      position: absolute;
-      top: 30px;
-      right: 30px;
-      color: #ffd700;
-      font-size: 36px;
-      text-shadow: 0 0 30px #ffd700;
-      z-index: 100;
-      pointer-events: none;
-      font-weight: 900;
-      font-family: 'Orbitron', sans-serif;
-    }
-    
-    /* Lobby */
-    .lobby-code {
-      text-align: center;
-      font-size: 48px;
-      color: #ffd700;
-      background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
-      padding: 25px;
-      border-radius: 16px;
-      margin: 25px 0;
-      border: 3px solid #ffd700;
-      letter-spacing: 12px;
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 900;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-    }
-    
-    .player-list {
-      max-height: 400px;
-      overflow-y: auto;
-      margin-top: 25px;
-    }
-    
-    .player-entry {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
-      margin: 12px 0;
-      background: rgba(0, 255, 255, 0.05);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      color: #00ffff;
-      font-size: 20px;
-      font-weight: 500;
-      transition: all 0.3s;
-    }
-    
-    .player-entry:hover {
-      background: rgba(0, 255, 255, 0.1);
-      transform: translateX(5px);
-    }
-    
-    .player-entry.ready {
-      background: rgba(0, 255, 100, 0.15);
-      border-color: #00ff88;
-      color: #00ff88;
-    }
-    
-    .player-entry.current-user {
-      background: rgba(255, 215, 0, 0.15);
-      border-color: #ffd700;
-      color: #ffd700;
-    }
-    
-    .player-status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .status-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #ff4757;
-      animation: statusPulse 2s infinite;
-    }
-    
-    .player-entry.ready .status-indicator {
-      background: #00ff88;
-    }
-    
-    @keyframes statusPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    
-    /* Pause Button */
-    #pauseBtn {
-      position: absolute;
-      top: 100px;
-      right: 30px;
-      padding: 15px 35px;
-      background: rgba(0, 255, 255, 0.2);
-      border: 3px solid #00ffff;
-      border-radius: 12px;
-      color: #00ffff;
-      font-size: 20px;
-      font-weight: 700;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 20px;
       cursor: pointer;
-      z-index: 100;
-      font-family: 'Orbitron', sans-serif;
-      transition: all 0.3s;
-      letter-spacing: 2px;
+      z-index: 10;
+      font-size: 18px;
     }
-    
-    #pauseBtn:hover {
-      background: rgba(0, 255, 255, 0.4);
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
-      transform: scale(1.05);
+    #pause-btn:hover {
+      background: rgba(0, 0, 0, 0.7);
     }
-    
-    /* Game Over */
     #gameOver {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 42px;
+      font-size: 36px;
       color: #fff;
-      background: linear-gradient(135deg, rgba(10, 14, 39, 0.95), rgba(20, 30, 60, 0.95));
-      padding: 50px;
-      border-radius: 20px;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 30px;
+      border-radius: 15px;
       text-align: center;
       display: none;
       z-index: 20;
-      box-shadow: 0 0 60px rgba(0, 255, 255, 0.4);
-      border: 3px solid #00ffff;
-      font-family: 'Orbitron', sans-serif;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+      border: 2px solid gold;
     }
-    
-    #winner-text {
-      color: #ffd700;
-      font-weight: 900;
-      margin: 25px 0;
-      font-size: 32px;
-      text-shadow: 0 0 30px #ffd700;
-    }
-    
-    .retry-btn {
-      background: linear-gradient(135deg, #ff9800, #f57c00);
-      font-size: 22px;
-      padding: 18px 40px;
-      margin-top: 20px;
-      border: none;
-      border-radius: 12px;
-      color: #0a0e27;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: 'Orbitron', sans-serif;
-      transition: all 0.3s;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-    
-    .retry-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 40px rgba(255, 152, 0, 0.5);
-    }
-    
-    /* Pause Menu */
-    #pause-menu {
+    #setup-screen, #time-setup, #mode-select-screen, #multiplayer-screen, #lobby-screen {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: linear-gradient(135deg, rgba(10, 14, 39, 0.98), rgba(20, 30, 60, 0.98));
-      padding: 50px;
-      border-radius: 20px;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 30px;
+      border-radius: 15px;
       text-align: center;
-      z-index: 40;
+      z-index: 30;
       color: white;
       width: 400px;
-      display: none;
-      box-shadow: 0 0 60px rgba(0, 255, 255, 0.4);
-      border: 3px solid #00ffff;
     }
-    
-    /* Countdown */
+    #multiplayer-screen, #lobby-screen {
+      width: 500px;
+    }
     #countdown {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 150px;
-      color: #00ffff;
+      font-size: 120px;
+      color: rgba(255, 255, 255, 0.7);
       z-index: 25;
       display: none;
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 900;
-      text-shadow: 0 0 50px #00ffff, 0 0 100px #00ffff;
-      animation: countdownPulse 1s infinite;
     }
-    
-    @keyframes countdownPulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); }
-      50% { transform: translate(-50%, -50%) scale(1.1); }
-    }
-    
-    /* Waiting Room */
-    .waiting-message {
+    #pause-menu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.9);
+      padding: 30px;
+      border-radius: 15px;
       text-align: center;
-      color: #00d4ff;
-      font-size: 24px;
-      margin: 30px 0;
+      z-index: 40;
+      color: white;
+      width: 300px;
+      display: none;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+      border: 2px solid #4CAF50;
+    }
+    button {
+      background: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 10px 5px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .toggle-btn {
+      background: #555;
+    }
+    .toggle-btn.active {
+      background: #4CAF50;
+    }
+    .back-btn {
+      background: #f44336;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 8px 15px;
+      font-size: 14px;
+    }
+    .back-btn:hover {
+      background: #d32f2f;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+      width: 100px;
+    }
+    .mode-container {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #444;
+    }
+    .background-options {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .background-option {
+      width: 120px;
+      height: 80px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .background-option.selected {
+      border-color: #4CAF50;
+      box-shadow: 0 0 10px #4CAF50;
+    }
+    .background-option:hover {
+      transform: scale(1.05);
+    }
+    .bluffs-container {
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+    }
+    .retry-btn {
+      background: #FF9800;
+      font-size: 18px;
+      padding: 12px 25px;
+      margin-top: 15px;
+    }
+    .retry-btn:hover {
+      background: #F57C00;
+    }
+    .lobby-code {
+      text-align: center;
+      font-size: 36px;
+      color: #ffd93d;
+      background: rgba(255, 217, 61, 0.1);
       padding: 20px;
-      background: rgba(0, 212, 255, 0.1);
-      border-radius: 12px;
-      border: 2px solid #00d4ff;
-      animation: waitingPulse 2s infinite;
+      border-radius: 10px;
+      margin: 20px 0;
+      border: 2px solid #ffd93d;
+      letter-spacing: 8px;
     }
-    
-    @keyframes waitingPulse {
-      0%, 100% { opacity: 0.7; }
-      50% { opacity: 1; }
+    .player-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
     }
-    
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 12px;
+    .player-entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 18px;
+      margin: 8px 0;
+      background: rgba(0, 255, 136, 0.1);
+      border: 2px solid #00ff88;
+      border-radius: 8px;
+      color: #00ff88;
+      font-size: 16px;
     }
-
-    ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 6px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #00ffff;
-      border-radius: 6px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: #00d4ff;
+    .player-entry.ready {
+      background: rgba(0, 255, 136, 0.3);
+      border-color: #00ff88;
     }
   </style>
 </head>
 <body>
   <div class="game-container">
+    <button id="home-btn" style="display: none;">🏠 Home</button>
     <div id="ui" style="display: none;">Time: 0</div>
-    <button id="pauseBtn" style="display: none;">⏸ PAUSE</button>
-    
-    <!-- Game Over Display -->
+    <button id="pause-btn" style="display: none;">Pause</button>
     <div id="gameOver">
-      <h2 style="font-size: 48px; margin-bottom: 20px;">🏁 GAME OVER!</h2>
-      <div id="winner-text"></div>
-      <div style="margin: 25px 0; font-size: 20px; color: #00d4ff;">
-        <p>Press SPACEBAR or click button to continue</p>
-        <button class="retry-btn" onclick="continueAfterGame()">CONTINUE</button>
+      <h2>Game Over!</h2>
+      <div id="winner-text" style="color:gold; font-weight:bold; margin: 20px 0; font-size: 24px;"></div>
+      <div style="margin: 20px 0;">
+        <p id="gameOverMessage">Press SPACEBAR or click the button</p>
+        <button class="retry-btn" id="gameOverBtn">🔄 Play Again</button>
       </div>
     </div>
-    
-    <!-- Countdown -->
     <div id="countdown"></div>
-    
-    <!-- Pause Menu -->
     <div id="pause-menu">
-      <h2 style="font-family: 'Orbitron', sans-serif; font-size: 36px; margin-bottom: 30px;">⏸ PAUSED</h2>
-      <button class="menu-btn" onclick="resumeGame()">Resume Game</button>
-      <button class="menu-btn danger" onclick="leaveGame()">Leave Game</button>
+      <h2>Game Paused</h2>
+      <button id="resumeBtn">Resume Game</button>
+      <button id="leaveBtn">Leave Game</button>
     </div>
     
-    <!-- Welcome Screen -->
-    <div id="welcomeScreen" class="screen active">
-      <div class="menu-container">
-        <div class="menu-title">🏃 ARENA TAG</div>
-        <div class="subtitle">MULTIPLAYER SHOWDOWN</div>
-        <input type="text" id="nameInput" placeholder="Enter your name" maxlength="20">
-        <button class="menu-btn" onclick="saveUserName()">START</button>
+    <div id="mode-select-screen">
+      <h2>Select Game Mode</h2>
+      <button id="soloBtn">Solo/Local Multiplayer</button>
+      <button id="onlineBtn">Online Multiplayer</button>
+    </div>
+    
+    <div id="setup-screen" style="display: none;">
+      <h2>Select Number of Players</h2>
+      <button class="player-btn" data-players="1">1 Player</button>
+      <button class="player-btn" data-players="2">2 Players</button>
+      <button class="player-btn" data-players="3">3 Players</button>
+      <button class="player-btn" data-players="4">4 Players</button>
+      
+      <div class="mode-container">
+        <h3>Robot Mode</h3>
+        <button id="robot-toggle" class="toggle-btn">OFF</button>
+        <p>Adds a smart circle that seeks or avoids players</p>
       </div>
+      <button class="back-btn" id="setupBackBtn">Back</button>
     </div>
     
-    <!-- Home Screen -->
-    <div id="homeScreen" class="screen">
-      <div class="menu-container">
-        <div class="menu-title">🏃 ARENA TAG</div>
-        <div class="subtitle">Welcome back, <span id="welcomeName"></span>!</div>
-        <button class="menu-btn" onclick="createLobby()">CREATE LOBBY</button>
-        <input type="text" id="joinCodeInput" placeholder="Enter 6-digit code" maxlength="6">
-        <button class="menu-btn secondary" onclick="joinLobby()">JOIN LOBBY</button>
+    <div id="time-setup" style="display: none;">
+      <button class="back-btn" id="timeBackBtn">Back</button>
+      <h2>Game Setup</h2>
+      
+      <div>
+        <h3>Time Limit (Seconds)</h3>
+        <input type="number" id="time-input" min="10" max="300" value="30">
       </div>
-    </div>
-    
-    <!-- Lobby Screen -->
-    <div id="lobbyScreen" class="screen">
-      <div class="menu-container">
-        <div class="menu-title">🎮 LOBBY</div>
-        <div class="lobby-code" id="lobbyCode">------</div>
-        <div class="subtitle">Share this code with friends!</div>
-        
-        <div id="waitingMessage" class="waiting-message" style="display: none;">
-          ⏳ Waiting for players to ready up...
+      
+      <div>
+        <h3>Select Background</h3>
+        <div class="background-options">
+          <div class="background-option selected" style="background: linear-gradient(135deg, #ff6ec4, #7873f5);" data-bg="1"></div>
+          <div class="background-option" style="background: linear-gradient(135deg, #667eea, #764ba2);" data-bg="2"></div>
+          <div class="background-option" style="background: linear-gradient(135deg, #f093fb, #f5576c);" data-bg="3"></div>
         </div>
-        
-        <div class="player-list" id="playerList"></div>
-        
-        <div style="margin-top: 30px;">
-          <label style="color: #00ffff; font-size: 18px; margin-bottom: 10px; display: block;">
-            ⏱ Game Duration (seconds):
-          </label>
-          <input type="number" id="gameDuration" min="30" max="300" value="60" 
-                 style="text-align: center; font-size: 24px; font-weight: 700;">
-        </div>
-        
-        <button class="menu-btn" id="readyBtn" onclick="toggleReady()">READY</button>
-        <button class="menu-btn danger" onclick="leaveLobby()">LEAVE LOBBY</button>
       </div>
+      
+      <div class="bluffs-container">
+        <h3>Power-ups (Bluffs)</h3>
+        <button id="bluffs-toggle" class="toggle-btn active">ON</button>
+        <p>Enable or disable power-ups during gameplay</p>
+      </div>
+      
+      <button id="startGameBtn">Start Game</button>
+    </div>
+    
+    <div id="multiplayer-screen" style="display: none;">
+      <h2>Online Multiplayer</h2>
+      <button id="createLobbyBtn">Create Lobby</button>
+      <input type="text" id="joinCodeInput" placeholder="Enter 6-digit code" maxlength="6" style="width: 200px;">
+      <button id="joinLobbyBtn">Join Lobby</button>
+      <button class="back-btn" id="multiBackBtn">Back</button>
+    </div>
+    
+    <div id="lobby-screen" style="display: none;">
+      <h2>Lobby</h2>
+      <div class="lobby-code" id="lobbyCode">------</div>
+      <div style="margin-bottom: 15px; color: #00d4aa;">Share this code with friends!</div>
+      
+      <div style="margin: 15px 0;">
+        <label style="color: #fff; font-size: 16px;">Game Duration (seconds):</label>
+        <input type="number" id="lobby-time-input" min="10" max="300" value="30" style="width: 80px; margin-left: 10px;">
+      </div>
+      
+      <div class="player-list" id="playerList"></div>
+      
+      <button id="readyBtn">READY</button>
+      <button class="back-btn" style="position: relative; left: 0; top: 0; margin-top: 10px;" id="leaveLobbyBtn">Leave Lobby</button>
     </div>
     
     <canvas id="gameCanvas" width="1200" height="700"></canvas>
-    
-    <!-- HUD -->
-    <div id="hud" style="display: none;">
-      TIME: <span id="timer">0</span>
-    </div>
   </div>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getDatabase, ref, set, get, update, remove, onValue, onDisconnect } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-    
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  
+  <script>
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
       authDomain: "games-c3e27.firebaseapp.com",
@@ -532,65 +353,64 @@
       appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
     };
     
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
-    
-    // Game Constants
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Game variables
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const gravity = 0.5;
-    
-    // Player Colors
-    const PLAYER_COLORS = [
-      '#00ffff', '#ff4757', '#ffd700', '#00ff88', 
-      '#ff6b9d', '#c44569', '#4bcffa', '#ffa502',
-      '#5f27cd', '#00d2d3'
-    ];
-    
-    // Game State
-    let gameState = {
-      userId: null,
-      userName: null,
-      currentLobby: null,
-      isPlaying: false,
-      isPaused: false,
-      isHost: false,
-      playerColor: null,
-      localPlayer: null,
-      startTime: 0,
-      timer: 60,
-      frameCount: 0
-    };
-    
-    let otherPlayers = {};
-    let lobbyListener = null;
-    let gameInterval = null;
-    let currentPlatforms = [];
     const keys = {};
     const keyState = {};
     
-    // Platform definitions
+    let players = [];
+    let smartCircle = null;
+    let numPlayers = 2;
+    let gameStarted = false;
+    let robotMode = false;
+    let gamePaused = false;
+    let selectedBackground = 1;
+    let bluffsEnabled = true;
+    let currentPlatforms = [];
+    let isMultiplayer = false;
+    let currentLobby = null;
+    let lobbyListener = null;
+    let userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    let otherPlayers = {};
+    let playerRef = null;
+    let timer = 0;
+    let frameCount = 0;
+    let gameOver = false;
+    let animationId = null;
+    let teleporters = [];
+    let teleportCooldown = 0;
+    let lastTagTime = 0;
+    let powerUps = [];
+    let immunitySpawnTimer = 0;
+    let timeSlowSpawnTimer = 0;
+    let speedBoostSpawnTimer = 0;
+    let activeEffects = {
+      immunity: [],
+      timeSlow: { active: false, endTime: 0, slowedPlayers: [] },
+      speedBoost: []
+    };
+
+    const gravity = 0.5;
+    const PLAYER_COLORS = ['red', 'green', 'blue', 'yellow', 'purple', 'orange', 'cyan', 'magenta', 'lime', 'pink'];
+    
     const basePlatforms = [
-      { x: 100, y: 550, w: 80, h: 15 },
-      { x: 250, y: 500, w: 70, h: 15 },
-      { x: 400, y: 450, w: 80, h: 15 },
-      { x: 550, y: 500, w: 70, h: 15 },
-      { x: 700, y: 550, w: 80, h: 15 },
-      { x: 850, y: 500, w: 70, h: 15 },
-      { x: 1000, y: 450, w: 80, h: 15 },
-      { x: 200, y: 350, w: 70, h: 15 },
-      { x: 400, y: 300, w: 80, h: 15 },
-      { x: 600, y: 350, w: 70, h: 15 },
-      { x: 800, y: 300, w: 80, h: 15 },
-      { x: 1000, y: 350, w: 70, h: 15 },
-      { x: 300, y: 200, w: 80, h: 15 },
-      { x: 500, y: 150, w: 70, h: 15 },
-      { x: 700, y: 200, w: 80, h: 15 },
-      { x: 900, y: 150, w: 70, h: 15 },
-      { x: 200, y: 620, w: 90, h: 15 },
-      { x: 900, y: 620, w: 90, h: 15 }
+      { x: 100, y: 550, w: 80, h: 15 }, { x: 250, y: 500, w: 70, h: 15 },
+      { x: 400, y: 450, w: 80, h: 15 }, { x: 550, y: 500, w: 70, h: 15 },
+      { x: 700, y: 550, w: 80, h: 15 }, { x: 850, y: 500, w: 70, h: 15 },
+      { x: 1000, y: 450, w: 80, h: 15 }, { x: 200, y: 350, w: 70, h: 15 },
+      { x: 400, y: 300, w: 80, h: 15 }, { x: 600, y: 350, w: 70, h: 15 },
+      { x: 800, y: 300, w: 80, h: 15 }, { x: 1000, y: 350, w: 70, h: 15 },
+      { x: 300, y: 200, w: 80, h: 15 }, { x: 500, y: 150, w: 70, h: 15 },
+      { x: 700, y: 200, w: 80, h: 15 }, { x: 900, y: 150, w: 70, h: 15 },
+      { x: 200, y: 620, w: 90, h: 15 }, { x: 900, y: 620, w: 90, h: 15 }
     ];
     
+    const bouncePad = { x: 30, y: 650, w: 50, h: 12 };
+
     // Event Listeners
     document.addEventListener('keydown', e => {
       keys[e.key] = true;
@@ -599,9 +419,8 @@
       } else {
         keyState[e.key].justPressed = true;
       }
-      
-      if (e.key === ' ' && document.getElementById('gameOver').style.display === 'block') {
-        continueAfterGame();
+      if (e.key === ' ' && gameOver) {
+        document.getElementById('gameOverBtn').click();
       }
     });
     
@@ -611,100 +430,189 @@
         keyState[e.key].justPressed = false;
       }
     });
-    
-    // Utility Functions
-    function generateUserId() {
-      return 'tag_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-    
-    function generateLobbyCode() {
-      return Math.floor(100000 + Math.random() * 900000).toString();
-    }
-    
-    function showScreen(screenId) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      if (screenId) {
-        const screen = document.getElementById(screenId);
-        if (screen) screen.classList.add('active');
-      }
-    }
-    
-    function randomizePlatforms() {
-      currentPlatforms = basePlatforms.map(platform => {
-        const minWidth = platform.w - 20;
-        const maxWidth = platform.w + 50;
-        const newWidth = Math.floor(Math.random() * (maxWidth - minWidth + 1)) + minWidth;
-        return {
-          x: platform.x,
-          y: platform.y,
-          w: newWidth,
-          h: platform.h
-        };
+
+    // Navigation
+    function hideAllScreens() {
+      ['mode-select-screen', 'setup-screen', 'time-setup', 'multiplayer-screen', 'lobby-screen'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
       });
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('pause-menu').style.display = 'none';
     }
-    
-    // User Management
-    function checkExistingUser() {
-      const userId = localStorage.getItem('arenaTagUserId');
-      if (userId) {
-        gameState.userId = userId;
-        get(ref(database, 'tagUsers/' + userId)).then((snapshot) => {
-          if (snapshot.exists()) {
-            const userData = snapshot.val();
-            gameState.userName = userData.name;
-            showScreen('homeScreen');
-            document.getElementById('welcomeName').textContent = userData.name;
-          } else {
-            localStorage.removeItem('arenaTagUserId');
-            showScreen('welcomeScreen');
-          }
-        }).catch(() => showScreen('welcomeScreen'));
+
+    function goToModeSelect() {
+      hideAllScreens();
+      document.getElementById('mode-select-screen').style.display = 'block';
+      if (animationId) cancelAnimationFrame(animationId);
+      gameStarted = false;
+      gameOver = false;
+    }
+
+    // Button event listeners
+    document.getElementById('soloBtn').addEventListener('click', () => {
+      hideAllScreens();
+      document.getElementById('setup-screen').style.display = 'block';
+      isMultiplayer = false;
+    });
+
+    document.getElementById('onlineBtn').addEventListener('click', () => {
+      hideAllScreens();
+      document.getElementById('multiplayer-screen').style.display = 'block';
+      isMultiplayer = true;
+    });
+
+    document.getElementById('setupBackBtn').addEventListener('click', goToModeSelect);
+    document.getElementById('multiBackBtn').addEventListener('click', goToModeSelect);
+    document.getElementById('home-btn').addEventListener('click', goToModeSelect);
+
+    document.querySelectorAll('.player-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        numPlayers = parseInt(btn.dataset.players);
+        const robotToggle = document.getElementById('robot-toggle');
+        
+        if (numPlayers === 1) {
+          robotMode = true;
+          robotToggle.classList.add('active');
+          robotToggle.textContent = 'ON';
+          robotToggle.disabled = true;
+          robotToggle.style.opacity = '0.6';
+        } else {
+          robotToggle.disabled = false;
+          robotToggle.style.opacity = '1';
+        }
+        
+        hideAllScreens();
+        document.getElementById('time-setup').style.display = 'block';
+      });
+    });
+
+    document.getElementById('timeBackBtn').addEventListener('click', () => {
+      hideAllScreens();
+      document.getElementById('setup-screen').style.display = 'block';
+      robotMode = false;
+      const robotToggle = document.getElementById('robot-toggle');
+      robotToggle.classList.remove('active');
+      robotToggle.textContent = 'OFF';
+      robotToggle.disabled = false;
+      robotToggle.style.opacity = '1';
+    });
+
+    document.getElementById('robot-toggle').addEventListener('click', function() {
+      robotMode = !robotMode;
+      this.classList.toggle('active', robotMode);
+      this.textContent = robotMode ? 'ON' : 'OFF';
+    });
+
+    document.getElementById('bluffs-toggle').addEventListener('click', function() {
+      bluffsEnabled = !bluffsEnabled;
+      this.classList.toggle('active', bluffsEnabled);
+      this.textContent = bluffsEnabled ? 'ON' : 'OFF';
+    });
+
+    document.querySelectorAll('.background-option').forEach(opt => {
+      opt.addEventListener('click', function() {
+        document.querySelectorAll('.background-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedBackground = parseInt(this.dataset.bg);
+      });
+    });
+
+    document.getElementById('pause-btn').addEventListener('click', () => {
+      if (!gameStarted || gameOver || isMultiplayer) return;
+      gamePaused = true;
+      cancelAnimationFrame(animationId);
+      document.getElementById('pause-menu').style.display = 'block';
+    });
+
+    document.getElementById('resumeBtn').addEventListener('click', () => {
+      gamePaused = false;
+      document.getElementById('pause-menu').style.display = 'none';
+      gameLoop();
+    });
+
+    document.getElementById('leaveBtn').addEventListener('click', () => {
+      gamePaused = false;
+      gameStarted = false;
+      gameOver = false;
+      document.getElementById('pause-menu').style.display = 'none';
+      document.getElementById('pause-btn').style.display = 'none';
+      document.getElementById('ui').style.display = 'none';
+      document.getElementById('home-btn').style.display = 'none';
+      if (animationId) cancelAnimationFrame(animationId);
+      
+      if (isMultiplayer && currentLobby) {
+        returnToLobby();
       } else {
-        showScreen('welcomeScreen');
+        goToModeSelect();
+      }
+    });
+
+    document.getElementById('gameOverBtn').addEventListener('click', () => {
+      if (isMultiplayer) {
+        returnToLobby();
+      } else {
+        resetToSetup();
+      }
+    });
+
+    function resetToSetup() {
+      gameOver = false;
+      document.getElementById('gameOver').style.display = 'none';
+      hideAllScreens();
+      document.getElementById('setup-screen').style.display = 'block';
+      document.getElementById('pause-btn').style.display = 'none';
+      document.getElementById('ui').style.display = 'none';
+      document.getElementById('home-btn').style.display = 'none';
+      
+      robotMode = false;
+      const robotToggle = document.getElementById('robot-toggle');
+      robotToggle.classList.remove('active');
+      robotToggle.textContent = 'OFF';
+      robotToggle.disabled = false;
+      robotToggle.style.opacity = '1';
+    }
+
+    function returnToLobby() {
+      gameOver = false;
+      gameStarted = false;
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('pause-btn').style.display = 'none';
+      document.getElementById('ui').style.display = 'none';
+      document.getElementById('home-btn').style.display = 'none';
+      if (animationId) cancelAnimationFrame(animationId);
+      
+      if (currentLobby) {
+        database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({ ready: false });
+        database.ref(`tagLobbies/${currentLobby}`).once('value', (snapshot) => {
+          if (snapshot.exists() && snapshot.val().host === userId) {
+            database.ref(`tagLobbies/${currentLobby}`).update({ gameStarted: false });
+          }
+        });
+        
+        hideAllScreens();
+        document.getElementById('lobby-screen').style.display = 'block';
+        document.getElementById('readyBtn').disabled = false;
+        document.getElementById('readyBtn').textContent = 'READY';
       }
     }
-    
-    window.saveUserName = function() {
-      const name = document.getElementById('nameInput').value.trim();
-      if (!name) {
-        alert('Please enter a name!');
-        return;
-      }
+
+    // Multiplayer functions
+    document.getElementById('createLobbyBtn').addEventListener('click', () => {
+      const lobbyCode = Math.floor(100000 + Math.random() * 900000).toString();
+      currentLobby = lobbyCode;
       
-      const userId = generateUserId();
-      gameState.userId = userId;
-      gameState.userName = name;
-      
-      set(ref(database, 'tagUsers/' + userId), {
-        name,
-        createdAt: Date.now()
-      }).then(() => {
-        localStorage.setItem('arenaTagUserId', userId);
-        document.getElementById('welcomeName').textContent = name;
-        showScreen('homeScreen');
-      }).catch(err => alert('Database error: ' + err.message));
-    };
-    
-    // Lobby Management
-    window.createLobby = function() {
-      const lobbyCode = generateLobbyCode();
-      gameState.currentLobby = lobbyCode;
-      gameState.isHost = true;
-      gameState.playerColor = PLAYER_COLORS[0];
-      
-      set(ref(database, `tagLobbies/${lobbyCode}`), {
+      database.ref(`tagLobbies/${lobbyCode}`).set({
         code: lobbyCode,
-        host: gameState.userId,
+        host: userId,
         createdAt: Date.now(),
         gameStarted: false,
-        gameDuration: 60,
+        gameDuration: 30,
         players: {
-          [gameState.userId]: {
-            name: gameState.userName,
+          [userId]: {
+            name: 'Player ' + userId.substr(-4),
             ready: false,
-            color: gameState.playerColor,
+            color: PLAYER_COLORS[0],
             isIt: false,
-            alive: true,
             x: 100,
             y: 100,
             vx: 0,
@@ -712,19 +620,20 @@
           }
         }
       }).then(() => {
-        onDisconnect(ref(database, `tagLobbies/${lobbyCode}/players/${gameState.userId}`)).remove();
+        playerRef = database.ref(`tagLobbies/${lobbyCode}/players/${userId}`);
+        playerRef.onDisconnect().remove();
         showLobbyScreen(lobbyCode);
       });
-    };
-    
-    window.joinLobby = function() {
+    });
+
+    document.getElementById('joinLobbyBtn').addEventListener('click', () => {
       const code = document.getElementById('joinCodeInput').value.trim();
       if (code.length !== 6) {
         alert('Enter 6-digit code!');
         return;
       }
       
-      get(ref(database, `tagLobbies/${code}`)).then((snapshot) => {
+      database.ref(`tagLobbies/${code}`).once('value', (snapshot) => {
         if (!snapshot.exists()) {
           alert('Lobby not found!');
           return;
@@ -738,214 +647,206 @@
           return;
         }
         
-        gameState.currentLobby = code;
-        gameState.isHost = false;
-        gameState.playerColor = PLAYER_COLORS[playerCount % PLAYER_COLORS.length];
-        
+        currentLobby = code;
         const startPositions = [
-          { x: 100, y: 100 },
-          { x: 1000, y: 100 },
-          { x: 100, y: 500 },
-          { x: 1000, y: 500 },
-          { x: 550, y: 300 },
-          { x: 300, y: 200 },
-          { x: 800, y: 200 },
-          { x: 550, y: 500 },
-          { x: 200, y: 350 },
-          { x: 900, y: 350 }
+          { x: 100, y: 100 }, { x: 1000, y: 100 }, { x: 100, y: 500 }, { x: 1000, y: 500 },
+          { x: 550, y: 300 }, { x: 300, y: 200 }, { x: 800, y: 200 }, { x: 550, y: 500 },
+          { x: 200, y: 350 }, { x: 900, y: 350 }
         ];
-        
         const pos = startPositions[playerCount % startPositions.length];
         
-        update(ref(database, `tagLobbies/${code}/players/${gameState.userId}`), {
-          name: gameState.userName,
+        database.ref(`tagLobbies/${code}/players/${userId}`).update({
+          name: 'Player ' + userId.substr(-4),
           ready: false,
-          color: gameState.playerColor,
+          color: PLAYER_COLORS[playerCount % PLAYER_COLORS.length],
           isIt: false,
-          alive: true,
           x: pos.x,
           y: pos.y,
           vx: 0,
           vy: 0
         }).then(() => {
-          onDisconnect(ref(database, `tagLobbies/${code}/players/${gameState.userId}`)).remove();
+          playerRef = database.ref(`tagLobbies/${code}/players/${userId}`);
+          playerRef.onDisconnect().remove();
           showLobbyScreen(code);
         });
       });
-    };
-    
+    });
+
     function showLobbyScreen(code) {
       document.getElementById('lobbyCode').textContent = code;
       document.getElementById('readyBtn').disabled = false;
       document.getElementById('readyBtn').textContent = 'READY';
       
-      // Only host can change duration
-      const durationInput = document.getElementById('gameDuration');
-      durationInput.disabled = !gameState.isHost;
+      hideAllScreens();
+      document.getElementById('lobby-screen').style.display = 'block';
       
-      showScreen('lobbyScreen');
-      
-      lobbyListener = onValue(ref(database, `tagLobbies/${code}`), (snapshot) => {
+      lobbyListener = database.ref(`tagLobbies/${code}`).on('value', (snapshot) => {
         if (!snapshot.exists()) {
           alert('Lobby closed!');
-          showScreen('homeScreen');
+          goToModeSelect();
           return;
         }
         
         const lobby = snapshot.val();
         updatePlayerList(lobby.players);
+        document.getElementById('lobby-time-input').value = lobby.gameDuration || 30;
         
-        // Update duration display
-        if (lobby.gameDuration && !gameState.isHost) {
-          durationInput.value = lobby.gameDuration;
-        }
-        
-        // Check if game started
-        if (lobby.gameStarted && !gameState.isPlaying) {
+        if (lobby.gameStarted && !gameStarted) {
           startMultiplayerGame(lobby);
         }
       });
     }
-    
+
     function updatePlayerList(players) {
       const list = document.getElementById('playerList');
       list.innerHTML = '';
       
       Object.entries(players).forEach(([id, player]) => {
         const entry = document.createElement('div');
-        const isCurrentUser = id === gameState.userId;
-        entry.className = 'player-entry' + 
-                         (player.ready ? ' ready' : '') +
-                         (isCurrentUser ? ' current-user' : '');
+        entry.className = 'player-entry' + (player.ready ? ' ready' : '');
         entry.innerHTML = `
-          <div class="player-status">
-            <div class="status-indicator"></div>
-            <span style="color: ${player.color}; font-weight: 700;">⬤ ${player.name}</span>
-          </div>
-          <span style="font-weight: 700;">${player.ready ? '✓ READY' : '✗ NOT READY'}</span>
+          <span style="color: ${player.color}">⬤ ${player.name}</span>
+          <span>${player.ready ? '✓ READY' : '✗ NOT READY'}</span>
         `;
         list.appendChild(entry);
       });
     }
-    
-    window.toggleReady = function() {
-      get(ref(database, `tagLobbies/${gameState.currentLobby}/players/${gameState.userId}`)).then((snapshot) => {
+
+    document.getElementById('readyBtn').addEventListener('click', () => {
+      database.ref(`tagLobbies/${currentLobby}/players/${userId}`).once('value', (snapshot) => {
         const currentReady = snapshot.val().ready;
-        update(ref(database, `tagLobbies/${gameState.currentLobby}/players/${gameState.userId}`), {
+        database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({
           ready: !currentReady
         }).then(() => {
           document.getElementById('readyBtn').textContent = !currentReady ? 'UNREADY' : 'READY';
           checkAllReady();
         });
       });
-    };
-    
-    // Update duration when host changes it
-    document.getElementById('gameDuration').addEventListener('change', function() {
-      if (gameState.isHost && gameState.currentLobby) {
-        const duration = parseInt(this.value);
-        update(ref(database, `tagLobbies/${gameState.currentLobby}`), {
-          gameDuration: duration
-        });
-      }
     });
-    
+
+    document.getElementById('lobby-time-input').addEventListener('change', function() {
+      database.ref(`tagLobbies/${currentLobby}`).once('value', (snapshot) => {
+        if (snapshot.exists() && snapshot.val().host === userId) {
+          database.ref(`tagLobbies/${currentLobby}`).update({
+            gameDuration: parseInt(this.value)
+          });
+        }
+      });
+    });
+
     function checkAllReady() {
-      if (!gameState.isHost) return;
-      
-      get(ref(database, `tagLobbies/${gameState.currentLobby}`)).then((snapshot) => {
+      database.ref(`tagLobbies/${currentLobby}`).once('value', (snapshot) => {
         const lobby = snapshot.val();
+        if (lobby.host !== userId) return;
+        
         const players = lobby.players;
         const allReady = Object.values(players).every(p => p.ready);
         const playerCount = Object.keys(players).length;
         
         if (allReady && playerCount >= 2) {
-          // Randomly assign who is "it"
           const playerIds = Object.keys(players);
           const randomIndex = Math.floor(Math.random() * playerIds.length);
           const itPlayerId = playerIds[randomIndex];
           
           const updates = {};
-          updates[`tagLobbies/${gameState.currentLobby}/gameStarted`] = true;
-          updates[`tagLobbies/${gameState.currentLobby}/gameStartTime`] = Date.now();
+          updates[`tagLobbies/${currentLobby}/gameStarted`] = true;
+          updates[`tagLobbies/${currentLobby}/gameStartTime`] = Date.now();
           
           playerIds.forEach(id => {
-            updates[`tagLobbies/${gameState.currentLobby}/players/${id}/isIt`] = (id === itPlayerId);
-            updates[`tagLobbies/${gameState.currentLobby}/players/${id}/ready`] = false;
+            updates[`tagLobbies/${currentLobby}/players/${id}/isIt`] = (id === itPlayerId);
+            updates[`tagLobbies/${currentLobby}/players/${id}/ready`] = false;
           });
           
-          // Generate and save platforms for this game
           randomizePlatforms();
-          updates[`tagLobbies/${gameState.currentLobby}/platforms`] = currentPlatforms;
+          updates[`tagLobbies/${currentLobby}/platforms`] = currentPlatforms;
           
-          update(ref(database), updates);
-        } else if (allReady && playerCount < 2) {
-          document.getElementById('waitingMessage').style.display = 'block';
-        } else {
-          document.getElementById('waitingMessage').style.display = 'none';
+          database.ref().update(updates);
         }
       });
     }
-    
-    window.leaveLobby = function() {
-      if (gameState.currentLobby) {
-        remove(ref(database, `tagLobbies/${gameState.currentLobby}/players/${gameState.userId}`));
-        
-        // If host is leaving and game hasn't started, delete the lobby
-        if (gameState.isHost) {
-          get(ref(database, `tagLobbies/${gameState.currentLobby}`)).then((snapshot) => {
-            if (snapshot.exists() && !snapshot.val().gameStarted) {
-              remove(ref(database, `tagLobbies/${gameState.currentLobby}`));
+
+    document.getElementById('leaveLobbyBtn').addEventListener('click', () => {
+      if (currentLobby && playerRef) {
+        playerRef.remove().then(() => {
+          database.ref(`tagLobbies/${currentLobby}/players`).once('value', (snapshot) => {
+            if (!snapshot.exists() || Object.keys(snapshot.val()).length === 0) {
+              database.ref(`tagLobbies/${currentLobby}`).remove();
             }
           });
+        });
+        
+        if (lobbyListener) {
+          database.ref(`tagLobbies/${currentLobby}`).off('value', lobbyListener);
+          lobbyListener = null;
         }
         
-        if (lobbyListener) lobbyListener();
-        gameState.currentLobby = null;
-        gameState.isHost = false;
+        playerRef = null;
+        currentLobby = null;
       }
-      showScreen('homeScreen');
-    };
-    
-    // Game Logic
+      goToModeSelect();
+    });
+
     function startMultiplayerGame(lobby) {
-      if (lobbyListener) lobbyListener();
+      if (lobbyListener) {
+        database.ref(`tagLobbies/${currentLobby}`).off('value', lobbyListener);
+        lobbyListener = null;
+      }
       
-      gameState.isPlaying = true;
-      gameState.isPaused = false;
-      gameState.timer = lobby.gameDuration || 60;
-      gameState.startTime = lobby.gameStartTime;
-      gameState.frameCount = 0;
+      isMultiplayer = true;
+      timer = lobby.gameDuration || 30;
       
-      // Load platforms from lobby
       if (lobby.platforms) {
         currentPlatforms = lobby.platforms;
       } else {
         randomizePlatforms();
       }
       
-      // Initialize local player
-      const localPlayerData = lobby.players[gameState.userId];
-      gameState.localPlayer = {
+      canvas.style.background = 'linear-gradient(135deg, #ff6ec4, #7873f5)';
+      
+      hideAllScreens();
+      document.getElementById('ui').style.display = 'block';
+      document.getElementById('home-btn').style.display = 'block';
+      document.getElementById('ui').textContent = `Time: ${timer}`;
+      
+      const localPlayerData = lobby.players[userId];
+      players = [{
         x: localPlayerData.x,
         y: localPlayerData.y,
         vx: 0,
         vy: 0,
-        w: 40,
-        h: 40,
+        w: 30,
+        h: 30,
         color: localPlayerData.color,
         isIt: localPlayerData.isIt,
+        controls: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' },
         jumps: 0,
         canDoubleJump: false,
-        lastJumpTime: 0
-      };
+        lastJumpTime: 0,
+        isLocal: true
+      }];
       
-      showScreen(null);
-      document.getElementById('hud').style.display = 'block';
-      document.getElementById('pauseBtn').style.display = 'block';
-      document.getElementById('timer').textContent = gameState.timer + 's';
+      gameStarted = false;
+      gameOver = false;
+      frameCount = 0;
+      lastTagTime = 0;
+      powerUps = [];
+      smartCircle = null;
       
-      // Start countdown
+      spawnTeleporters();
+      
+      database.ref(`tagLobbies/${currentLobby}/players`).on('value', (snapshot) => {
+        if (!snapshot.exists()) return;
+        
+        otherPlayers = {};
+        snapshot.forEach((child) => {
+          if (child.key !== userId) {
+            otherPlayers[child.key] = child.val();
+          } else {
+            players[0].isIt = child.val().isIt;
+          }
+        });
+      });
+      
       let countdown = 3;
       const countdownDisplay = document.getElementById('countdown');
       countdownDisplay.style.display = 'block';
@@ -960,104 +861,254 @@
           countdownDisplay.textContent = "GO!";
           setTimeout(() => {
             countdownDisplay.style.display = 'none';
-            startGameLoop();
+            gameStarted = true;
+            gameLoop();
           }, 500);
         }
       }, 1000);
+    }
+
+    // Solo game start
+    document.getElementById('startGameBtn').addEventListener('click', () => {
+      const timeLimit = parseInt(document.getElementById('time-input').value);
+      if (isNaN(timeLimit) || timeLimit < 10) {
+        alert("Please enter a valid time limit (minimum 10 seconds)");
+        return;
+      }
       
-      // Listen to other players
-      onValue(ref(database, `tagLobbies/${gameState.currentLobby}/players`), (snapshot) => {
-        if (!snapshot.exists()) return;
-        
-        otherPlayers = {};
-        snapshot.forEach((child) => {
-          if (child.key !== gameState.userId) {
-            otherPlayers[child.key] = child.val();
-          } else {
-            // Update local player's "it" status from server
-            gameState.localPlayer.isIt = child.val().isIt;
-          }
+      switch(selectedBackground) {
+        case 1: canvas.style.background = 'linear-gradient(135deg, #ff6ec4, #7873f5)'; break;
+        case 2: canvas.style.background = 'linear-gradient(135deg, #667eea, #764ba2)'; break;
+        case 3: canvas.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)'; break;
+      }
+      
+      randomizePlatforms();
+      timer = timeLimit;
+      hideAllScreens();
+      document.getElementById('pause-btn').style.display = 'block';
+      document.getElementById('ui').style.display = 'block';
+      document.getElementById('home-btn').style.display = 'block';
+      document.getElementById('ui').textContent = `Time: ${timer}`;
+      
+      players = [];
+      smartCircle = null;
+      gameStarted = false;
+      gameOver = false;
+      frameCount = 0;
+      lastTagTime = 0;
+      powerUps = [];
+      immunitySpawnTimer = 0;
+      timeSlowSpawnTimer = 0;
+      speedBoostSpawnTimer = 0;
+      activeEffects = { immunity: [], timeSlow: { active: false, endTime: 0, slowedPlayers: [] }, speedBoost: [] };
+      
+      const colors = ['red', 'green', 'blue', 'yellow'];
+      const startPositions = [
+        { x: 100, y: 100 }, { x: 1000, y: 100 }, { x: 100, y: 500 }, { x: 1000, y: 500 }
+      ];
+      
+      const controlSchemes = [
+        { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' },
+        { up: 'w', down: 's', left: 'a', right: 'd' },
+        { up: 't', down: 'g', left: 'f', right: 'h' },
+        { up: 'i', down: 'k', left: 'j', right: 'l' }
+      ];
+      
+      for (let i = 0; i < numPlayers; i++) {
+        players.push({ 
+          x: startPositions[i].x, y: startPositions[i].y, vx: 0, vy: 0, w: 30, h: 30, 
+          color: colors[i], isIt: false, controls: controlSchemes[i],
+          canDoubleJump: false, jumps: 0, lastJumpTime: 0
         });
+      }
+      
+      if (robotMode) {
+        smartCircle = {
+          x: canvas.width / 2, y: canvas.height / 2, vx: 0, vy: 0,
+          radius: 12, speed: 3.5, isIt: false, color: 'orange', targetCooldown: 0
+        };
+      }
+      
+      const totalEntities = players.length + (robotMode ? 1 : 0);
+      const randomIndex = Math.floor(Math.random() * totalEntities);
+      
+      if (randomIndex < players.length) {
+        players[randomIndex].isIt = true;
+      } else if (robotMode && smartCircle) {
+        smartCircle.isIt = true;
+      }
+      
+      spawnTeleporters();
+      
+      let countdown = 3;
+      const countdownDisplay = document.getElementById('countdown');
+      countdownDisplay.style.display = 'block';
+      countdownDisplay.textContent = countdown;
+      
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          countdownDisplay.textContent = countdown;
+        } else {
+          clearInterval(countdownInterval);
+          countdownDisplay.textContent = "GO!";
+          setTimeout(() => {
+            countdownDisplay.style.display = 'none';
+            gameStarted = true;
+            gameLoop();
+          }, 500);
+        }
+      }, 1000);
+    });
+
+    function randomizePlatforms() {
+      currentPlatforms = basePlatforms.map(platform => {
+        const minWidth = platform.w - 20;
+        const maxWidth = platform.w + 50;
+        const newWidth = Math.floor(Math.random() * (maxWidth - minWidth + 1)) + minWidth;
+        return { x: platform.x, y: platform.y, w: newWidth, h: platform.h };
       });
     }
-    
-    function startGameLoop() {
-      if (gameInterval) clearInterval(gameInterval);
-      gameInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
+
+    function spawnTeleporters() {
+      const accessiblePositions = [
+        { x: 150, y: 300 }, { x: 1050, y: 300 }, { x: 600, y: 200 },
+        { x: 600, y: 400 }, { x: 350, y: 200 }, { x: 850, y: 200 }
+      ];
+      
+      const index1 = Math.floor(Math.random() * accessiblePositions.length);
+      let index2;
+      do {
+        index2 = Math.floor(Math.random() * accessiblePositions.length);
+      } while (index2 === index1);
+      
+      teleporters = [
+        { x: accessiblePositions[index1].x, y: accessiblePositions[index1].y, radius: 12, active: true },
+        { x: accessiblePositions[index2].x, y: accessiblePositions[index2].y, radius: 12, active: true }
+      ];
     }
-    
-    function gameLoop() {
-      if (!gameState.isPlaying || gameState.isPaused) return;
+
+    // Power-ups (keeping them simple for now - you can expand these)
+    function updatePowerUps() {
+      if (!gameStarted || gamePaused || !bluffsEnabled || isMultiplayer) return;
+      // Power-up logic here (abbreviated for space)
+    }
+
+    function hasImmunity(entity) {
+      return activeEffects.immunity.some(effect => effect.entity === entity);
+    }
+
+    function isPlayerSlowed(player) {
+      if (!activeEffects.timeSlow.active) return false;
+      return activeEffects.timeSlow.slowedPlayers.includes(player);
+    }
+
+    function hasSpeedBoost(entity) {
+      return activeEffects.speedBoost.some(effect => effect.entity === entity);
+    }
+
+    // Smart circle logic
+    function updateSmartCircle() {
+      if (!smartCircle || !gameStarted || gamePaused) return;
       
-      gameState.frameCount++;
+      if (smartCircle.targetCooldown > 0) smartCircle.targetCooldown--;
       
-      // Update timer every second
-      if (gameState.frameCount % 60 === 0) {
-        const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-        const remaining = Math.max(0, gameState.timer - elapsed);
-        document.getElementById('timer').textContent = remaining + 's';
-        
-        if (remaining === 0) {
-          endGame();
-          return;
+      let target = null;
+      let minDistance = Infinity;
+      
+      const speedMultiplier = hasSpeedBoost(smartCircle) ? 1.5 : 1;
+      const finalSpeed = smartCircle.speed * speedMultiplier;
+      
+      if (smartCircle.isIt) {
+        for (const player of players) {
+          if (player && typeof player.x !== 'undefined') {
+            const dx = player.x + player.w/2 - smartCircle.x;
+            const dy = player.y + player.h/2 - smartCircle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < minDistance) {
+              minDistance = distance;
+              target = { x: player.x + player.w/2, y: player.y + player.h/2 };
+            }
+          }
+        }
+      } else {
+        const itPlayer = players.find(p => p && p.isIt);
+        if (itPlayer) {
+          const dx = itPlayer.x + itPlayer.w/2 - smartCircle.x;
+          const dy = itPlayer.y + itPlayer.h/2 - smartCircle.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 200) {
+            target = { x: smartCircle.x - dx, y: smartCircle.y - dy };
+          } else {
+            if (smartCircle.targetCooldown <= 0) {
+              target = { x: Math.random() * canvas.width, y: Math.random() * canvas.height };
+              smartCircle.targetCooldown = 120;
+            }
+          }
         }
       }
       
-      updateLocalPlayer();
-      draw();
+      if (target) {
+        const dx = target.x - smartCircle.x;
+        const dy = target.y - smartCircle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0) {
+          smartCircle.vx = (dx / distance) * finalSpeed;
+          smartCircle.vy = (dy / distance) * finalSpeed;
+        }
+      }
+      
+      smartCircle.x += smartCircle.vx;
+      smartCircle.y += smartCircle.vy;
+      
+      smartCircle.x = Math.max(smartCircle.radius, Math.min(canvas.width - smartCircle.radius, smartCircle.x));
+      smartCircle.y = Math.max(smartCircle.radius, Math.min(canvas.height - smartCircle.radius, smartCircle.y));
     }
-    
-    function updateLocalPlayer() {
-      const p = gameState.localPlayer;
+
+    // Player update
+    function updatePlayer(p) {
+      if (!gameStarted || gamePaused) return;
       
-      // Horizontal movement
-      if (keys['ArrowLeft'] || keys['a']) p.vx = -5;
-      else if (keys['ArrowRight'] || keys['d']) p.vx = 5;
+      const speedMultiplier = 1;
+      
+      if (keys[p.controls.left]) p.vx = -4 * speedMultiplier;
+      else if (keys[p.controls.right]) p.vx = 4 * speedMultiplier;
       else p.vx = 0;
-      
-      // Jumping
+
       const currentTime = Date.now();
-      const jumpKey = keys['ArrowUp'] || keys['w'] || keys[' '];
+      const jumpKey = p.controls.up;
       
       if (isGrounded(p)) {
         p.jumps = 0;
         p.canDoubleJump = true;
       }
       
-      if ((keyState['ArrowUp'] && keyState['ArrowUp'].justPressed) ||
-          (keyState['w'] && keyState['w'].justPressed) ||
-          (keyState[' '] && keyState[' '].justPressed)) {
+      if (keyState[jumpKey] && keyState[jumpKey].justPressed) {
         if (p.jumps === 0 && isGrounded(p)) {
-          p.vy = -12;
+          p.vy = -10;
           p.jumps = 1;
           p.lastJumpTime = currentTime;
-          
-          if (keyState['ArrowUp']) keyState['ArrowUp'].justPressed = false;
-          if (keyState['w']) keyState['w'].justPressed = false;
-          if (keyState[' ']) keyState[' '].justPressed = false;
+          keyState[jumpKey].justPressed = false;
         } else if (p.jumps === 1 && p.canDoubleJump && (currentTime - p.lastJumpTime) <= 700) {
-          p.vy = -12;
+          p.vy = -10;
           p.jumps = 2;
           p.canDoubleJump = false;
-          
-          if (keyState['ArrowUp']) keyState['ArrowUp'].justPressed = false;
-          if (keyState['w']) keyState['w'].justPressed = false;
-          if (keyState[' ']) keyState[' '].justPressed = false;
+          keyState[jumpKey].justPressed = false;
         }
       }
-      
-      // Apply gravity
+
       p.vy += gravity;
       p.x += p.vx;
       p.y += p.vy;
-      
-      // Ground collision
+
       if (p.y + p.h > canvas.height) {
         p.y = canvas.height - p.h;
         p.vy = 0;
       }
-      
-      // Platform collision
+
       currentPlatforms.forEach(pl => {
         if (p.vy >= 0 && 
             p.x < pl.x + pl.w &&
@@ -1068,26 +1119,45 @@
           p.vy = 0;
         }
       });
-      
-      // Keep inside canvas
+
+      if (p.x < bouncePad.x + bouncePad.w &&
+          p.x + p.w > bouncePad.x &&
+          p.y + p.h >= bouncePad.y &&
+          p.y + p.h <= bouncePad.y + bouncePad.h + 5) {
+        p.vy = -20;
+      }
+
+      if (teleporters[0].active && teleporters[1].active) {
+        for (let i = 0; i < teleporters.length; i++) {
+          const tp = teleporters[i];
+          const dx = (p.x + p.w/2) - tp.x;
+          const dy = (p.y + p.h/2) - tp.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < tp.radius + p.w/2) {
+            const target = teleporters[1 - i];
+            p.x = target.x - p.w/2;
+            p.y = target.y - p.h/2;
+            p.vx = (Math.random() - 0.5) * 4;
+            p.vy = -2;
+            teleporters[0].active = false;
+            teleporters[1].active = false;
+            teleportCooldown = frameCount;
+            break;
+          }
+        }
+      }
+
       p.x = Math.max(0, Math.min(canvas.width - p.w, p.x));
       p.y = Math.min(canvas.height - p.h, p.y);
       
-      // Check for tags
-      checkTagCollisions();
-      
-      // Update position in database (throttled)
-      if (gameState.frameCount % 3 === 0) {
-        update(ref(database, `tagLobbies/${gameState.currentLobby}/players/${gameState.userId}`), {
-          x: p.x,
-          y: p.y,
-          vx: p.vx,
-          vy: p.vy,
-          isIt: p.isIt
+      if (isMultiplayer && p.isLocal && frameCount % 3 === 0) {
+        database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({
+          x: p.x, y: p.y, vx: p.vx, vy: p.vy
         });
       }
     }
-    
+
     function isGrounded(p) {
       return (
         p.y + p.h >= canvas.height ||
@@ -1099,238 +1169,288 @@
         )
       );
     }
-    
-    function checkTagCollisions() {
-      const p1 = gameState.localPlayer;
-      
-      Object.entries(otherPlayers).forEach(([id, p2]) => {
-        if (!p2.alive) return;
-        
-        const collision = (
-          p1.x < p2.x + 40 &&
-          p1.x + p1.w > p2.x &&
-          p1.y < p2.y + 40 &&
-          p1.y + p1.h > p2.y
-        );
-        
-        if (collision) {
-          if (p1.isIt && !p2.isIt) {
-            // Local player tags other player
-            p1.isIt = false;
-            update(ref(database, `tagLobbies/${gameState.currentLobby}/players/${gameState.userId}`), {
-              isIt: false
-            });
-            update(ref(database, `tagLobbies/${gameState.currentLobby}/players/${id}`), {
-              isIt: true
-            });
-          } else if (!p1.isIt && p2.isIt) {
-            // Other player tags local player
-            p1.isIt = true;
-            update(ref(database, `tagLobbies/${gameState.currentLobby}/players/${gameState.userId}`), {
-              isIt: true
-            });
-            update(ref(database, `tagLobbies/${gameState.currentLobby}/players/${id}`), {
-              isIt: false
-            });
-          }
-        }
-      });
+
+    function detectPlayerTag(p1, p2) {
+      if (hasImmunity(p2)) return false;
+      return (
+        p1.x < p2.x + p2.w &&
+        p1.x + p1.w > p2.x &&
+        p1.y < p2.y + p2.h &&
+        p1.y + p1.h > p2.y
+      );
     }
-    
-    function draw() {
-      // Clear canvas
-      ctx.fillStyle = '#1a1a3e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    function detectCirclePlayerTag(circle, player) {
+      if (!circle || !player || hasImmunity(player)) return false;
       
-      // Draw platforms with glow effect
-      currentPlatforms.forEach(pl => {
-        // Platform glow
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#00ffff';
-        ctx.fillStyle = '#2a4a6a';
-        ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
-        
-        // Platform highlight
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = '#3a5a7a';
-        ctx.fillRect(pl.x, pl.y, pl.w, 3);
-      });
-      
-      // Draw other players
-      Object.entries(otherPlayers).forEach(([id, player]) => {
-        if (!player.alive) return;
-        drawPlayer(player.x, player.y, player.color, player.isIt, player.name);
-      });
-      
-      // Draw local player
-      const p = gameState.localPlayer;
-      drawPlayer(p.x, p.y, p.color, p.isIt, gameState.userName + ' (You)');
+      const dx = (player.x + player.w/2) - circle.x;
+      const dy = (player.y + player.h/2) - circle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < circle.radius + player.w/2;
     }
-    
-    function drawPlayer(x, y, color, isIt, name) {
-      const w = 40;
-      const h = 40;
-      
-      // Shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-      ctx.fillRect(x + 4, y + 4, w, h);
-      
-      // Player body with gradient
-      const gradient = ctx.createLinearGradient(x, y, x, y + h);
-      gradient.addColorStop(0, color);
-      gradient.addColorStop(1, shadeColor(color, -20));
-      ctx.fillStyle = gradient;
-      
-      // Add glow for "it" player
-      if (isIt) {
-        ctx.shadowBlur = 25;
-        ctx.shadowColor = '#ffd700';
+
+    // Drawing functions
+    function drawTagIndicator(entity) {
+      let orbX, orbY;
+      if (entity.radius) {
+        orbX = entity.x;
+        orbY = entity.y - 20;
       } else {
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = color;
+        orbX = entity.x + entity.w / 2;
+        orbY = entity.y - 12;
       }
       
-      // Rounded rectangle body
       ctx.beginPath();
-      ctx.roundRect(x, y, w, h, 8);
+      ctx.arc(orbX, orbY, 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'gold';
+      ctx.shadowColor = 'gold';
+      ctx.shadowBlur = 10;
       ctx.fill();
       ctx.shadowBlur = 0;
-      
-      // Eyes
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.arc(x + 12, y + 15, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x + 28, y + 15, 4, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Eye highlights
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(x + 13, y + 14, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x + 29, y + 14, 2, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Smile
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(x + 20, y + 25, 8, 0.2, Math.PI - 0.2);
-      ctx.stroke();
-      
-      // "IT" indicator
-      if (isIt) {
-        ctx.fillStyle = '#ffd700';
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#ffd700';
-        ctx.beginPath();
-        ctx.arc(x + w/2, y - 12, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 10px Orbitron';
-        ctx.textAlign = 'center';
-        ctx.fillText('IT', x + w/2, y - 9);
-      }
-      
-      // Name tag
-      ctx.fillStyle = color;
-      ctx.font = '12px Rajdhani';
-      ctx.textAlign = 'center';
-      ctx.shadowBlur = 5;
-      ctx.shadowColor = '#000';
-      ctx.fillText(name, x + w/2, y - 20);
-      ctx.shadowBlur = 0;
     }
-    
-    function shadeColor(color, percent) {
-      const num = parseInt(color.replace('#', ''), 16);
-      const amt = Math.round(2.55 * percent);
-      const R = (num >> 16) + amt;
-      const G = (num >> 8 & 0x00FF) + amt;
-      const B = (num & 0x0000FF) + amt;
-      return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-        (B < 255 ? B < 1 ? 0 : B : 255))
-        .toString(16).slice(1);
-    }
-    
-    function endGame() {
-      gameState.isPlaying = false;
-      if (gameInterval) clearInterval(gameInterval);
-      
-      // Find who is "it"
+
+    function showGameOver() {
       let winner = '';
-      if (gameState.localPlayer.isIt) {
-        winner = `${gameState.userName} (You) was IT!`;
-      } else {
-        const itPlayer = Object.entries(otherPlayers).find(([id, p]) => p.isIt);
-        if (itPlayer) {
-          winner = `${itPlayer[1].name} was IT!`;
-        }
+      const itPlayer = players.find(p => p.isIt);
+      
+      if (itPlayer) {
+        winner = `${itPlayer.color.toUpperCase()} player was IT!`;
+      } else if (smartCircle && smartCircle.isIt) {
+        winner = 'SMART CIRCLE was IT!';
+      }
+      
+      if (isMultiplayer) {
+        Object.entries(otherPlayers).forEach(([id, player]) => {
+          if (player.isIt) {
+            winner = `${player.name} was IT!`;
+          }
+        });
       }
       
       document.getElementById('winner-text').textContent = winner;
-      document.getElementById('gameOver').style.display = 'block';
-      document.getElementById('pauseBtn').style.display = 'none';
-    }
-    
-    window.continueAfterGame = function() {
-      document.getElementById('gameOver').style.display = 'none';
       
-      // Reset players in lobby
-      if (gameState.currentLobby) {
-        update(ref(database, `tagLobbies/${gameState.currentLobby}/players/${gameState.userId}`), {
-          ready: false
-        });
+      if (isMultiplayer) {
+        document.getElementById('gameOverMessage').textContent = 'Press SPACEBAR or click to return to lobby';
+        document.getElementById('gameOverBtn').textContent = '🔙 Back to Lobby';
+      } else {
+        document.getElementById('gameOverMessage').textContent = 'Press SPACEBAR or click the button to play again';
+        document.getElementById('gameOverBtn').textContent = '🔄 Play Again';
+      }
+      
+      document.getElementById('gameOver').style.display = 'block';
+    }
+
+    function drawPlatforms() {
+      currentPlatforms.forEach(pl => {
+        ctx.fillStyle = '#8a5c36';
+        ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
+        ctx.fillStyle = '#5d4037';
+        ctx.fillRect(pl.x, pl.y, pl.w, 4);
+      });
+
+      ctx.fillStyle = '#00c853';
+      ctx.fillRect(bouncePad.x, bouncePad.y, bouncePad.w, bouncePad.h);
+      for (let i = 0; i < bouncePad.w; i += 8) {
+        ctx.fillStyle = '#009624';
+        ctx.fillRect(bouncePad.x + i, bouncePad.y, 4, bouncePad.h);
+      }
+    }
+
+    function drawPlayers() {
+      players.forEach(p => {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(p.x + 3, p.y + 3, p.w, p.h);
         
-        // Only host can reset game
-        if (gameState.isHost) {
-          update(ref(database, `tagLobbies/${gameState.currentLobby}`), {
-            gameStarted: false
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(p.x + 8, p.y + 8, 6, 6);
+        ctx.fillRect(p.x + p.w - 14, p.y + 8, 6, 6);
+        
+        if (p.isIt) drawTagIndicator(p);
+      });
+      
+      if (isMultiplayer) {
+        Object.entries(otherPlayers).forEach(([id, player]) => {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.fillRect(player.x + 3, player.y + 3, 30, 30);
+          
+          ctx.fillStyle = player.color;
+          ctx.fillRect(player.x, player.y, 30, 30);
+          
+          ctx.fillStyle = '#000';
+          ctx.fillRect(player.x + 8, player.y + 8, 6, 6);
+          ctx.fillRect(player.x + 30 - 14, player.y + 8, 6, 6);
+          
+          if (player.isIt) {
+            drawTagIndicator({ x: player.x, y: player.y, w: 30, h: 30 });
+          }
+        });
+      }
+    }
+
+    function drawSmartCircle() {
+      if (!smartCircle) return;
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.beginPath();
+      ctx.arc(smartCircle.x + 2, smartCircle.y + 2, smartCircle.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = smartCircle.color;
+      ctx.beginPath();
+      ctx.arc(smartCircle.x, smartCircle.y, smartCircle.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(smartCircle.x - 4, smartCircle.y - 4, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(smartCircle.x + 4, smartCircle.y - 4, 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      if (smartCircle.isIt) drawTagIndicator(smartCircle);
+    }
+
+    function drawTeleporters() {
+      teleporters.forEach(tp => {
+        if (tp.active) {
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius + 3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+          ctx.shadowColor = '#ff0';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+          
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffeb3b';
+          ctx.fill();
+          
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, tp.radius / 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffc107';
+          ctx.fill();
+          
+          ctx.shadowBlur = 0;
+        }
+      });
+    }
+
+    // Game loop
+    function gameLoop() {
+      if (gameOver) {
+        showGameOver();
+        return;
+      }
+      
+      if (gamePaused) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      frameCount++;
+
+      drawPlatforms();
+
+      if (!teleporters[0].active && frameCount - teleportCooldown > 300) {
+        spawnTeleporters();
+      }
+
+      drawTeleporters();
+      updatePowerUps();
+
+      players.forEach(p => updatePlayer(p));
+      drawPlayers();
+
+      updateSmartCircle();
+      drawSmartCircle();
+
+      const itPlayer = players.find(p => p.isIt);
+      
+      if (itPlayer && !isMultiplayer) {
+        const otherLocalPlayers = players.filter(p => !p.isIt);
+        for (const otherPlayer of otherLocalPlayers) {
+          if (detectPlayerTag(itPlayer, otherPlayer) && Date.now() - lastTagTime > 1000) {
+            itPlayer.isIt = false;
+            otherPlayer.isIt = true;
+            lastTagTime = Date.now();
+            break;
+          }
+        }
+      }
+
+      if (smartCircle && !isMultiplayer) {
+        if (smartCircle.isIt) {
+          for (const player of players) {
+            if (player && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
+              smartCircle.isIt = false;
+              player.isIt = true;
+              lastTagTime = Date.now();
+              break;
+            }
+          }
+        } else {
+          for (const player of players) {
+            if (player && player.isIt && detectCirclePlayerTag(smartCircle, player) && Date.now() - lastTagTime > 1000) {
+              player.isIt = false;
+              smartCircle.isIt = true;
+              lastTagTime = Date.now();
+              break;
+            }
+          }
+        }
+      }
+      
+      if (isMultiplayer) {
+        if (itPlayer) {
+          Object.entries(otherPlayers).forEach(([id, otherPlayer]) => {
+            const collision = (
+              itPlayer.x < otherPlayer.x + 30 &&
+              itPlayer.x + itPlayer.w > otherPlayer.x &&
+              itPlayer.y < otherPlayer.y + 30 &&
+              itPlayer.y + itPlayer.h > otherPlayer.y
+            );
+            
+            if (collision && Date.now() - lastTagTime > 1000) {
+              itPlayer.isIt = false;
+              database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({ isIt: false });
+              database.ref(`tagLobbies/${currentLobby}/players/${id}`).update({ isIt: true });
+              lastTagTime = Date.now();
+            }
           });
         }
         
-        showLobbyScreen(gameState.currentLobby);
-      }
-    };
-    
-    // Pause functionality
-    document.getElementById('pauseBtn').addEventListener('click', () => {
-      gameState.isPaused = true;
-      if (gameInterval) clearInterval(gameInterval);
-      document.getElementById('pause-menu').style.display = 'block';
-    });
-    
-    window.resumeGame = function() {
-      gameState.isPaused = false;
-      document.getElementById('pause-menu').style.display = 'none';
-      startGameLoop();
-    };
-    
-    window.leaveGame = function() {
-      gameState.isPlaying = false;
-      if (gameInterval) clearInterval(gameInterval);
-      document.getElementById('pause-menu').style.display = 'none';
-      document.getElementById('gameOver').style.display = 'none';
-      document.getElementById('hud').style.display = 'none';
-      document.getElementById('pauseBtn').style.display = 'none';
-      
-      if (gameState.currentLobby) {
-        update(ref(database, `tagLobbies/${gameState.currentLobby}/players/${gameState.userId}`), {
-          ready: false,
-          alive: false
+        Object.entries(otherPlayers).forEach(([id, otherPlayer]) => {
+          if (otherPlayer.isIt && players[0]) {
+            const collision = (
+              players[0].x < otherPlayer.x + 30 &&
+              players[0].x + players[0].w > otherPlayer.x &&
+              players[0].y < otherPlayer.y + 30 &&
+              players[0].y + players[0].h > otherPlayer.y
+            );
+            
+            if (collision && Date.now() - lastTagTime > 1000) {
+              players[0].isIt = true;
+              database.ref(`tagLobbies/${currentLobby}/players/${userId}`).update({ isIt: true });
+              database.ref(`tagLobbies/${currentLobby}/players/${id}`).update({ isIt: false });
+              lastTagTime = Date.now();
+            }
+          }
         });
-        showLobbyScreen(gameState.currentLobby);
       }
-    };
-    
-    // Initialize
-    checkExistingUser();
+
+      if (frameCount % 60 === 0 && timer > 0) {
+        timer--;
+        document.getElementById('ui').textContent = `Time: ${timer}`;
+      }
+
+      if (timer === 0 && !gameOver) {
+        gameOver = true;
+      }
+
+      animationId = requestAnimationFrame(gameLoop);
+    }
   </script>
 </body>
 </html>
