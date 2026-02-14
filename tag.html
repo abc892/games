@@ -287,7 +287,12 @@
       <h2>Select Game Mode</h2>
       <p style="color: #00ff88;">Welcome, <span id="playerNameDisplay"></span>!</p>
       <button id="soloBtn">Solo/Local Multiplayer</button>
-      <button id="onlineBtn">Online Multiplayer</button>
+      <button id="onlineBtn">Create Online Lobby</button>
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #444;">
+        <h3>Join Existing Lobby</h3>
+        <input type="text" id="joinCodeInputMain" placeholder="Enter 6-digit code" maxlength="6" style="width: 200px;">
+        <button id="joinLobbyBtnMain">Join Lobby</button>
+      </div>
     </div>
     
     <!-- Setup Screen (Solo/Local) -->
@@ -511,6 +516,66 @@
     document.getElementById('onlineBtn').addEventListener('click', () => {
       showLobbyCreation();
     });
+
+    document.getElementById('joinLobbyBtnMain').addEventListener('click', () => {
+      const code = document.getElementById('joinCodeInputMain').value.trim();
+      if (code.length !== 6) {
+        alert('Please enter a 6-digit lobby code!');
+        return;
+      }
+      joinLobby(code);
+    });
+
+    document.getElementById('joinCodeInputMain').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('joinLobbyBtnMain').click();
+      }
+    });
+
+    function joinLobby(code) {
+      console.log('Joining lobby:', code);
+      
+      database.ref(`tagGame/lobbies/${code}`).once('value', (snapshot) => {
+        if (!snapshot.exists()) {
+          alert('Lobby not found! Please check the code.');
+          return;
+        }
+        
+        const lobby = snapshot.val();
+        const playerCount = Object.keys(lobby.players || {}).length;
+        
+        if (playerCount >= 10) {
+          alert('Lobby is full! (Maximum 10 players)');
+          return;
+        }
+        
+        currentLobby = code;
+        isHost = false;
+        
+        const startPositions = [
+          { x: 100, y: 100 }, { x: 1000, y: 100 }, { x: 100, y: 500 }, { x: 1000, y: 500 },
+          { x: 550, y: 300 }, { x: 300, y: 200 }, { x: 800, y: 200 }, { x: 550, y: 500 },
+          { x: 200, y: 350 }, { x: 900, y: 350 }
+        ];
+        const pos = startPositions[playerCount % startPositions.length];
+        
+        database.ref(`tagGame/lobbies/${code}/players/${userId}`).set({
+          name: playerName,
+          ready: false,
+          color: PLAYER_COLORS[playerCount % PLAYER_COLORS.length],
+          isIt: false,
+          x: pos.x,
+          y: pos.y,
+          vx: 0,
+          vy: 0
+        }).then(() => {
+          playerRef = database.ref(`tagGame/lobbies/${code}/players/${userId}`);
+          playerRef.onDisconnect().remove();
+          document.getElementById('joinCodeInputMain').value = '';
+          showLobbyScreen(code);
+        });
+      });
+    }
 
     function showLobbyCreation() {
       const lobbyCode = Math.floor(100000 + Math.random() * 900000).toString();
