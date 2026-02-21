@@ -720,20 +720,16 @@
       // Listen for timer updates during game
       timerListener = database.ref(`tagGame/lobbies/${code}/timer`).on('value', (snapshot) => {
         if (snapshot.exists() && gameStarted && !gameOver) {
-          timer = snapshot.val();
+          const newTimer = snapshot.val();
+          timer = newTimer;
           document.getElementById('ui').textContent = `Time: ${timer}`;
           
           console.log('Timer update from Firebase:', timer);
           
-          // If timer hits 0, stop the game
-          if (timer <= 0) {
-            console.log('Timer is 0 - stopping game');
-            gameOver = true;
-            gameStarted = false;
-            if (animationId) {
-              cancelAnimationFrame(animationId);
-              animationId = null;
-            }
+          // If timer hits 0, END THE GAME IMMEDIATELY
+          if (timer <= 0 && gameStarted && !gameOver) {
+            console.log('⚠️ Timer is 0 - calling endGameForAll() NOW');
+            endGameForAll();
           }
         }
       });
@@ -997,17 +993,21 @@
     }
 
     function endGameForAll() {
-      console.log('Ending game for all players...');
+      console.log('🏁 endGameForAll() called');
+      console.log('Current state - gameStarted:', gameStarted, 'gameOver:', gameOver);
       
+      // Force stop everything
       gameStarted = false;
       gameOver = true;
       
       if (animationId) {
+        console.log('Cancelling animation frame');
         cancelAnimationFrame(animationId);
         animationId = null;
       }
       
       if (hostTimerInterval) {
+        console.log('Clearing host timer interval');
         clearInterval(hostTimerInterval);
         hostTimerInterval = null;
       }
@@ -1019,23 +1019,37 @@
       
       // Find winner
       let winner = '';
-      const itPlayer = players.find(p => p.isIt);
+      const itPlayer = players.find(p => p && p.isIt);
       
       if (itPlayer) {
         winner = `${playerName} (You) was IT!`;
-      } else {
+      } else if (otherPlayers) {
         Object.entries(otherPlayers).forEach(([id, player]) => {
-          if (player.isIt) {
+          if (player && player.isIt) {
             winner = `${player.name} was IT!`;
           }
         });
       }
       
-      document.getElementById('winner-text').textContent = winner;
-      document.getElementById('gameOver').style.display = 'block';
+      if (!winner) {
+        winner = 'Game Over!';
+      }
+      
+      console.log('Winner:', winner);
+      
+      // FORCE SHOW THE GAME OVER SCREEN
+      const gameOverElement = document.getElementById('gameOver');
+      const winnerElement = document.getElementById('winner-text');
+      
+      winnerElement.textContent = winner;
+      gameOverElement.style.display = 'block';
+      
+      // Hide game UI
       document.getElementById('pause-btn').style.display = 'none';
       document.getElementById('ui').style.display = 'none';
       document.getElementById('home-btn').style.display = 'none';
+      
+      console.log('✅ Game over screen should now be visible');
     }
 
     document.getElementById('gameOverBtn').addEventListener('click', () => {
@@ -1505,21 +1519,12 @@
 
     // Game loop
     function gameLoop() {
-      if (gameOver || !gameStarted) return;
-      
-      if (gamePaused) return;
-
-      // Check if game has ended (for multiplayer)
-      if (currentLobby && timer <= 0) {
-        gameOver = true;
-        gameStarted = false;
-        if (animationId) {
-          cancelAnimationFrame(animationId);
-          animationId = null;
-        }
-        // Don't call endGameForAll here - let Firebase signal handle it
+      if (gameOver || !gameStarted) {
+        console.log('Game loop stopped - gameOver:', gameOver, 'gameStarted:', gameStarted);
         return;
       }
+      
+      if (gamePaused) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frameCount++;
