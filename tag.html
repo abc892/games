@@ -693,27 +693,48 @@
         }
         
         const lobby = snapshot.val();
+        console.log('Lobby update:', {
+          gameStarted: lobby.gameStarted,
+          gameEnded: lobby.gameEnded,
+          timer: lobby.timer,
+          currentGameStarted: gameStarted,
+          currentGameOver: gameOver
+        });
+        
         updatePlayerList(lobby.players);
         document.getElementById('lobby-time-input').value = lobby.gameDuration || 30;
         
         // Game started
         if (lobby.gameStarted && !gameStarted && !lobby.gameEnded) {
-          console.log('Game starting...');
+          console.log('🎮 Game starting...');
           startMultiplayerGame(lobby);
         }
         
         // Game ended - all players return to lobby
-        if (lobby.gameEnded && gameStarted) {
-          console.log('Game ended signal received');
+        if (lobby.gameEnded && gameStarted && !gameOver) {
+          console.log('🏁 Game ended signal received');
           endGameForAll();
         }
       });
       
       // Listen for timer updates during game
       timerListener = database.ref(`tagGame/lobbies/${code}/timer`).on('value', (snapshot) => {
-        if (snapshot.exists() && gameStarted) {
+        if (snapshot.exists() && gameStarted && !gameOver) {
           timer = snapshot.val();
           document.getElementById('ui').textContent = `Time: ${timer}`;
+          
+          console.log('Timer update from Firebase:', timer);
+          
+          // If timer hits 0, stop the game
+          if (timer <= 0) {
+            console.log('Timer is 0 - stopping game');
+            gameOver = true;
+            gameStarted = false;
+            if (animationId) {
+              cancelAnimationFrame(animationId);
+              animationId = null;
+            }
+          }
         }
       });
     }
@@ -928,16 +949,20 @@
     function startHostTimer() {
       if (hostTimerInterval) clearInterval(hostTimerInterval);
       
-      console.log('Host timer started');
+      console.log('Host timer started, initial timer:', timer);
       
       hostTimerInterval = setInterval(() => {
-        if (timer > 0 && gameStarted && !gameOver) {
-          timer--;
-          database.ref(`tagGame/lobbies/${currentLobby}`).update({ timer });
-          console.log('Timer:', timer);
+        console.log('Host timer tick, current:', timer, 'gameStarted:', gameStarted, 'gameOver:', gameOver);
+        
+        if (gameStarted && !gameOver) {
+          if (timer > 0) {
+            timer--;
+            console.log('Timer decremented to:', timer);
+            database.ref(`tagGame/lobbies/${currentLobby}`).update({ timer });
+          }
           
-          if (timer === 0) {
-            console.log('Timer reached 0 - ending game');
+          if (timer <= 0) {
+            console.log('Timer reached 0 - calling endGame()');
             clearInterval(hostTimerInterval);
             hostTimerInterval = null;
             endGame();
@@ -947,16 +972,22 @@
     }
 
     function endGame() {
-      if (!isHost || !currentLobby) return;
+      if (!isHost || !currentLobby) {
+        console.log('endGame called but not host or no lobby');
+        return;
+      }
       
-      console.log('Host ending game...');
+      console.log('Host ending game - setting gameEnded flag...');
       
       // Signal all players that game ended
       database.ref(`tagGame/lobbies/${currentLobby}`).update({
         gameStarted: false,
-        gameEnded: true
+        gameEnded: true,
+        timer: 0
       }).then(() => {
-        console.log('Game ended signal sent to Firebase');
+        console.log('✅ Game ended signal sent to Firebase successfully');
+      }).catch((error) => {
+        console.error('❌ Error sending game ended signal:', error);
       });
       
       if (hostTimerInterval) {
@@ -1477,6 +1508,18 @@
       if (gameOver || !gameStarted) return;
       
       if (gamePaused) return;
+
+      // Check if game has ended (for multiplayer)
+      if (currentLobby && timer <= 0) {
+        gameOver = true;
+        gameStarted = false;
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+        // Don't call endGameForAll here - let Firebase signal handle it
+        return;
+      }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frameCount++;
