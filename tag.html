@@ -416,6 +416,7 @@
     let teleportCooldown = 0;
     let lastTagTime = 0;
     let tagCooldowns = {}; // Track cooldown between specific player pairs
+    let currentlyTouching = {}; // Track which players are currently in contact
     let isHost = false;
     let isTabVisible = true;
 
@@ -877,6 +878,7 @@
       gameOver = false;
       frameCount = 0;
       lastTagTime = 0;
+      currentlyTouching = {}; // Reset contact tracking
       smartCircle = null;
       
       spawnTeleporters();
@@ -1059,6 +1061,7 @@
       gameOver = false;
       frameCount = 0;
       lastTagTime = 0;
+      currentlyTouching = {}; // Reset contact tracking
       
       const colors = ['red', 'green', 'blue', 'yellow'];
       const startPositions = [
@@ -1500,38 +1503,46 @@
           const otherLocalPlayers = players.filter(p => !p.isIt);
           for (const otherPlayer of otherLocalPlayers) {
             const tagKey = `${players.indexOf(itPlayer)}-${players.indexOf(otherPlayer)}`;
-            const now = Date.now();
+            const collision = detectPlayerTag(itPlayer, otherPlayer);
             
-            // Check if this specific pair has a cooldown
-            if (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000) {
-              if (detectPlayerTag(itPlayer, otherPlayer)) {
+            if (collision) {
+              // They are touching
+              if (!currentlyTouching[tagKey]) {
+                // First contact - transfer tag
+                currentlyTouching[tagKey] = true;
                 itPlayer.isIt = false;
                 otherPlayer.isIt = true;
-                tagCooldowns[tagKey] = now;
-                lastTagTime = now;
                 console.log('Tag!', itPlayer.color, '→', otherPlayer.color);
                 break;
+              }
+              // else: Already touching, don't retag
+            } else {
+              // Not touching - clear the contact flag
+              if (currentlyTouching[tagKey]) {
+                currentlyTouching[tagKey] = false;
               }
             }
           }
         }
 
         if (smartCircle) {
-          const now = Date.now();
-          
           if (smartCircle.isIt) {
             for (let i = 0; i < players.length; i++) {
               const player = players[i];
               const tagKey = `circle-${i}`;
+              const collision = player && detectCirclePlayerTag(smartCircle, player);
               
-              if (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000) {
-                if (player && detectCirclePlayerTag(smartCircle, player)) {
+              if (collision) {
+                if (!currentlyTouching[tagKey]) {
+                  currentlyTouching[tagKey] = true;
                   smartCircle.isIt = false;
                   player.isIt = true;
-                  tagCooldowns[tagKey] = now;
-                  lastTagTime = now;
                   console.log('Circle tagged player', i);
                   break;
+                }
+              } else {
+                if (currentlyTouching[tagKey]) {
+                  currentlyTouching[tagKey] = false;
                 }
               }
             }
@@ -1539,15 +1550,19 @@
             for (let i = 0; i < players.length; i++) {
               const player = players[i];
               const tagKey = `${i}-circle`;
+              const collision = player && player.isIt && detectCirclePlayerTag(smartCircle, player);
               
-              if (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000) {
-                if (player && player.isIt && detectCirclePlayerTag(smartCircle, player)) {
+              if (collision) {
+                if (!currentlyTouching[tagKey]) {
+                  currentlyTouching[tagKey] = true;
                   player.isIt = false;
                   smartCircle.isIt = true;
-                  tagCooldowns[tagKey] = now;
-                  lastTagTime = now;
                   console.log('Player', i, 'tagged circle');
                   break;
+                }
+              } else {
+                if (currentlyTouching[tagKey]) {
+                  currentlyTouching[tagKey] = false;
                 }
               }
             }
@@ -1583,30 +1598,34 @@
           document.getElementById('gameOverBtn').onclick = goToModeSelect;
         }
       } else {
-        // Multiplayer tag detection with intelligent cooldown
+        // Multiplayer tag detection with contact tracking
         const itPlayer = players[0];
-        const now = Date.now();
         
         if (itPlayer && itPlayer.isIt) {
           Object.entries(otherPlayers).forEach(([id, otherPlayer]) => {
             const tagKey = `${userId}-${id}`;
+            const collision = (
+              itPlayer.x < otherPlayer.x + 30 &&
+              itPlayer.x + itPlayer.w > otherPlayer.x &&
+              itPlayer.y < otherPlayer.y + 30 &&
+              itPlayer.y + itPlayer.h > otherPlayer.y
+            );
             
-            // Check cooldown for this specific pair
-            if (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000) {
-              const collision = (
-                itPlayer.x < otherPlayer.x + 30 &&
-                itPlayer.x + itPlayer.w > otherPlayer.x &&
-                itPlayer.y < otherPlayer.y + 30 &&
-                itPlayer.y + itPlayer.h > otherPlayer.y
-              );
-              
-              if (collision) {
+            if (collision) {
+              // Players are touching
+              if (!currentlyTouching[tagKey]) {
+                // First contact - transfer tag
                 console.log('Tagged:', id);
+                currentlyTouching[tagKey] = true;
                 itPlayer.isIt = false;
                 database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ isIt: false });
                 database.ref(`tagGame/lobbies/${currentLobby}/players/${id}`).update({ isIt: true });
-                tagCooldowns[tagKey] = now;
-                lastTagTime = now;
+              }
+              // else: Still touching, don't retag
+            } else {
+              // Not touching - clear contact flag
+              if (currentlyTouching[tagKey]) {
+                currentlyTouching[tagKey] = false;
               }
             }
           });
@@ -1616,7 +1635,7 @@
         Object.entries(otherPlayers).forEach(([id, otherPlayer]) => {
           const tagKey = `${id}-${userId}`;
           
-          if (otherPlayer.isIt && players[0] && (!tagCooldowns[tagKey] || now - tagCooldowns[tagKey] > 2000)) {
+          if (otherPlayer.isIt && players[0]) {
             const collision = (
               players[0].x < otherPlayer.x + 30 &&
               players[0].x + players[0].w > otherPlayer.x &&
@@ -1625,12 +1644,21 @@
             );
             
             if (collision) {
-              console.log('Got tagged by:', id);
-              players[0].isIt = true;
-              database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ isIt: true });
-              database.ref(`tagGame/lobbies/${currentLobby}/players/${id}`).update({ isIt: false });
-              tagCooldowns[tagKey] = now;
-              lastTagTime = now;
+              // Players are touching
+              if (!currentlyTouching[tagKey]) {
+                // First contact - transfer tag
+                console.log('Got tagged by:', id);
+                currentlyTouching[tagKey] = true;
+                players[0].isIt = true;
+                database.ref(`tagGame/lobbies/${currentLobby}/players/${userId}`).update({ isIt: true });
+                database.ref(`tagGame/lobbies/${currentLobby}/players/${id}`).update({ isIt: false });
+              }
+              // else: Still touching, don't retag
+            } else {
+              // Not touching - clear contact flag
+              if (currentlyTouching[tagKey]) {
+                currentlyTouching[tagKey] = false;
+              }
             }
           }
         });
