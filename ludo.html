@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ludo</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(150deg,#dce8ff 0%,#f0e4ff 55%,#ffeae0 100%);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;color:#1e1b2e}
+#root{width:100%;max-width:880px}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:18px}
+.setup{max-width:440px;margin:28px auto;padding:36px 28px}
+.game{display:flex;flex-direction:column;gap:10px}
+.bwrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.bgrid{display:inline-grid;grid-template-columns:auto auto auto;grid-template-rows:auto auto auto;gap:6px;align-items:center;justify-items:center}
+.fcorner{width:54px;height:54px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;padding:5px;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1);border:1.5px solid #e5e7eb}
+.ftok{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:all .3s}
+.board-frame{padding:10px;background:linear-gradient(135deg,#c8943a,#8b5e1a);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.2)}
+#bc{border-radius:8px;display:block;cursor:default}
+.dp{display:flex;flex-direction:column;align-items:center;gap:12px;padding-top:10px;min-width:110px}
+#dd{font-size:68px;line-height:1;min-height:76px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 8px rgba(0,0,0,.18))}
+.msgbar{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:500;border-left:4px solid;background:#f8f9fb}
+.pstatus{display:flex;gap:7px;flex-wrap:wrap;flex:1}
+.pp{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 7px;border-radius:20px;font-size:12px;font-weight:600;border:2px solid #e5e7eb;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.pp .dot{width:9px;height:9px;border-radius:50%}
+.pp .fc{opacity:.5;font-size:11px;font-weight:400}
+.leg{font-size:10px;color:#9ca3af;line-height:2.3}
+.lr{display:flex;align-items:center;gap:6px}
+.ls{width:10px;height:10px;border-radius:2px}
+button{font-family:inherit}
+.btn{padding:11px 26px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;border:none;color:#fff;transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.btn:active{transform:translateY(0)}
+.btng{background:#f3f4f6!important;color:#374151!important;border:1.5px solid #e5e7eb!important;box-shadow:none!important}
+.btng:hover{background:#e5e7eb!important}
+.cpubox{padding:10px 16px;border-radius:10px;font-size:12px;font-weight:600;text-align:center;border:2px solid}
+@keyframes cpupulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.72;transform:scale(.96)}}
+@keyframes tpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
+@keyframes rankIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ═══════════════════════════════════════════════════════
+// BOARD DATA
+// ═══════════════════════════════════════════════════════
+const MAIN=[
+  {r:13,c:6},{r:12,c:6},{r:11,c:6},{r:10,c:6},{r:9,c:6},{r:8,c:6},
+  {r:8,c:5},{r:8,c:4},{r:8,c:3},{r:8,c:2},{r:8,c:1},{r:8,c:0},
+  {r:7,c:0},{r:6,c:0},
+  {r:6,c:1},{r:6,c:2},{r:6,c:3},{r:6,c:4},{r:6,c:5},{r:6,c:6},
+  {r:5,c:6},{r:4,c:6},{r:3,c:6},{r:2,c:6},{r:1,c:6},{r:0,c:6},
+  {r:0,c:7},{r:0,c:8},
+  {r:1,c:8},{r:2,c:8},{r:3,c:8},{r:4,c:8},{r:5,c:8},{r:6,c:8},
+  {r:6,c:9},{r:6,c:10},{r:6,c:11},{r:6,c:12},{r:6,c:13},{r:6,c:14},
+  {r:7,c:14},{r:8,c:14},
+  {r:8,c:13},{r:8,c:12},{r:8,c:11},{r:8,c:10},{r:8,c:9},{r:8,c:8},
+  {r:9,c:8},{r:10,c:8},{r:11,c:8},{r:12,c:8},{r:13,c:8},{r:14,c:8},
+  {r:14,c:7},{r:14,c:6}
+];
+const N=55, FIN=N+6; // 55 main steps → home stretch → finished at 61
+const HS={
+  red:   [{r:13,c:7},{r:12,c:7},{r:11,c:7},{r:10,c:7},{r:9,c:7},{r:8,c:7}],
+  green: [{r:7,c:1},{r:7,c:2},{r:7,c:3},{r:7,c:4},{r:7,c:5},{r:7,c:6}],
+  yellow:[{r:1,c:7},{r:2,c:7},{r:3,c:7},{r:4,c:7},{r:5,c:7},{r:6,c:7}],
+  blue:  [{r:7,c:13},{r:7,c:12},{r:7,c:11},{r:7,c:10},{r:7,c:9},{r:7,c:8}]
+};
+const YS={
+  red:   [{r:10,c:1},{r:10,c:4},{r:13,c:1},{r:13,c:4}],
+  green: [{r:1,c:1},{r:1,c:4},{r:4,c:1},{r:4,c:4}],
+  yellow:[{r:1,c:10},{r:1,c:13},{r:4,c:10},{r:4,c:13}],
+  blue:  [{r:10,c:10},{r:10,c:13},{r:13,c:10},{r:13,c:13}]
+};
+const COLS=['red','green','yellow','blue'];
+const CN={red:'Red',green:'Green',yellow:'Yellow',blue:'Blue'};
+const ENTRY={red:0,green:14,yellow:28,blue:42};
+const SAFE=new Set([0,8,14,22,28,36,42,50]);
+const E2C={0:'red',14:'green',28:'yellow',42:'blue'};
+const C={
+  red:   {h:'#e53e3e',l:'#fff0f0',m:'#fc8181',d:'#c53030'},
+  green: {h:'#38a169',l:'#f0fff4',m:'#68d391',d:'#276749'},
+  yellow:{h:'#d69e2e',l:'#fffff0',m:'#f6e05e',d:'#b7791f'},
+  blue:  {h:'#3182ce',l:'#ebf8ff',m:'#63b3ed',d:'#2b6cb0'}
+};
+const DF=['⚀','⚁','⚂','⚃','⚄','⚅'];
+const ARWS={red:'↑',green:'→',yellow:'↓',blue:'←'};
+
+const CM={};
+for(let r=0;r<15;r++) for(let c=0;c<15;c++){
+  const k=`${r},${c}`;let x=null;
+  const mi=MAIN.findIndex(p=>p.r===r&&p.c===c);
+  if(mi>=0){x={t:'tr',mi,ec:E2C[mi]||null,star:SAFE.has(mi)&&!E2C[mi]};}
+  if(!x){for(const cl of COLS){const hi=HS[cl].findIndex(p=>p.r===r&&p.c===c);if(hi>=0){x={t:'hs',cl,hi};break;}}}
+  if(!x&&r===7&&c===7)x={t:'ct'};
+  if(!x){for(const cl of COLS){const yi=YS[cl].findIndex(p=>p.r===r&&p.c===c);if(yi>=0){x={t:'ys',cl,yi};break;}}}
+  if(!x){
+    if(r<=5&&c<=5)x={t:'yb',cl:'green'};
+    else if(r<=5&&c>=9)x={t:'yb',cl:'yellow'};
+    else if(r>=9&&c<=5)x={t:'yb',cl:'red'};
+    else if(r>=9&&c>=9)x={t:'yb',cl:'blue'};
+    else x={t:'xc'};
+  }
+  CM[k]=x;
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME LOGIC
+// ═══════════════════════════════════════════════════════
+function gmi(cl,p){return(p+ENTRY[cl])%56;}
+function tcell(cl,p){if(p<0||p>=FIN)return null;if(p>=N)return HS[cl][p-N];return MAIN[gmi(cl,p)];}
+function canMov(cl,p,d){if(p>=FIN)return false;if(p<0)return d===6;return p+d<=FIN;}
+function movTo(p,d){return p<0?0:p+d;}
+
+function findCap(gs,mpi,nnp){
+  if(nnp<0||nnp>=N)return null;
+  const mi=gmi(gs.players[mpi].color,nnp);
+  if(SAFE.has(mi))return null;
+  for(let pi=0;pi<gs.players.length;pi++){
+    if(pi===mpi)continue;
+    const oc=gs.players[pi].color;
+    for(let ti=0;ti<4;ti++){
+      const op=gs.tokens[pi][ti];
+      if(op<0||op>=N)continue;
+      if(gmi(oc,op)===mi)return{pi,ti};
+    }
+  }
+  return null;
+}
+
+// ── SMART AI ──────────────────────────────────────────
+// Scores how good it is to move token ti by dice d.
+// Considers: finishing, captures, danger, safe squares,
+// escape from threat, home-stretch urgency, yard entries.
+function assessDanger(gs,pi,cl,normPos){
+  if(normPos<0||normPos>=N)return 0;
+  const mi=gmi(cl,normPos);
+  if(SAFE.has(mi))return 0;
+  let danger=0;
+  for(let opi=0;opi<gs.players.length;opi++){
+    if(opi===pi)continue;
+    const oc=gs.players[opi].color;
+    for(let ti=0;ti<4;ti++){
+      const op=gs.tokens[opi][ti];
+      if(op<0||op>=N)continue;
+      for(let d=1;d<=6;d++){
+        const nop=op+d;
+        if(nop>=N)continue;
+        if(gmi(oc,nop)===mi){danger+=130+op*1.5;break;}
+      }
+    }
+  }
+  return Math.min(danger,900);
+}
+
+function aiScore(gs,pi,ti,d){
+  const cl=gs.players[pi].color;
+  const tks=gs.tokens[pi];
+  const p=tks[ti];
+  if(!canMov(cl,p,d))return -Infinity;
+  const np=movTo(p,d);
+  let score=0;
+
+  // 1. FINISH — absolute top priority
+  if(np>=FIN)return 100000;
+
+  // 2. CAPTURE — very valuable; prefer capturing advanced tokens
+  const cap=findCap(gs,pi,np);
+  if(cap){
+    const capPos=gs.tokens[cap.pi][cap.ti];
+    score+=3500+capPos*15;
+    if(capPos>=N-10)score+=700; // capturing near-winner is critical
+    if(SAFE.has(gmi(cl,np)))score+=300; // land on safe after capture
+  }
+
+  // 3. HOME STRETCH — high reward, each step counts
+  if(np>=N){
+    score+=2200+(np-N)*180;
+    return score; // HS is always safe, no danger needed
+  }
+
+  // 4. ENTERING FROM YARD on a 6
+  if(p<0){
+    score+=900;
+    const onBoard=tks.filter(tp=>tp>=0&&tp<FIN).length;
+    if(onBoard===0)score+=1000; // no tokens on board → very urgent
+    else if(onBoard===1)score+=350;
+    // entry square is always safe, no danger penalty
+    return score; // base score established
+  }
+
+  // 5. MAIN TRACK MOVEMENT
+  if(np>=0&&np<N){
+    const mi=gmi(cl,np);
+    if(SAFE.has(mi)){score+=480;}             // safe square reward
+    score+=np*4;                              // progress toward home
+    if(np>=N-12)score+=(np-(N-12))*22;       // accelerate near home stretch
+
+    // Danger at destination
+    if(!SAFE.has(mi)){
+      const danger=assessDanger(gs,pi,cl,np);
+      score-=danger;
+    }
+
+    // Escape bonus: reward leaving a threatened position
+    if(p>=0&&p<N&&!SAFE.has(gmi(cl,p))){
+      const escDanger=assessDanger(gs,pi,cl,p);
+      if(escDanger>100)score+=Math.min(escDanger*0.35,280);
+    }
+  }
+
+  return score;
+}
+
+function aiPick(gs,d){
+  const pi=gs.curPi;
+  const cl=gs.players[pi].color;
+  const mv=gs.tokens[pi].map((p,i)=>({i,p})).filter(({p})=>canMov(cl,p,d));
+  if(!mv.length)return -1;
+  let best=-Infinity,bestTi=mv[0].i;
+  for(const{i}of mv){
+    const s=aiScore(gs,pi,i,d);
+    if(s>best){best=s;bestTi=i;}
+  }
+  return bestTi;
+}
+
+// ═══════════════════════════════════════════════════════
+// CANVAS ENGINE
+// ═══════════════════════════════════════════════════════
+let canvas,ctx,cache,cs,dpr;
+function lgt(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.min(255,Math.round(r+(255-r)*a))},${Math.min(255,Math.round(g+(255-g)*a))},${Math.min(255,Math.round(b+(255-b)*a))})`;}
+function drk(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.round(r*(1-a))},${Math.round(g*(1-a))},${Math.round(b*(1-a))})`;}
+function rr(o,x,y,w,h,r){o.beginPath();o.moveTo(x+r,y);o.lineTo(x+w-r,y);o.arcTo(x+w,y,x+w,y+r,r);o.lineTo(x+w,y+h-r);o.arcTo(x+w,y+h,x+w-r,y+h,r);o.lineTo(x+r,y+h);o.arcTo(x,y+h,x,y+h-r,r);o.lineTo(x,y+r);o.arcTo(x,y,x+r,y,r);o.closePath();}
+
+function initCanvas(){
+  canvas=document.getElementById('bc');if(!canvas)return;
+  ctx=canvas.getContext('2d');
+  const maxW=Math.min(window.innerWidth-88,578);
+  cs=Math.min(38,Math.max(20,Math.floor(maxW/15)));
+  const bp=cs*15;dpr=window.devicePixelRatio||1;
+  canvas.width=bp*dpr;canvas.height=bp*dpr;
+  canvas.style.width=bp+'px';canvas.style.height=bp+'px';
+  ctx.scale(dpr,dpr);buildCache();
+}
+
+function buildCache(){
+  const sz=cs*15,oc=document.createElement('canvas');
+  oc.width=sz*dpr;oc.height=sz*dpr;
+  const ox=oc.getContext('2d');ox.scale(dpr,dpr);
+  drawStatic(ox,sz);cache=oc;
+}
+
+function drawStatic(ox,sz){
+  ox.fillStyle='#fdf8f2';ox.fillRect(0,0,sz,sz);
+  drawYard(ox,'green',0,5,0,5);drawYard(ox,'yellow',0,5,9,14);
+  drawYard(ox,'red',9,14,0,5);drawYard(ox,'blue',9,14,9,14);
+  MAIN.forEach(({r,c},mi)=>{
+    const x=c*cs,y=r*cs,ec=E2C[mi],star=SAFE.has(mi)&&!ec;
+    ox.fillStyle=ec?C[ec].m:star?'#fffde7':'#ffffff';
+    ox.fillRect(x,y,cs,cs);
+    ox.strokeStyle='#374151';ox.lineWidth=1.8;
+    ox.strokeRect(x+.9,y+.9,cs-1.8,cs-1.8);
+    if(star){ox.fillStyle='#d69e2e';ox.font=`bold ${Math.max(10,Math.floor(cs*.46))}px serif`;ox.textAlign='center';ox.textBaseline='middle';ox.fillText('★',x+cs/2,y+cs/2);}
+    if(ec){ox.beginPath();ox.arc(x+cs/2,y+cs/2,cs*.1,0,Math.PI*2);ox.fillStyle=C[ec].d+'88';ox.fill();}
+  });
+  COLS.forEach(color=>{
+    HS[color].forEach(({r,c},idx)=>{
+      const x=c*cs,y=r*cs,col=C[color];
+      ox.fillStyle=col.m;ox.fillRect(x,y,cs,cs);
+      ox.save();ox.beginPath();ox.rect(x,y,cs,cs);ox.clip();
+      ox.strokeStyle=col.d+'55';ox.lineWidth=3;
+      for(let i=-cs;i<cs*2;i+=7){ox.beginPath();ox.moveTo(x+i,y);ox.lineTo(x+i+cs,y+cs);ox.stroke();}
+      ox.restore();
+      ox.strokeStyle='#374151';ox.lineWidth=1.8;ox.strokeRect(x+.9,y+.9,cs-1.8,cs-1.8);
+      if(idx===0){ox.fillStyle=C[color].d;ox.font=`bold ${Math.max(9,Math.floor(cs*.36))}px sans-serif`;ox.textAlign='center';ox.textBaseline='middle';ox.fillText(ARWS[color],x+cs/2,y+cs/2);}
+    });
+  });
+  {
+    const x=7*cs,y=7*cs,ccx=x+cs/2,ccy=y+cs/2;
+    const corn=[[x,y],[x+cs,y],[x+cs,y+cs],[x,y+cs]];
+    [C.yellow.m,C.blue.m,C.red.m,C.green.m].forEach((col,i)=>{
+      ox.fillStyle=col;ox.beginPath();ox.moveTo(ccx,ccy);
+      ox.lineTo(corn[i][0],corn[i][1]);ox.lineTo(corn[(i+1)%4][0],corn[(i+1)%4][1]);ox.closePath();ox.fill();
+    });
+    ox.strokeStyle='#374151';ox.lineWidth=1.8;ox.strokeRect(x+.9,y+.9,cs-1.8,cs-1.8);
+    ox.fillStyle='#b7791f';ox.font=`bold ${Math.max(12,Math.floor(cs*.54))}px serif`;
+    ox.textAlign='center';ox.textBaseline='middle';ox.fillText('★',ccx,ccy);
+  }
+  ox.strokeStyle='#6b3a0f';ox.lineWidth=3;ox.strokeRect(1.5,1.5,sz-3,sz-3);
+}
+
+function drawYard(ox,color,r1,r2,c1,c2){
+  const x=c1*cs,y=r1*cs,w=(c2-c1+1)*cs,h=(r2-r1+1)*cs,col=C[color];
+  ox.fillStyle=col.l;ox.fillRect(x,y,w,h);
+  const grad=ox.createRadialGradient(x+w/2,y+h/2,0,x+w/2,y+h/2,w*.75);
+  grad.addColorStop(0,'rgba(255,255,255,.5)');grad.addColorStop(1,'rgba(0,0,0,.04)');
+  ox.fillStyle=grad;ox.fillRect(x,y,w,h);
+  ox.strokeStyle=col.h;ox.lineWidth=3;ox.strokeRect(x+1.5,y+1.5,w-3,h-3);
+  const pad=cs*.58,ir=cs*.6;
+  ox.fillStyle='#fff';rr(ox,x+pad,y+pad,w-pad*2,h-pad*2,ir);ox.fill();
+  ox.strokeStyle=col.m;ox.lineWidth=3;rr(ox,x+pad,y+pad,w-pad*2,h-pad*2,ir);ox.stroke();
+  YS[color].forEach(({r:sr,c:sc})=>{
+    const scx=sc*cs+cs/2,scy=sr*cs+cs/2,sr2=cs*.36;
+    ox.beginPath();ox.arc(scx,scy,sr2,0,Math.PI*2);ox.fillStyle='#fff';ox.fill();
+    ox.strokeStyle=col.h;ox.lineWidth=2.5;ox.stroke();
+    ox.beginPath();ox.arc(scx,scy,sr2*.6,0,Math.PI*2);ox.fillStyle=col.l;ox.fill();
+  });
+  ox.fillStyle=col.d;ox.font=`700 ${Math.max(7,Math.floor(cs*.24))}px system-ui`;
+  ox.textAlign='center';ox.textBaseline='middle';ox.fillText(CN[color].toUpperCase(),x+w/2,y+cs*.24);
+}
+
+function buildTM(){
+  const TM={};
+  G.players.forEach((pl,pi)=>{
+    G.tokens[pi].forEach((p,ti)=>{
+      if(p>=FIN)return;
+      const cell=p<0?YS[pl.color][ti]:tcell(pl.color,p);if(!cell)return;
+      const k=`${cell.r},${cell.c}`;
+      (TM[k]||(TM[k]=[])).push({pi,ti,cl:pl.color,p,sel:pi===G.curPi&&G.rolled&&G.selectable.includes(ti)});
+    });
+  });
+  return TM;
+}
+
+function drawTokens(ph){
+  if(!G.players.length)return;
+  const TM=buildTM();
+  Object.entries(TM).forEach(([k,toks])=>{
+    const[r,c]=k.split(',').map(Number);
+    const bx=c*cs+cs/2,by=r*cs+cs/2,n=toks.length;
+    toks.forEach((tok,idx)=>{
+      let tx=bx,ty=by;
+      if(n>1){const off=cs*.22;const offs=[[-off,-off],[off,-off],[-off,off],[off,off]];tx=bx+offs[idx][0];ty=by+offs[idx][1];}
+      const br=cs*(n>1?.21:.31),pulse=tok.sel?Math.sin(ph):0;
+      drawTok(tx,ty,br*(1+.13*pulse),tok.cl,tok.ti+1,tok.sel,pulse);
+    });
+  });
+}
+
+function drawTok(x,y,r,color,label,sel,pulse){
+  const col=C[color];ctx.save();
+  if(sel){ctx.beginPath();ctx.arc(x,y,r+4.5,0,Math.PI*2);ctx.strokeStyle=`rgba(251,191,36,${.55+.45*Math.abs(pulse)})`;ctx.lineWidth=3;ctx.shadowColor='#fbbf24';ctx.shadowBlur=10+6*Math.abs(pulse);ctx.stroke();ctx.shadowBlur=0;}
+  ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=5;ctx.shadowOffsetX=1;ctx.shadowOffsetY=2.5;
+  const g=ctx.createRadialGradient(x-r*.32,y-r*.38,r*.04,x+r*.08,y+r*.1,r);
+  g.addColorStop(0,lgt(col.h,.6));g.addColorStop(.4,col.h);g.addColorStop(1,drk(col.h,.42));
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+  ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+  ctx.strokeStyle=sel?'#fbbf24':'rgba(255,255,255,.82)';ctx.lineWidth=sel?2.5:1.5;ctx.stroke();
+  ctx.fillStyle='#fff';ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=2;
+  ctx.font=`bold ${Math.max(7,Math.floor(r*1.1))}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(label,x,y+.6);ctx.restore();
+}
+
+let rafId=null,ph=0;
+function startAnim(){if(rafId)return;(function loop(){ph=(ph+.08)%(Math.PI*2);drawFrame();rafId=requestAnimationFrame(loop);})();}
+function stopAnim(){if(rafId){cancelAnimationFrame(rafId);rafId=null;}drawFrame();}
+function drawFrame(){if(!ctx||!cache)return;const s=cs*15;ctx.clearRect(0,0,s,s);ctx.drawImage(cache,0,0,s,s);drawTokens(ph);}
+function syncAnim(){(G.phase==='playing'&&(G.selectable.length>0||G.rolling))?startAnim():stopAnim();}
+
+// ═══════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════
+let G={phase:'setup',players:[],tokens:[],curPi:0,dice:null,rolled:false,rolling:false,selectable:[],msg:'',rankings:[],_t:null};
+let SO={n:2,ai:[false,true,false,true]};
+
+function doStart(){
+  clearTimeout(G._t);
+  const pls=COLS.slice(0,SO.n).map((cl,i)=>({color:cl,isAI:SO.ai[i]}));
+  G={phase:'playing',players:pls,tokens:pls.map(()=>[-1,-1,-1,-1]),curPi:0,dice:null,rolled:false,rolling:false,selectable:[],msg:`${CN[pls[0].color]}'s turn — roll the dice!`,rankings:[],_t:null};
+  showGame();
+}
+
+function doRoll(){
+  if(G.rolled||G.rolling)return;
+  clearTimeout(G._t);G.rolling=true;updUI();startAnim();
+  let ct=0;
+  (function tick(){
+    G.dice=Math.ceil(Math.random()*6);
+    const el=document.getElementById('dd');if(el)el.textContent=DF[G.dice-1];
+    ct++;
+    if(ct<10){G._t=setTimeout(tick,55);}
+    else{
+      G.rolling=false;G.rolled=true;
+      const cl=G.players[G.curPi].color;
+      const mv=G.tokens[G.curPi].map((p,i)=>({i,p})).filter(({p})=>canMov(cl,p,G.dice)).map(({i})=>i);
+      G.selectable=mv;
+      G.msg=mv.length?`${CN[cl]}: rolled ${G.dice}${G.players[G.curPi].isAI?'':' — tap a token'}!`:`${CN[cl]}: rolled ${G.dice} — no valid moves!`;
+      updUI();syncAnim();
+      if(!mv.length)G._t=setTimeout(doNext,1400);
+      else sched();
+    }
+  })();
+}
+
+function doMove(ti){
+  if(!G.rolled||!G.selectable.includes(ti))return;
+  clearTimeout(G._t);
+  const pi=G.curPi,cl=G.players[pi].color;
+  const np=movTo(G.tokens[pi][ti],G.dice);
+  G.tokens[pi][ti]=np;G.selectable=[];
+  let capt=false;
+  const cap=findCap(G,pi,np);
+  if(cap){G.tokens[cap.pi][cap.ti]=-1;capt=true;}
+  G.rolled=false;
+
+  // ── CHECK if this player just finished all tokens ─────────
+  if(G.tokens[pi].every(p=>p>=FIN)){
+    G.rankings.push(pi);
+    const rank=G.rankings.length;
+    const active=G.players.filter((_,i)=>!G.rankings.includes(i)).length;
+    G.msg=`🎉 ${CN[cl]} finished — Rank #${rank}!`;
+    G.dice=null;
+    updUI();drawFrame();
+    // End condition: 2-player game → stop at 1st; else → stop when 1 remains
+    if(G.players.length===2||active<=1){
+      G.players.forEach((_,i)=>{if(!G.rankings.includes(i))G.rankings.push(i);});
+      G.phase='finished';
+      stopAnim();
+      setTimeout(()=>showFinished(),1600);
+    } else {
+      // Flash message then continue
+      setTimeout(()=>doNext(),1400);
+    }
+    return;
+  }
+
+  const extra=G.dice===6||capt;G.dice=null;
+  if(extra){G.msg=`${CN[cl]}: ${capt?'captured!':'rolled 6!'} Roll again!`;updUI();syncAnim();sched();}
+  else doNext();
+}
+
+function doNext(){
+  const n=G.players.length;
+  let next=(G.curPi+1)%n,t=0;
+  // skip fully-finished players
+  while(G.tokens[next].every(p=>p>=FIN)&&t++<n)next=(next+1)%n;
+  G.curPi=next;G.rolled=false;G.dice=null;G.selectable=[];
+  G.msg=`${CN[G.players[next].color]}'s turn — roll the dice!`;
+  updUI();syncAnim();sched();
+}
+
+function sched(){
+  const cur=G.players[G.curPi];if(!cur||!cur.isAI)return;
+  if(G.rolled&&G.selectable.length===0)return;
+  clearTimeout(G._t);
+  if(!G.rolled&&!G.rolling)G._t=setTimeout(doRoll,900);
+  else if(G.rolled&&G.selectable.length>0)G._t=setTimeout(()=>{const p=aiPick(G,G.dice);if(p>=0)doMove(p);},720);
+}
+
+// ═══════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════
+function cornerHTML(color){
+  const pi=G.players.findIndex(p=>p.color===color);
+  const col=C[color],count=pi>=0?G.tokens[pi].filter(p=>p>=FIN).length:0;
+  const cells=Array.from({length:4},(_,i)=>
+    i<count
+      ? `<div class="ftok" style="background:${col.h};color:#fff">★</div>`
+      : `<div class="ftok" style="background:${col.l};border:2px dashed ${col.m}"></div>`
+  ).join('');
+  return `<div class="fcorner" style="border-color:${count>0?col.h:'#e5e7eb'}">${cells}</div>`;
+}
+
+function pstatHTML(){
+  const medals=['🥇','🥈','🥉','🏅'];
+  const finCt=pi=>G.tokens[pi].filter(p=>p>=FIN).length;
+  return G.players.map((pl,pi)=>{
+    const on=pi===G.curPi&&G.phase==='playing';
+    const rank=G.rankings.indexOf(pi);
+    const finished=rank>=0;
+    return`<div class="pp" style="border-color:${on?C[pl.color].h:'#e5e7eb'};background:${on?C[pl.color].l:'#fff'};opacity:${finished?0.7:1}">
+      <div class="dot" style="background:${C[pl.color].h};box-shadow:${on?`0 0 7px ${C[pl.color].h}`:'none'}"></div>
+      <span style="color:${on?C[pl.color].d:'#374151'}">${CN[pl.color]}${pl.isAI?' 🤖':''}</span>
+      <span class="fc">${finished?medals[rank]:finCt(pi)+'/4'}</span>
+    </div>`;
+  }).join('');
+}
+
+function ctrlHTML(){
+  const cur=G.players[G.curPi];
+  if(!cur)return'';
+  const canRoll=!cur.isAI&&!G.rolled&&!G.rolling;
+  if(canRoll)return`<button class="btn" onclick="doRoll()" style="background:${C[cur.color].h};box-shadow:0 4px 18px ${C[cur.color].h}55">Roll Dice 🎲</button>`;
+  if(cur.isAI&&G.rolling)return`<div class="cpubox" style="background:${C[cur.color].l};border-color:${C[cur.color].h};color:${C[cur.color].d};animation:cpupulse 1s ease-in-out infinite">🎲 Rolling…</div>`;
+  if(cur.isAI&&!G.rolled&&!G.rolling)return`<div class="cpubox" style="background:${C[cur.color].l};border-color:${C[cur.color].m};color:${C[cur.color].d};border-style:dashed">🤖 Thinking…</div>`;
+  return'';
+}
+
+function showSetup(){
+  clearTimeout(G._t);stopAnim();
+  document.getElementById('root').innerHTML=`
+  <div class="card setup">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:56px;margin-bottom:10px;line-height:1">🎲</div>
+      <h1 style="font-size:28px;font-weight:700;color:#1e1b2e;margin-bottom:6px">Ludo</h1>
+      <p style="font-size:14px;color:#6b7280">Classic race board game · 1–4 players</p>
+    </div>
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:10px">Number of players</p>
+    <div style="display:flex;gap:8px;margin-bottom:24px">
+      ${[1,2,3,4].map(i=>{const cl=COLS[i-1],on=SO.n===i;return`<button onclick="SO.n=${i};showSetup()" style="flex:1;padding:13px 0;font-size:20px;font-weight:700;border-radius:10px;cursor:pointer;border:2px solid ${on?C[cl].h:'#e5e7eb'};background:${on?C[cl].l:'#f9fafb'};color:${on?C[cl].d:'#374151'};transition:all .15s">${i}</button>`;}).join('')}
+    </div>
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:10px">Player type</p>
+    <div style="margin-bottom:28px">
+      ${COLS.map((cl,i)=>`<div style="display:flex;align-items:center;padding:10px 14px;margin-bottom:8px;border-radius:10px;border:1.5px solid ${i<SO.n?C[cl].m+'88':'#e5e7eb'};background:${i<SO.n?C[cl].l:'#f9fafb'};opacity:${i<SO.n?1:.4}">
+        <div style="width:14px;height:14px;border-radius:50%;background:${C[cl].h};margin-right:12px;flex-shrink:0;box-shadow:0 0 8px ${C[cl].h}66"></div>
+        <span style="flex:1;font-size:14px;font-weight:600;color:#1e1b2e">${CN[cl]}</span>
+        ${i<SO.n?`<div style="display:flex;gap:6px">
+          <button onclick="SO.ai[${i}]=false;showSetup()" style="padding:5px 12px;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;border:1.5px solid ${!SO.ai[i]?C[cl].h:'#d1d5db'};background:${!SO.ai[i]?C[cl].h:'transparent'};color:${!SO.ai[i]?'#fff':'#6b7280'}">Human</button>
+          <button onclick="SO.ai[${i}]=true;showSetup()" style="padding:5px 12px;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;border:1.5px solid ${SO.ai[i]?C[cl].h:'#d1d5db'};background:${SO.ai[i]?C[cl].h:'transparent'};color:${SO.ai[i]?'#fff':'#6b7280'}">CPU 🤖</button>
+        </div>`:''}
+      </div>`).join('')}
+    </div>
+    <button onclick="doStart()" style="width:100%;padding:15px;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;border:none;background:linear-gradient(135deg,#5a67d8,#6b46c1);color:#fff;box-shadow:0 4px 20px rgba(90,103,216,.4);letter-spacing:.4px">Start Game →</button>
+  </div>`;
+}
+
+function showGame(){
+  const cur=G.players[G.curPi];
+  document.getElementById('root').innerHTML=`
+  <div class="game">
+    <div class="card" style="padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="pstatus" id="pstatus">${pstatHTML()}</div>
+        <button onclick="clearTimeout(G._t);stopAnim();showSetup()" class="btn btng" style="padding:6px 13px;font-size:12px;white-space:nowrap;flex-shrink:0">⬅ Menu</button>
+      </div>
+    </div>
+    <div class="msgbar" id="msgbar" style="border-color:${cur?C[cur.color].h:'#d1d5db'};color:${cur?C[cur.color].d:'#374151'}">${G.msg}</div>
+    <div class="bwrap">
+      <div class="bgrid">
+        <div id="fc-green">${cornerHTML('green')}</div><div></div><div id="fc-yellow">${cornerHTML('yellow')}</div>
+        <div></div><div class="board-frame"><canvas id="bc"></canvas></div><div></div>
+        <div id="fc-red">${cornerHTML('red')}</div><div></div><div id="fc-blue">${cornerHTML('blue')}</div>
+      </div>
+      <div class="dp">
+        <div id="dd">${G.dice?DF[G.dice-1]:'<span style="opacity:.15;font-size:64px">⚀</span>'}</div>
+        <div id="ctrl">${ctrlHTML()}</div>
+        <div class="leg">
+          <div class="lr"><div class="ls" style="background:#fffde7;border:1px solid #d69e2e"></div><span style="color:#d69e2e">★</span> safe</div>
+          <div class="lr"><div class="ls" style="background:#fc8181"></div>colour entry</div>
+          <div class="lr"><div class="ls" style="background:#68d391"></div>home stretch</div>
+          <div class="lr" style="margin-top:4px"><div class="ftok" style="background:#e53e3e;width:14px;height:14px;font-size:8px;border:1.5px solid white">★</div>token home!</div>
+          <div style="margin-top:6px;font-size:9px;color:#6b7280;line-height:1.8">Roll 6 to enter.<br>6 or capture<br>= extra turn.</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  setTimeout(()=>{initCanvas();attachEv();drawFrame();syncAnim();sched();},0);
+}
+
+function showFinished(){
+  const medals=['🥇','🥈','🥉','🏅'];
+  const podiumBg=['linear-gradient(135deg,#ffeaa7,#fdcb6e)','linear-gradient(135deg,#dfe6e9,#b2bec3)','linear-gradient(135deg,#fab1a0,#e17055)','linear-gradient(135deg,#e8e8e8,#ccc)'];
+  document.getElementById('root').innerHTML=`
+  <div class="card" style="max-width:500px;margin:28px auto;padding:36px 28px;text-align:center">
+    <div style="font-size:56px;margin-bottom:8px;line-height:1">🏁</div>
+    <h1 style="font-size:26px;font-weight:700;color:#1e1b2e;margin-bottom:4px">Game Over!</h1>
+    <p style="color:#6b7280;font-size:14px;margin-bottom:28px">Final Rankings</p>
+    <div style="text-align:left;margin-bottom:28px">
+      ${G.rankings.map((pi,rank)=>{
+        const pl=G.players[pi],col=C[pl.color];
+        return`<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:10px;border-radius:14px;background:${col.l};border:2px solid ${col.m};animation:rankIn .4s ease ${rank*0.15}s both">
+          <span style="font-size:30px;flex-shrink:0">${medals[rank]}</span>
+          <div style="width:20px;height:20px;border-radius:50%;background:${col.h};flex-shrink:0;box-shadow:0 2px 8px ${col.h}66"></div>
+          <span style="font-size:16px;font-weight:700;color:${col.d};flex:1">${CN[pl.color]}</span>
+          <span style="font-size:13px;color:${col.d};opacity:.65">${pl.isAI?'CPU 🤖':'Human 👤'}</span>
+          <span style="font-size:18px;font-weight:800;color:${rank===0?'#d69e2e':rank===1?'#718096':'#a0522d'}">#${rank+1}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button onclick="doStart()" style="padding:12px 28px;font-size:14px;font-weight:700;border-radius:10px;cursor:pointer;border:none;background:linear-gradient(135deg,#5a67d8,#6b46c1);color:#fff;box-shadow:0 4px 16px rgba(90,103,216,.4)">Play Again 🎲</button>
+      <button onclick="showSetup()" class="btn btng" style="padding:12px 28px;font-size:14px">Change Settings</button>
+    </div>
+  </div>`;
+}
+
+function updUI(){
+  const cur=G.players[G.curPi];
+  const ps=document.getElementById('pstatus');if(ps)ps.innerHTML=pstatHTML();
+  const mb=document.getElementById('msgbar');
+  if(mb){mb.textContent=G.msg;mb.style.borderColor=cur?C[cur.color].h:'#d1d5db';mb.style.color=cur?C[cur.color].d:'#374151';}
+  const dd=document.getElementById('dd');
+  if(dd)dd.innerHTML=G.dice?DF[G.dice-1]:'<span style="opacity:.15;font-size:64px">⚀</span>';
+  const ct=document.getElementById('ctrl');if(ct)ct.innerHTML=ctrlHTML();
+  ['green','yellow','red','blue'].forEach(cl=>{const el=document.getElementById(`fc-${cl}`);if(el)el.innerHTML=cornerHTML(cl);});
+}
+
+function attachEv(){
+  if(!canvas)return;
+  canvas.onclick=e=>{
+    if(!G.rolled||G.rolling||G.phase!=='playing'||G.players[G.curPi].isAI)return;
+    const rect=canvas.getBoundingClientRect();
+    const x=(e.clientX-rect.left)*(cs*15/rect.width),y=(e.clientY-rect.top)*(cs*15/rect.height);
+    const toks=(buildTM()[`${Math.floor(y/cs)},${Math.floor(x/cs)}`]||[]).filter(t=>t.sel);
+    if(toks.length)doMove(toks[0].ti);
+  };
+  canvas.onmousemove=e=>{
+    if(!G.rolled||G.rolling){canvas.style.cursor='default';return;}
+    const rect=canvas.getBoundingClientRect();
+    const x=(e.clientX-rect.left)*(cs*15/rect.width),y=(e.clientY-rect.top)*(cs*15/rect.height);
+    const toks=(buildTM()[`${Math.floor(y/cs)},${Math.floor(x/cs)}`]||[]).filter(t=>t.sel);
+    canvas.style.cursor=toks.length?'pointer':'default';
+  };
+}
+
+showSetup();
+</script>
+</body>
+</html>
