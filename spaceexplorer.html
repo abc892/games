@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gravity Game</title>
+<style>
+  body { margin:0; background:black; overflow:hidden; }
+  canvas { display:block; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById("game");
+const ctx    = canvas.getContext("2d");
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// ================================================================
+//  TUNABLE CONSTANTS
+// ================================================================
+const G                   = 0.15;
+const THRUST              = 0.08;
+const ASTEROID_COUNT      = 15;
+const ASTEROID_GRAV_SCALE = 6;
+const ASTEROID_MASS_K     = 0.0008;
+
+// LASER
+const LASER_STEP       = 5;      // px per ray-march step
+const LASER_MAX_STEPS  = 500;    // max range
+const LASER_DAMAGE     = 2.0;    // hp/frame on asteroids
+const LASER_ERODE      = 1.6;    // surface depth removed per frame at hit point
+const LASER_BH_BEND    = 0.004;  // GR bending — 14× stronger for dramatic curves
+const LASER_BH_RANGE   = 3500;   // px, bending influence radius
+const PLANET_SURFACE_N = 90;     // angular resolution of planet surface heightmap
+// ================================================================
+
+const keys           = {};
+const miniMap        = { width:200, height:150, padding:10 };
+const starSectorSize = 400;
+
+let   laserPoints  = [];
+let   laserHitInfo = null;
+const debrisParticles = [];
+
+// ----------------------------------------------------------------
+//  MULBERRY32 PRNG
+// ----------------------------------------------------------------
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ----------------------------------------------------------------
+//  COLOR UTILITIES
+// ----------------------------------------------------------------
+function lerpRGB(a, b, t) {
+  return { r: a.r+(b.r-a.r)*t, g: a.g+(b.g-a.g)*t, b: a.b+(b.b-a.b)*t };
+}
+function lighten(c, f) { return lerpRGB(c, {r:255,g:255,b:255}, f); }
+function darken(c, f)  { return lerpRGB(c, {r:0,  g:0,  b:0  }, f); }
+function rgbStr(c)     { return `rgb(${c.r|0},${c.g|0},${c.b|0})`; }
+function rgbaStr(c, a) { return `rgba(${c.r|0},${c.g|0},${c.b|0},${a})`; }
+
+// ----------------------------------------------------------------
+//  PLANET SURFACE HEIGHTMAP HELPERS
+// ----------------------------------------------------------------
+// Trace the deformed surface polygon path (local space, already translated)
+function planetSurfacePath(p) {
+  const N = PLANET_SURFACE_N;
+  ctx.beginPath();
+  for(let i = 0; i <= N; i++){
+    const ang = (i / N) * Math.PI * 2;
+    const r   = p.surf[i % N];
+    i === 0 ? ctx.moveTo(Math.cos(ang)*r, Math.sin(ang)*r)
+            : ctx.lineTo(Math.cos(ang)*r, Math.sin(ang)*r);
+  }
+  ctx.closePath();
+}
+
+// Compute average (effective) radius from heightmap
+function planetAvgR(p) {
+  let s = 0;
+  for(let i = 0; i < PLANET_SURFACE_N; i++) s += p.surf[i];
+  return s / PLANET_SURFACE_N;
+}
+
+// Erode surface at a given world-angle impact point with a Gaussian brush
+function erodePlanetAt(p, hitAngle, amount) {
+  const N = PLANET_SURFACE_N;
+  const spread = 0.22; // radians — ~12° half-width brush
+  for(let i = 0; i < N; i++){
+    let diff = hitAngle - (i / N) * Math.PI * 2;
+    // Wrap to [-π, π]
+    while(diff >  Math.PI) diff -= Math.PI * 2;
+    while(diff < -Math.PI) diff += Math.PI * 2;
+    if(Math.abs(diff) < spread){
+      const w = 1 - (diff / spread) ** 2; // smooth parabolic falloff
+      p.surf[i] = Math.max(0, p.surf[i] - amount * w);
+    }
+  }
+}
+
+// ----------------------------------------------------------------
+//  PLAYER
+// ----------------------------------------------------------------
+const player = {
+  x: canvas.width/2, y: canvas.height/2,
+  vx:0, vy:0, angle:0, radius:14, mass:50
+};
+
+// ----------------------------------------------------------------
+//  PLANETS
+// ----------------------------------------------------------------
+const PLANET_PALETTE = [
+  {r:255,g:140,b:0},{r:210,g:50,b:50},{r:50,g:185,b:80},
+  {r:55,g:115,b:215},{r:145,g:45,b:195},{r:225,g:205,b:40},
+  {r:225,g:95,b:165},{r:35,g:195,b:215},{r:115,g:215,b:40},{r:195,g:40,b:175}
+];
+const planets = [];
+
+function buildPlanetVisuals(p) {
+  const rng = mulberry32(((p.x*997+p.y*1009)|0)>>>0);
+  const c = p.rgb;
+  p.lightAngle = rng()*Math.PI*2;
+  p.atmoWidth  = p.radius*(0.14+rng()*0.22);
+  p.bands = [];
+  const bc = 3+Math.floor(rng()*5);
+  for(let i=0;i<bc;i++){
+    p.bands.push({
+      yFrac: -0.85+rng()*1.7, halfFrac: 0.06+rng()*0.2,
+      color: rng()>0.5 ? darken(c,0.3+rng()*0.3) : lighten(c,0.18+rng()*0.3),
+      opacity: 0.1+rng()*0.25
+    });
+  }
+  p.spots = [];
+  const sc = 1+Math.floor(rng()*4);
+  for(let i=0;i<sc;i++){
+    const ang=rng()*Math.PI*2, rad=rng()*p.radius*0.52;
+    p.spots.push({
+      x:Math.cos(ang)*rad, y:Math.sin(ang)*rad,
+      r:p.radius*(0.04+rng()*0.13),
+      color: rng()>0.5 ? darken(c,0.35+rng()*0.3) : lighten(c,0.22+rng()*0.32),
+      opacity: 0.18+rng()*0.32
+    });
+  }
+  p.hasRing = rng()>0.6;
+  if(p.hasRing){
+    p.ringInner   = p.radius*(1.28+rng()*0.12);
+    p.ringOuter   = p.radius*(1.75+rng()*0.85);
+    p.ringTilt    = 0.18+rng()*0.38;
+    p.ringOpacity = 0.28+rng()*0.32;
+    p.ringColor   = lighten(c,0.18+rng()*0.28);
+  }
+  // Surface heightmap — initialized flat; deformed by laser erosion
+  p.surf = new Float32Array(PLANET_SURFACE_N).fill(p.radius);
+}
+
+function generatePlanets(num){
+  let attempts=0;
+  while(planets.length<num && attempts<1000){
+    attempts++;
+    const radius=30+Math.random()*90;
+    const x=Math.random()*3000-1500, y=Math.random()*3000-1500;
+    const rgb=PLANET_PALETTE[Math.floor(Math.random()*PLANET_PALETTE.length)];
+    let ok=true;
+    for(const p of planets){
+      const dx=x-p.x,dy=y-p.y;
+      if(Math.sqrt(dx*dx+dy*dy)<radius+p.radius+50){ok=false;break;}
+    }
+    if(Math.sqrt(x*x+y*y)<200) ok=false;
+    if(ok){
+      const p={x,y,radius,baseRadius:radius,mass:radius*radius*radius*0.07,rgb};
+      buildPlanetVisuals(p);
+      // surf is initialized in buildPlanetVisuals
+      planets.push(p);
+    }
+  }
+}
+generatePlanets(10);
+
+// ----------------------------------------------------------------
+//  BLACK HOLE
+// ----------------------------------------------------------------
+let blackHole;
+(function(){
+  let ok=false;
+  while(!ok){
+    const x=Math.random()*6000-3000, y=Math.random()*6000-3000;
+    if(Math.sqrt((x-player.x)**2+(y-player.y)**2)>4000){
+      blackHole={x,y,radius:100,mass:800000,angle:0,particles:[]};
+      for(let i=0;i<100;i++) blackHole.particles.push({
+        r:blackHole.radius+Math.random()*150,
+        angle:Math.random()*Math.PI*2,
+        speed:0.002+Math.random()*0.004,
+        size:1+Math.random()*2
+      });
+      ok=true;
+    }
+  }
+})();
+
+// ----------------------------------------------------------------
+//  ASTEROIDS
+// ----------------------------------------------------------------
+const asteroids=[];
+
+function makeAsteroidVerts(size){
+  const n=7+Math.floor(Math.random()*5);
+  const verts=[];
+  for(let i=0;i<n;i++){
+    const a=(i/n)*Math.PI*2;
+    const r=size*(0.55+Math.random()*0.45);
+    verts.push({x:Math.cos(a)*r, y:Math.sin(a)*r});
+  }
+  return verts;
+}
+function computeBoundingRadius(verts){
+  let r=0;
+  for(const v of verts){ const d=Math.sqrt(v.x*v.x+v.y*v.y); if(d>r) r=d; }
+  return r;
+}
+const ROCK_PALETTES=[
+  [{r:130,g:118,b:105},{r:72,g:62,b:52},{r:185,g:172,b:158},{r:95,g:82,b:70}],
+  [{r:112,g:84,b:62}, {r:60,g:42,b:28},{r:168,g:138,b:108},{r:82,g:60,b:44}],
+  [{r:95, g:95,b:110},{r:52,g:52,b:65}, {r:155,g:155,b:175},{r:70,g:70,b:88}],
+  [{r:125,g:95,b:80}, {r:68,g:48,b:38},{r:180,g:148,b:130},{r:90,g:66,b:54}],
+  [{r:80, g:80,b:80}, {r:40,g:40,b:40},{r:140,g:140,b:140},{r:58,g:58,b:58}],
+];
+function buildAsteroidVisuals(size, verts){
+  const rng=mulberry32((size*7919+verts.length*997+verts[0].x*1009)|0>>>0);
+  const pal=ROCK_PALETTES[Math.floor(rng()*ROCK_PALETTES.length)];
+  const craters=[];
+  const nc=1+Math.floor(rng()*4);
+  const br=computeBoundingRadius(verts)*0.78;
+  for(let i=0;i<nc;i++){
+    const ang=rng()*Math.PI*2, rad=rng()*br*0.6;
+    craters.push({ x:Math.cos(ang)*rad, y:Math.sin(ang)*rad, r:size*(0.06+rng()*0.18) });
+  }
+  const cracks=[];
+  const nk=1+Math.floor(rng()*3);
+  for(let i=0;i<nk;i++){
+    const a1=rng()*Math.PI*2, r1=rng()*br*0.5;
+    const a2=a1+(-0.6+rng()*1.2), r2=rng()*br*0.55;
+    cracks.push({ x1:Math.cos(a1)*r1, y1:Math.sin(a1)*r1, x2:Math.cos(a2)*r2, y2:Math.sin(a2)*r2 });
+  }
+  const lightAngle=rng()*Math.PI*2;
+  return { pal, craters, cracks, lightAngle };
+}
+
+function generateAsteroids(num){
+  let attempts=0;
+  while(asteroids.length<num && attempts<1000){
+    attempts++;
+    const x=Math.random()*4000-2000, y=Math.random()*4000-2000;
+    if(Math.sqrt(x*x+y*y)<350) continue;
+    let ok=true;
+    for(const p of planets){
+      const dx=x-p.x,dy=y-p.y;
+      if(Math.sqrt(dx*dx+dy*dy)<p.radius+100){ok=false;break;}
+    }
+    for(const a of asteroids){
+      const dx=x-a.x,dy=y-a.y;
+      if(Math.sqrt(dx*dx+dy*dy)<100){ok=false;break;}
+    }
+    if(!ok) continue;
+    const size=12+Math.random()*22;
+    const mass=ASTEROID_MASS_K*size*size*size;
+    const verts=makeAsteroidVerts(size);
+    const boundingRadius=computeBoundingRadius(verts);
+    const vis=buildAsteroidVisuals(size,verts);
+    const maxHealth = size * 5;
+    asteroids.push({
+      x,y,
+      vx:(Math.random()-0.5)*0.4, vy:(Math.random()-0.5)*0.4,
+      size, boundingRadius, mass, verts,
+      angle:Math.random()*Math.PI*2,
+      rotSpeed:(Math.random()-0.5)*0.008,
+      vis,
+      health: maxHealth, maxHealth,
+      hitFlash: 0
+    });
+  }
+}
+generateAsteroids(ASTEROID_COUNT);
+
+// ----------------------------------------------------------------
+//  INPUT
+// ----------------------------------------------------------------
+window.addEventListener("keydown", e=>{ keys[e.key]=true; });
+window.addEventListener("keyup",   e=>{ keys[e.key]=false; });
+
+// ================================================================
+//  LASER SYSTEM
+// ================================================================
+
+// Ray-cast point-in-asteroid (handles rotation)
+function pointInAsteroid(px, py, ast) {
+  const cos = Math.cos(-ast.angle), sin = Math.sin(-ast.angle);
+  const lx  = cos*(px-ast.x) - sin*(py-ast.y);
+  const ly  = sin*(px-ast.x) + cos*(py-ast.y);
+  const verts = ast.verts;
+  let inside = false;
+  for(let i=0, j=verts.length-1; i<verts.length; j=i++){
+    const xi=verts[i].x, yi=verts[i].y, xj=verts[j].x, yj=verts[j].y;
+    if(((yi>ly)!==(yj>ly)) && (lx < (xj-xi)*(ly-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+
+// Explosion debris cloud (world coords)
+function spawnExplosion(wx, wy, radius, baseColor) {
+  const count = Math.floor(18 + radius * 1.8);
+  for(let i=0; i<count; i++){
+    const ang = Math.random()*Math.PI*2;
+    const spd = 0.5 + Math.random()*3.8;
+    const hot = Math.random() > 0.5;
+    debrisParticles.push({
+      x: wx+(Math.random()-0.5)*radius, y: wy+(Math.random()-0.5)*radius,
+      vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd,
+      life:1.0, decay:0.015+Math.random()*0.03,
+      size: 1+Math.random()*Math.max(2,radius*0.28),
+      r: hot?255:(baseColor?baseColor.r:170),
+      g: hot?120+Math.random()*100:(baseColor?baseColor.g:140),
+      b: hot?15:(baseColor?baseColor.b:90),
+      flash:false
+    });
+  }
+  // White flash core
+  debrisParticles.push({ x:wx,y:wy, vx:0,vy:0, life:1.0, decay:0.07,
+    size:radius*1.9, r:255,g:230,b:130, flash:true });
+}
+
+// Erosion sparks on planet surface
+function spawnErosionSparks(wx, wy, pRgb) {
+  for(let i=0; i<4; i++){
+    const ang = Math.random()*Math.PI*2;
+    debrisParticles.push({
+      x:wx, y:wy,
+      vx:Math.cos(ang)*(0.6+Math.random()*2.2), vy:Math.sin(ang)*(0.6+Math.random()*2.2),
+      life:1.0, decay:0.04+Math.random()*0.06,
+      size:1+Math.random()*2.5,
+      r:pRgb.r, g:pRgb.g, b:pRgb.b, flash:false
+    });
+  }
+  // Cyan laser splatter
+  for(let i=0;i<3;i++){
+    const ang = Math.random()*Math.PI*2;
+    debrisParticles.push({
+      x:wx,y:wy,
+      vx:Math.cos(ang)*(0.8+Math.random()*1.8), vy:Math.sin(ang)*(0.8+Math.random()*1.8),
+      life:0.7, decay:0.08,
+      size:1.2, r:80,g:255,b:255, flash:false
+    });
+  }
+}
+
+function updateDebris() {
+  for(let i=debrisParticles.length-1; i>=0; i--){
+    const p = debrisParticles[i];
+    p.x+=p.vx; p.y+=p.vy;
+    p.vx*=0.96; p.vy*=0.96;
+    p.life-=p.decay;
+    if(p.life<=0) debrisParticles.splice(i,1);
+  }
+}
+
+function drawDebris() {
+  const cx=canvas.width/2, cy=canvas.height/2;
+  for(const p of debrisParticles){
+    const sx=p.x-player.x+cx, sy=p.y-player.y+cy;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.flash ? p.life*0.55 : p.life);
+    ctx.fillStyle   = `rgb(${p.r|0},${p.g|0},${p.b|0})`;
+    if(p.flash){ ctx.shadowColor=ctx.fillStyle; ctx.shadowBlur=p.size*1.8; }
+    ctx.beginPath();
+    ctx.arc(sx, sy, Math.max(0.5, p.size*(p.flash?p.life:1)), 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ================================================================
+//  TRACE LASER  — world-space ray march with GR bending
+// ================================================================
+function traceLaser() {
+  const noseDist = 24;
+  let x  = player.x + Math.cos(player.angle)*noseDist;
+  let y  = player.y + Math.sin(player.angle)*noseDist;
+  let dx = Math.cos(player.angle);
+  let dy = Math.sin(player.angle);
+
+  const pts = [{x, y}];
+  laserHitInfo = null;
+
+  for(let step=0; step<LASER_MAX_STEPS; step++){
+
+    // --- GR gravitational light bending (4GM/bc²; linearised per step) ---
+    const bhx = blackHole.x - x, bhy = blackHole.y - y;
+    const bhd2 = bhx*bhx + bhy*bhy;
+    const bhd  = Math.sqrt(bhd2);
+    if(bhd > blackHole.radius*1.05 && bhd < LASER_BH_RANGE){
+      // Transverse deflection per step: α = LASER_BH_BEND * M / r²
+      const bend = LASER_BH_BEND * blackHole.mass / bhd2;
+      dx += (bhx/bhd) * bend;
+      dy += (bhy/bhd) * bend;
+      const dlen = Math.sqrt(dx*dx+dy*dy);
+      dx /= dlen; dy /= dlen;
+    }
+
+    // Advance
+    x += dx * LASER_STEP;
+    y += dy * LASER_STEP;
+
+    // --- Black hole event horizon ---
+    if(bhd <= blackHole.radius*1.05){
+      pts.push({x,y});
+      laserHitInfo = {type:'bh', x, y};
+      break;
+    }
+
+    // --- Planet: check against deformed surface polygon ---
+    let hitPlanet = false;
+    for(let pi=planets.length-1; pi>=0; pi--){
+      const p = planets[pi];
+      const pdx = x - p.x, pdy = y - p.y;
+      const pdist = Math.sqrt(pdx*pdx + pdy*pdy);
+      // Quick cull: max possible radius is baseRadius
+      if(pdist > p.baseRadius + LASER_STEP) continue;
+
+      // Exact hit: compare radial distance to surface heightmap at this angle
+      const hitAngle = Math.atan2(pdy, pdx);
+      // Nearest surface sample
+      const idx = ((hitAngle / (Math.PI*2) * PLANET_SURFACE_N) % PLANET_SURFACE_N
+                   + PLANET_SURFACE_N) % PLANET_SURFACE_N | 0;
+      const surfR = p.surf[idx];
+      if(pdist < surfR){
+        pts.push({x,y});
+        // Erode locally at exact hit angle
+        erodePlanetAt(p, hitAngle, LASER_ERODE);
+        // Update physics radius to avg
+        p.radius = planetAvgR(p);
+        p.mass   = p.radius**3 * 0.07;
+        p.atmoWidth = p.radius * 0.22;
+        spawnErosionSparks(x, y, p.rgb);
+        // Destroy planet if fully eroded
+        if(p.radius < 2){
+          spawnExplosion(p.x, p.y, p.baseRadius, p.rgb);
+          planets.splice(pi, 1);
+        }
+        laserHitInfo = {type:'planet', x, y};
+        hitPlanet = true;
+        break;
+      }
+    }
+    if(hitPlanet) break;
+
+    pts.push({x,y});
+
+    // --- Asteroid ---
+    let hitAsteroid = false;
+    for(let i=asteroids.length-1; i>=0; i--){
+      const a = asteroids[i];
+      const ddx=x-a.x, ddy=y-a.y;
+      if(ddx*ddx+ddy*ddy > (a.boundingRadius+LASER_STEP)**2) continue;
+      if(pointInAsteroid(x, y, a)){
+        a.health  -= LASER_DAMAGE;
+        a.hitFlash = 8;
+        if(a.health <= 0){
+          spawnExplosion(a.x, a.y, a.boundingRadius, a.vis.pal[0]);
+          asteroids.splice(i, 1);
+        }
+        laserHitInfo = {type:'asteroid', x, y};
+        hitAsteroid = true;
+        break;
+      }
+    }
+    if(hitAsteroid) break;
+  }
+
+  return pts;
+}
+
+// ================================================================
+//  DRAW LASER BEAM
+// ================================================================
+function drawLaserBeam(pts) {
+  if(pts.length < 2) return;
+  const cx = canvas.width/2, cy = canvas.height/2;
+  const flicker = 0.87 + Math.sin(Date.now()*0.031)*0.08 + Math.random()*0.05;
+
+  const spts = pts.map(p => ({
+    x: p.x - player.x + cx,
+    y: p.y - player.y + cy
+  }));
+
+  // How close is the laser tip to the BH? — drives purple shift
+  const tipBhDist = Math.sqrt((pts[pts.length-1].x-blackHole.x)**2+(pts[pts.length-1].y-blackHole.y)**2);
+  const bhProx = Math.max(0, Math.min(1, 1 - tipBhDist/2200));
+
+  const drawPath = (lw, alpha, r, g, b) => {
+    ctx.save();
+    ctx.strokeStyle = `rgba(${r},${g},${b},1)`;
+    ctx.lineWidth   = lw;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    ctx.globalAlpha = alpha * flicker;
+    ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
+    ctx.shadowBlur  = lw * 2.5;
+    ctx.beginPath();
+    ctx.moveTo(spts[0].x, spts[0].y);
+    for(let i=1; i<spts.length; i++) ctx.lineTo(spts[i].x, spts[i].y);
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  // Outer glow — shifts cyan→purple near BH
+  const gr = (80  + bhProx*140)|0;
+  const gg = (220 - bhProx*190)|0;
+  const gb = 255;
+  drawPath(20, 0.07, gr, gg, gb);
+  drawPath(10, 0.14, gr, gg, gb);
+  drawPath(4,  0.30 + bhProx*0.15, gr, gg, gb);
+  // Hot white core
+  drawPath(2,  0.90, 210, 255, 255);
+  drawPath(0.8,1.00, 255, 255, 255);
+
+  // Impact flash at endpoint
+  if(laserHitInfo){
+    const ep = spts[spts.length-1];
+    let ir=255, ig=160, ib=60;
+    if(laserHitInfo.type==='planet'){ ir=255;ig=255;ib=100; }
+    if(laserHitInfo.type==='bh')   { ir=180;ig=0;  ib=255; }
+    ctx.save();
+    const eg = ctx.createRadialGradient(ep.x,ep.y,0, ep.x,ep.y, 20);
+    eg.addColorStop(0,   `rgba(${ir},${ig},${ib},0.9)`);
+    eg.addColorStop(0.45,`rgba(${ir},${ig},${ib},0.35)`);
+    eg.addColorStop(1,   `rgba(${ir},${ig},${ib},0)`);
+    ctx.globalAlpha = flicker;
+    ctx.fillStyle   = eg;
+    ctx.beginPath(); ctx.arc(ep.x,ep.y, 20, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle   = 'rgba(255,255,255,0.95)';
+    ctx.beginPath(); ctx.arc(ep.x,ep.y, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ================================================================
+//  SAT COLLISION DETECTION
+// ================================================================
+function projPoly(verts, ax, ay){
+  let mn=1e9, mx=-1e9;
+  for(const v of verts){ const p=v.x*ax+v.y*ay; if(p<mn)mn=p; if(p>mx)mx=p; }
+  return [mn,mx];
+}
+
+function satPolyPoly(wa, wb){
+  let depth=1e9, nx=0, ny=0;
+  for(const [src] of [[wa],[wb]]){
+    const n=src.length;
+    for(let i=0;i<n;i++){
+      const j=(i+1)%n;
+      const ex=src[j].x-src[i].x, ey=src[j].y-src[i].y;
+      const len=Math.sqrt(ex*ex+ey*ey); if(len<1e-6) continue;
+      const ax=-ey/len, ay=ex/len;
+      const [aMn,aMx]=projPoly(wa,ax,ay);
+      const [bMn,bMx]=projPoly(wb,ax,ay);
+      if(aMx<bMn||bMx<aMn) return null;
+      const d=Math.min(aMx-bMn, bMx-aMn);
+      if(d<depth){ depth=d; nx=ax; ny=ay; }
+    }
+  }
+  let cax=0,cay=0,cbx=0,cby=0;
+  for(const v of wa){cax+=v.x;cay+=v.y;} cax/=wa.length;cay/=wa.length;
+  for(const v of wb){cbx+=v.x;cby+=v.y;} cbx/=wb.length;cby/=wb.length;
+  if((cax-cbx)*nx+(cay-cby)*ny<0){nx=-nx;ny=-ny;}
+  return {nx,ny,depth};
+}
+
+function satPolyCircle(wv, cx, cy, cr){
+  let depth=1e9, nx=0, ny=0;
+  const n=wv.length;
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
+    const ex=wv[j].x-wv[i].x, ey=wv[j].y-wv[i].y;
+    const len=Math.sqrt(ex*ex+ey*ey); if(len<1e-6) continue;
+    const ax=-ey/len, ay=ex/len;
+    const [pMn,pMx]=projPoly(wv,ax,ay);
+    const cc=cx*ax+cy*ay;
+    if(pMx<cc-cr||cc+cr<pMn) return null;
+    const d=Math.min(pMx-(cc-cr),(cc+cr)-pMn);
+    if(d<depth){depth=d;nx=ax;ny=ay;}
+  }
+  let nearD2=1e9, nearV=wv[0];
+  for(const v of wv){ const d2=(v.x-cx)**2+(v.y-cy)**2; if(d2<nearD2){nearD2=d2;nearV=v;} }
+  const vax=cx-nearV.x, vay=cy-nearV.y;
+  const vlen=Math.sqrt(vax*vax+vay*vay);
+  if(vlen>1e-6){
+    const ax=vax/vlen, ay=vay/vlen;
+    const [pMn,pMx]=projPoly(wv,ax,ay);
+    const cc=cx*ax+cy*ay;
+    if(pMx<cc-cr||cc+cr<pMn) return null;
+    const d=Math.min(pMx-(cc-cr),(cc+cr)-pMn);
+    if(d<depth){depth=d;nx=ax;ny=ay;}
+  }
+  let pcx=0,pcy=0;
+  for(const v of wv){pcx+=v.x;pcy+=v.y;} pcx/=n;pcy/=n;
+  if((cx-pcx)*nx+(cy-pcy)*ny<0){nx=-nx;ny=-ny;}
+  return {nx,ny,depth};
+}
+
+function applyImpulse(A, B, nx, ny, e){
+  const vrel=(A.vx-B.vx)*nx+(A.vy-B.vy)*ny;
+  if(vrel>=0) return;
+  const j=-(1+e)*vrel/(1/A.mass+1/B.mass);
+  A.vx+=(j/A.mass)*nx; A.vy+=(j/A.mass)*ny;
+  B.vx-=(j/B.mass)*nx; B.vy-=(j/B.mass)*ny;
+}
+
+function bounceSurface(obj, nx, ny, e){
+  const vrel=obj.vx*nx+obj.vy*ny;
+  if(vrel>=0) return;
+  obj.vx-=(1+e)*vrel*nx;
+  obj.vy-=(1+e)*vrel*ny;
+}
+
+// ================================================================
+//  PHYSICS
+// ================================================================
+function updatePhysics(){
+  for(const body of planets.concat([blackHole])){
+    const dx=body.x-player.x, dy=body.y-player.y;
+    const dist=Math.sqrt(dx*dx+dy*dy)||0.001;
+    const R=body.radius+player.radius;
+    const nx=dx/dist, ny=dy/dist;
+    const acc=dist>R ? G*body.mass/(dist*dist) : G*body.mass*dist/(R*R*R);
+    player.vx+=acc*nx; player.vy+=acc*ny;
+  }
+  for(const a of asteroids){
+    const dx=a.x-player.x, dy=a.y-player.y;
+    const dist=Math.sqrt(dx*dx+dy*dy)||0.001;
+    const acc=G*a.mass/(dist*dist)*0.15;
+    player.vx+=acc*(dx/dist); player.vy+=acc*(dy/dist);
+  }
+  for(const a of asteroids){
+    for(const body of planets.concat([blackHole])){
+      const dx=body.x-a.x, dy=body.y-a.y;
+      const dist=Math.sqrt(dx*dx+dy*dy)||0.001;
+      const R=body.radius+a.boundingRadius;
+      const nx=dx/dist, ny=dy/dist;
+      const acc=dist>R ? G*body.mass/(dist*dist) : G*body.mass*dist/(R*R*R);
+      a.vx+=acc*nx; a.vy+=acc*ny;
+    }
+  }
+  for(let i=0;i<asteroids.length;i++){
+    const a=asteroids[i];
+    for(let j=i+1;j<asteroids.length;j++){
+      const b=asteroids[j];
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const dist=Math.sqrt(dx*dx+dy*dy)||0.001;
+      if(dist<=a.boundingRadius+b.boundingRadius) continue;
+      const nx=dx/dist, ny=dy/dist;
+      const rangeA=ASTEROID_GRAV_SCALE*Math.cbrt(b.mass);
+      const rangeB=ASTEROID_GRAV_SCALE*Math.cbrt(a.mass);
+      if(dist<rangeA){ const f=G*b.mass/(dist*dist)*0.08; a.vx+=f*nx; a.vy+=f*ny; }
+      if(dist<rangeB){ const f=G*a.mass/(dist*dist)*0.08; b.vx-=f*nx; b.vy-=f*ny; }
+    }
+  }
+  if(keys["ArrowLeft"])  player.angle-=0.05;
+  if(keys["ArrowRight"]) player.angle+=0.05;
+  if(keys["ArrowUp"]){ player.vx+=Math.cos(player.angle)*THRUST; player.vy+=Math.sin(player.angle)*THRUST; }
+  if(keys["m"]){ player.vx*=0.98; player.vy*=0.98; }
+
+  player.x+=player.vx; player.y+=player.vy;
+  for(const a of asteroids){
+    a.x+=a.vx; a.y+=a.vy;
+    a.angle+=a.rotSpeed;
+    a.vx*=0.9997; a.vy*=0.9997;
+    if(a.hitFlash>0) a.hitFlash--;
+  }
+
+  for(const body of planets){
+    {
+      const dx=player.x-body.x, dy=player.y-body.y;
+      const dist=Math.sqrt(dx*dx+dy*dy)||0.001;
+      const R=body.radius+player.radius;
+      if(dist<R){
+        const nx=dx/dist, ny=dy/dist;
+        player.x+=nx*(R-dist); player.y+=ny*(R-dist);
+        bounceSurface(player,nx,ny,0.35);
+      }
+    }
+    for(const a of asteroids){
+      const dx=a.x-body.x, dy=a.y-body.y;
+      const dist=Math.sqrt(dx*dx+dy*dy)||0.001;
+      const R=body.radius+a.boundingRadius;
+      if(dist<R){
+        const nx=dx/dist, ny=dy/dist;
+        a.x+=nx*(R-dist); a.y+=ny*(R-dist);
+        bounceSurface(a,nx,ny,0.45);
+        a.rotSpeed+=(Math.random()-0.5)*0.004;
+      }
+    }
+  }
+
+  for(let pass=0;pass<3;pass++){
+    const wv=asteroids.map(a=>{
+      const cos=Math.cos(a.angle), sin=Math.sin(a.angle);
+      return a.verts.map(v=>({x:a.x+v.x*cos-v.y*sin, y:a.y+v.x*sin+v.y*cos}));
+    });
+    const applyVelocity=(pass===2);
+
+    for(let i=0;i<asteroids.length;i++){
+      for(let j=i+1;j<asteroids.length;j++){
+        const a=asteroids[i], b=asteroids[j];
+        const dx=b.x-a.x, dy=b.y-a.y;
+        if(dx*dx+dy*dy>(a.boundingRadius+b.boundingRadius)**2*1.05) continue;
+        const sat=satPolyPoly(wv[i],wv[j]);
+        if(!sat) continue;
+        const {nx,ny,depth}=sat;
+        const tm=a.mass+b.mass;
+        a.x+=nx*depth*(b.mass/tm); a.y+=ny*depth*(b.mass/tm);
+        b.x-=nx*depth*(a.mass/tm); b.y-=ny*depth*(a.mass/tm);
+        const cosA=Math.cos(a.angle),sinA=Math.sin(a.angle);
+        wv[i]=a.verts.map(v=>({x:a.x+v.x*cosA-v.y*sinA, y:a.y+v.x*sinA+v.y*cosA}));
+        const cosB=Math.cos(b.angle),sinB=Math.sin(b.angle);
+        wv[j]=b.verts.map(v=>({x:b.x+v.x*cosB-v.y*sinB, y:b.y+v.x*sinB+v.y*cosB}));
+        if(applyVelocity){
+          const vrelBefore=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;
+          applyImpulse(a,b,nx,ny,0.5);
+          const speed=Math.abs(vrelBefore);
+          a.rotSpeed+=(Math.random()-0.5)*speed*0.012;
+          b.rotSpeed+=(Math.random()-0.5)*speed*0.012;
+        }
+      }
+    }
+
+    for(let i=0;i<asteroids.length;i++){
+      const a=asteroids[i];
+      const dx=player.x-a.x, dy=player.y-a.y;
+      if(dx*dx+dy*dy>(player.radius+a.boundingRadius)**2*1.1) continue;
+      const sat=satPolyCircle(wv[i],player.x,player.y,player.radius);
+      if(!sat) continue;
+      const {nx,ny,depth}=sat;
+      const tm=player.mass+a.mass;
+      player.x+=nx*depth*(a.mass/tm);      player.y+=ny*depth*(a.mass/tm);
+      a.x     -=nx*depth*(player.mass/tm); a.y     -=ny*depth*(player.mass/tm);
+      const cosA=Math.cos(a.angle),sinA=Math.sin(a.angle);
+      wv[i]=a.verts.map(v=>({x:a.x+v.x*cosA-v.y*sinA, y:a.y+v.x*sinA+v.y*cosA}));
+      if(applyVelocity){
+        const vrelBefore=(player.vx-a.vx)*nx+(player.vy-a.vy)*ny;
+        applyImpulse(player,a,nx,ny,0.55);
+        a.rotSpeed+=(Math.random()-0.5)*Math.abs(vrelBefore)*0.018;
+      }
+    }
+  }
+}
+
+// ================================================================
+//  DRAW: STARFIELD
+// ================================================================
+function drawStars(){
+  const cx=canvas.width/2, cy=canvas.height/2;
+  const x0=Math.floor((player.x-canvas.width/2) /starSectorSize)*starSectorSize;
+  const y0=Math.floor((player.y-canvas.height/2)/starSectorSize)*starSectorSize;
+  const x1=Math.floor((player.x+canvas.width/2) /starSectorSize)*starSectorSize;
+  const y1=Math.floor((player.y+canvas.height/2)/starSectorSize)*starSectorSize;
+  for(let sx=x0;sx<=x1;sx+=starSectorSize){
+    for(let sy=y0;sy<=y1;sy+=starSectorSize){
+      const rand=mulberry32(((sx*73856093)^(sy*19349663))>>>0);
+      const cnt=10+Math.floor(rand()*15);
+      for(let i=0;i<cnt;i++){
+        const wx=sx+rand()*starSectorSize, wy=sy+rand()*starSectorSize;
+        const r=0.5+rand()*1.5, b=0.2+rand()*0.5;
+        const px=wx-player.x+cx, py=wy-player.y+cy;
+        if(px>=0&&px<=canvas.width&&py>=0&&py<=canvas.height){
+          ctx.fillStyle=`rgba(255,255,255,${b})`;
+          ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);ctx.fill();
+        }
+      }
+    }
+  }
+}
+
+// ================================================================
+//  DRAW: PLANETS
+// ================================================================
+function drawRingHalf(p,sx,sy,isFront){
+  const mid=(p.ringInner+p.ringOuter)/2, hw=(p.ringOuter-p.ringInner)/2;
+  ctx.save();ctx.translate(sx,sy);
+  ctx.beginPath();
+  if(isFront) ctx.rect(-p.ringOuter*3,0,p.ringOuter*6,p.ringOuter*3);
+  else         ctx.rect(-p.ringOuter*3,-p.ringOuter*3,p.ringOuter*6,p.ringOuter*3);
+  ctx.clip();ctx.scale(1,p.ringTilt);
+  const rc=p.ringColor;
+  ctx.shadowColor=rgbaStr(rc,0.3);ctx.shadowBlur=hw*0.6;
+  ctx.lineWidth=hw*2;ctx.strokeStyle=rgbaStr(rc,p.ringOpacity);
+  ctx.beginPath();ctx.arc(0,0,mid,0,Math.PI*2);ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.lineWidth=hw*0.35;ctx.strokeStyle=rgbaStr(lighten(rc,0.3),p.ringOpacity*0.5);
+  ctx.beginPath();ctx.arc(0,0,p.ringInner+hw*0.2,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(0,0,p.ringOuter-hw*0.2,0,Math.PI*2);ctx.stroke();
+  ctx.restore();
+}
+
+function drawSinglePlanet(p,sx,sy){
+  const c=p.rgb, la=p.lightAngle;
+  const avgR = p.radius; // kept up-to-date by erosion
+  const lx=Math.cos(la)*avgR*0.42, ly=Math.sin(la)*avgR*0.42;
+  const cullR=p.hasRing?p.ringOuter*2.5:avgR+(p.atmoWidth||avgR*0.22)+4;
+  if(sx+cullR<0||sx-cullR>canvas.width||sy+cullR<0||sy-cullR>canvas.height) return;
+
+  if(p.hasRing) drawRingHalf(p,sx,sy,false);
+  ctx.save(); ctx.translate(sx,sy);
+
+  // Atmosphere — still a circle based on avgR
+  const atmoW = p.atmoWidth || avgR*0.22;
+  const atmoG=ctx.createRadialGradient(0,0,avgR*0.82,0,0,avgR+atmoW);
+  atmoG.addColorStop(0,rgbaStr(c,0.5)); atmoG.addColorStop(0.45,rgbaStr(c,0.2)); atmoG.addColorStop(1,rgbaStr(c,0));
+  ctx.fillStyle=atmoG; ctx.beginPath(); ctx.arc(0,0,avgR+atmoW,0,Math.PI*2); ctx.fill();
+
+  // Base body — deformed polygon fill
+  const baseG=ctx.createRadialGradient(lx,ly,0,0,0,avgR);
+  baseG.addColorStop(0,  rgbStr(lighten(c,0.58)));
+  baseG.addColorStop(0.28,rgbStr(lighten(c,0.22)));
+  baseG.addColorStop(0.65,rgbStr(c));
+  baseG.addColorStop(1,  rgbStr(darken(c,0.68)));
+  ctx.fillStyle=baseG;
+  planetSurfacePath(p); ctx.fill();
+
+  // Clip subsequent layers to deformed surface
+  ctx.save();
+  planetSurfacePath(p); ctx.clip();
+
+  // Surface bands
+  for(const band of p.bands){
+    const yc=band.yFrac*avgR, hw=band.halfFrac*avgR;
+    const bg=ctx.createLinearGradient(0,yc-hw,0,yc+hw);
+    bg.addColorStop(0,rgbaStr(band.color,0)); bg.addColorStop(0.45,rgbaStr(band.color,band.opacity));
+    bg.addColorStop(0.55,rgbaStr(band.color,band.opacity)); bg.addColorStop(1,rgbaStr(band.color,0));
+    ctx.fillStyle=bg; ctx.fillRect(-avgR,yc-hw,avgR*2,hw*2);
+  }
+  // Spots
+  for(const spot of p.spots){
+    const sg=ctx.createRadialGradient(spot.x,spot.y,0,spot.x,spot.y,spot.r);
+    sg.addColorStop(0,rgbaStr(spot.color,spot.opacity)); sg.addColorStop(0.55,rgbaStr(spot.color,spot.opacity*0.45)); sg.addColorStop(1,rgbaStr(spot.color,0));
+    ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(spot.x,spot.y,spot.r,0,Math.PI*2); ctx.fill();
+  }
+
+  // Draw glowing eroded trenches along the surface edge by stroking notch contours
+  // We highlight concave dips in the heightmap as hot laser channels
+  {
+    const N = PLANET_SURFACE_N;
+    const baseR = p.baseRadius;
+    // Find eroded segments and draw molten-edge glow
+    let inTrench = false, tStart = 0;
+    for(let i=0; i<=N; i++){
+      const idx = i % N;
+      const erosionDepth = baseR - p.surf[idx];
+      if(erosionDepth > 2){
+        if(!inTrench){ inTrench=true; tStart=i; }
+      } else {
+        if(inTrench){
+          // Draw arc from tStart to i-1 as a glowing trench rim
+          const a1 = (tStart/N)*Math.PI*2 - 0.03;
+          const a2 = ((i-1)/N)*Math.PI*2 + 0.03;
+          // Use the local surface radius for the arc radius
+          const midIdx = ((tStart + (i-1)) / 2 | 0) % N;
+          const tr = p.surf[midIdx];
+          ctx.strokeStyle = 'rgba(80,255,200,0.55)';
+          ctx.lineWidth   = 1.8;
+          ctx.shadowColor = 'rgba(0,255,200,0.8)';
+          ctx.shadowBlur  = 6;
+          ctx.beginPath(); ctx.arc(0,0,tr, a1, a2); ctx.stroke();
+          ctx.shadowBlur  = 0;
+          inTrench = false;
+        }
+      }
+    }
+  }
+
+  ctx.restore(); // end clip
+
+  // Terminator shadow
+  const sha=la+Math.PI;
+  const sdx=Math.cos(sha)*avgR*0.12, sdy=Math.sin(sha)*avgR*0.12;
+  const shG=ctx.createRadialGradient(sdx,sdy,avgR*0.08,sdx,sdy,avgR*1.04);
+  shG.addColorStop(0,"rgba(0,0,0,0)"); shG.addColorStop(0.55,"rgba(0,0,0,0.12)");
+  shG.addColorStop(0.82,"rgba(0,0,0,0.42)"); shG.addColorStop(1,"rgba(0,0,0,0.78)");
+  ctx.fillStyle=shG; planetSurfacePath(p); ctx.fill();
+
+  // Specular
+  const spG=ctx.createRadialGradient(lx*0.62,ly*0.62,0,lx*0.62,ly*0.62,avgR*0.42);
+  spG.addColorStop(0,"rgba(255,255,255,0.42)"); spG.addColorStop(0.38,"rgba(255,255,255,0.1)"); spG.addColorStop(1,"rgba(255,255,255,0)");
+  ctx.fillStyle=spG; planetSurfacePath(p); ctx.fill();
+
+  // Limb edge glow — draw as deformed polygon stroke
+  ctx.save();
+  planetSurfacePath(p);
+  ctx.strokeStyle = rgbaStr(lighten(c,0.42), 0.32);
+  ctx.lineWidth   = avgR * 0.12;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.restore();
+  if(p.hasRing) drawRingHalf(p,sx,sy,true);
+}
+
+function drawBodies(){
+  const cx=canvas.width/2, cy=canvas.height/2;
+  for(const p of planets) drawSinglePlanet(p,p.x-player.x+cx,p.y-player.y+cy);
+
+  const bhX=blackHole.x-player.x+cx, bhY=blackHole.y-player.y+cy;
+  blackHole.angle+=0.005;
+  for(let i=0;i<5;i++){
+    ctx.strokeStyle=`rgba(150,0,200,${0.1-i*0.015})`;ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(bhX,bhY,blackHole.radius*(1.2+i*0.3),blackHole.angle,blackHole.angle+Math.PI*1.5);ctx.stroke();
+  }
+  const bhG=ctx.createRadialGradient(bhX,bhY,blackHole.radius*0.5,bhX,bhY,blackHole.radius*3);
+  bhG.addColorStop(0,"rgba(0,0,0,1)");bhG.addColorStop(0.3,"rgba(50,0,50,0.3)");bhG.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=bhG;ctx.beginPath();ctx.arc(bhX,bhY,blackHole.radius*3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="black";ctx.beginPath();ctx.arc(bhX,bhY,blackHole.radius,0,Math.PI*2);ctx.fill();
+  for(const p of blackHole.particles){
+    p.angle+=p.speed;
+    ctx.fillStyle="rgba(200,50,250,0.3)";
+    ctx.beginPath();ctx.arc(bhX+Math.cos(p.angle)*p.r,bhY+Math.sin(p.angle)*p.r,p.size,0,Math.PI*2);ctx.fill();
+  }
+}
+
+// ================================================================
+//  DRAW: ASTEROIDS
+// ================================================================
+function drawAsteroids(){
+  const cx=canvas.width/2, cy=canvas.height/2;
+  for(const a of asteroids){
+    const sx=a.x-player.x+cx, sy=a.y-player.y+cy;
+    if(sx<-150||sx>canvas.width+150||sy<-150||sy>canvas.height+150) continue;
+
+    const v=a.vis, pal=v.pal;
+    const base=pal[0], dark=pal[1], light=pal[2], rimC=pal[3];
+    const br=a.boundingRadius;
+    const lx=Math.cos(v.lightAngle)*br*0.55, ly=Math.sin(v.lightAngle)*br*0.55;
+
+    ctx.save(); ctx.translate(sx,sy); ctx.rotate(a.angle);
+
+    // Laser hit red flash
+    if(a.hitFlash>0){
+      ctx.save();
+      ctx.globalAlpha = (a.hitFlash/8)*0.65;
+      ctx.shadowColor = 'rgba(255,60,60,1)'; ctx.shadowBlur = 22;
+      ctx.fillStyle   = 'rgba(255,50,50,0.5)';
+      ctx.beginPath();
+      ctx.moveTo(a.verts[0].x,a.verts[0].y);
+      for(let k=1;k<a.verts.length;k++) ctx.lineTo(a.verts[k].x,a.verts[k].y);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    // HP bar when damaged
+    if(a.health < a.maxHealth){
+      const barW=br*2.3, hpF=Math.max(0,a.health/a.maxHealth);
+      ctx.save(); ctx.rotate(-a.angle);
+      const by=-br-9;
+      ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(-barW/2,by,barW,4);
+      ctx.fillStyle = hpF>0.5 ? 'rgba(80,255,80,0.9)' : hpF>0.25 ? 'rgba(255,200,50,0.9)' : 'rgba(255,50,50,0.9)';
+      ctx.fillRect(-barW/2,by,barW*hpF,4);
+      ctx.restore();
+    }
+
+    const halo=ctx.createRadialGradient(0,0,br*0.85,0,0,br*1.22);
+    halo.addColorStop(0,`rgba(${base.r},${base.g},${base.b},0.18)`);
+    halo.addColorStop(1,`rgba(${base.r},${base.g},${base.b},0)`);
+    ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(0,0,br*1.22,0,Math.PI*2); ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(a.verts[0].x,a.verts[0].y);
+    for(let k=1;k<a.verts.length;k++) ctx.lineTo(a.verts[k].x,a.verts[k].y);
+    ctx.closePath(); ctx.clip();
+
+    ctx.fillStyle=`rgb(${base.r},${base.g},${base.b})`; ctx.fill();
+
+    const litG=ctx.createRadialGradient(lx,ly,0,lx,ly,br*1.6);
+    litG.addColorStop(0,  `rgba(${light.r},${light.g},${light.b},0.72)`);
+    litG.addColorStop(0.38,`rgba(${light.r},${light.g},${light.b},0.18)`);
+    litG.addColorStop(0.7, `rgba(${base.r},${base.g},${base.b},0)`);
+    litG.addColorStop(1,   `rgba(${dark.r},${dark.g},${dark.b},0.55)`);
+    ctx.fillStyle=litG;
+    ctx.beginPath();
+    ctx.moveTo(a.verts[0].x,a.verts[0].y);
+    for(let k=1;k<a.verts.length;k++) ctx.lineTo(a.verts[k].x,a.verts[k].y);
+    ctx.closePath(); ctx.fill();
+
+    const shadowAng=v.lightAngle+Math.PI;
+    const sx2=Math.cos(shadowAng)*br*0.3, sy2=Math.sin(shadowAng)*br*0.3;
+    const shG=ctx.createRadialGradient(sx2,sy2,br*0.2,sx2,sy2,br*1.1);
+    shG.addColorStop(0,`rgba(${dark.r},${dark.g},${dark.b},0)`);
+    shG.addColorStop(0.6,`rgba(${dark.r},${dark.g},${dark.b},0.28)`);
+    shG.addColorStop(1,  `rgba(${dark.r},${dark.g},${dark.b},0.62)`);
+    ctx.fillStyle=shG;
+    ctx.beginPath();
+    ctx.moveTo(a.verts[0].x,a.verts[0].y);
+    for(let k=1;k<a.verts.length;k++) ctx.lineTo(a.verts[k].x,a.verts[k].y);
+    ctx.closePath(); ctx.fill();
+
+    for(const cr of v.craters){
+      const cg=ctx.createRadialGradient(cr.x,cr.y,0,cr.x,cr.y,cr.r);
+      cg.addColorStop(0,   `rgba(${dark.r},${dark.g},${dark.b},0.82)`);
+      cg.addColorStop(0.55,`rgba(${dark.r},${dark.g},${dark.b},0.38)`);
+      cg.addColorStop(0.78,`rgba(${dark.r},${dark.g},${dark.b},0.1)`);
+      cg.addColorStop(1,   `rgba(${rimC.r},${rimC.g},${rimC.b},0)`);
+      ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(cr.x,cr.y,cr.r*1.2,0,Math.PI*2); ctx.fill();
+      const rimAng=v.lightAngle+Math.PI;
+      ctx.strokeStyle=`rgba(${light.r},${light.g},${light.b},0.55)`;
+      ctx.lineWidth=cr.r*0.22;
+      ctx.beginPath(); ctx.arc(cr.x,cr.y,cr.r*0.9,rimAng+0.4,rimAng+Math.PI-0.4); ctx.stroke();
+    }
+
+    for(const ck of v.cracks){
+      ctx.strokeStyle=`rgba(${dark.r},${dark.g},${dark.b},0.55)`;
+      ctx.lineWidth=0.6;
+      ctx.beginPath(); ctx.moveTo(ck.x1,ck.y1); ctx.lineTo(ck.x2,ck.y2); ctx.stroke();
+      const dlx=Math.cos(v.lightAngle)*0.7, dly=Math.sin(v.lightAngle)*0.7;
+      ctx.strokeStyle=`rgba(${light.r},${light.g},${light.b},0.22)`;
+      ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(ck.x1+dlx,ck.y1+dly); ctx.lineTo(ck.x2+dlx,ck.y2+dly); ctx.stroke();
+    }
+
+    const spx=lx*0.6, spy=ly*0.6;
+    const spG=ctx.createRadialGradient(spx,spy,0,spx,spy,br*0.28);
+    spG.addColorStop(0,`rgba(255,255,255,0.48)`);
+    spG.addColorStop(0.5,`rgba(255,255,255,0.12)`);
+    spG.addColorStop(1,`rgba(255,255,255,0)`);
+    ctx.fillStyle=spG;
+    ctx.beginPath();
+    ctx.moveTo(a.verts[0].x,a.verts[0].y);
+    for(let k=1;k<a.verts.length;k++) ctx.lineTo(a.verts[k].x,a.verts[k].y);
+    ctx.closePath(); ctx.fill();
+
+    ctx.restore();
+
+    ctx.strokeStyle=`rgb(${dark.r},${dark.g},${dark.b})`;
+    ctx.lineWidth=1.3;
+    ctx.beginPath();
+    ctx.moveTo(a.verts[0].x,a.verts[0].y);
+    for(let k=1;k<a.verts.length;k++) ctx.lineTo(a.verts[k].x,a.verts[k].y);
+    ctx.closePath(); ctx.stroke();
+    ctx.strokeStyle=`rgba(${light.r},${light.g},${light.b},0.35)`;
+    ctx.lineWidth=0.6; ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
+// ================================================================
+//  DRAW: PLAYER SHIP
+// ================================================================
+function drawPlayer(){
+  const cx=canvas.width/2, cy=canvas.height/2;
+  const thrusting=keys["ArrowUp"], tL=keys["ArrowLeft"], tR=keys["ArrowRight"];
+  const laserOn = keys["l"] || keys["L"];
+  const t=Date.now()*0.001;
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(player.angle);
+
+  if(thrusting){
+    const fl=22+Math.random()*16;
+    const g1=ctx.createLinearGradient(-14,0,-14-fl,0);
+    g1.addColorStop(0,"rgba(255,200,60,0.95)"); g1.addColorStop(0.3,"rgba(255,90,10,0.7)"); g1.addColorStop(1,"rgba(255,30,0,0)");
+    ctx.fillStyle=g1;
+    ctx.beginPath(); ctx.moveTo(-13,5.5); ctx.quadraticCurveTo(-14-fl*0.5,(Math.random()-0.5)*5,-14-fl,0);
+    ctx.quadraticCurveTo(-14-fl*0.5,(Math.random()-0.5)*5,-13,-5.5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="rgba(255,255,220,0.9)";
+    ctx.beginPath(); ctx.moveTo(-13,2); ctx.lineTo(-14-fl*0.45,0); ctx.lineTo(-13,-2); ctx.closePath(); ctx.fill();
+  }
+  if(tL||tR){
+    const s=tL?1:-1, jl=3+Math.random()*5;
+    ctx.fillStyle="rgba(120,210,255,0.75)";
+    ctx.beginPath(); ctx.moveTo(6,s*8); ctx.lineTo(6,s*(8+jl)); ctx.lineTo(10,s*8); ctx.closePath(); ctx.fill();
+  }
+
+  // Laser nose glow
+  if(laserOn){
+    const glowR = 22+Math.random()*3;
+    const ng = ctx.createRadialGradient(22,0,0, 22,0, glowR);
+    ng.addColorStop(0,'rgba(120,255,255,0.95)');
+    ng.addColorStop(0.45,'rgba(0,200,255,0.35)');
+    ng.addColorStop(1,'rgba(0,100,255,0)');
+    ctx.fillStyle=ng;
+    ctx.beginPath(); ctx.arc(22,0, glowR, 0, Math.PI*2); ctx.fill();
+  }
+
+  for(const s of [-1,1]){
+    ctx.fillStyle="#152030"; ctx.strokeStyle="#254560"; ctx.lineWidth=0.9;
+    ctx.beginPath(); ctx.moveTo(4,s*9); ctx.lineTo(-9,s*17); ctx.lineTo(-14,s*16); ctx.lineTo(-9,s*8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#1e3348";
+    ctx.beginPath(); ctx.moveTo(2,s*10); ctx.lineTo(-8,s*16); ctx.lineTo(-12,s*15); ctx.lineTo(-7,s*9); ctx.closePath(); ctx.fill();
+    const eg=ctx.createRadialGradient(-12,s*16,0,-12,s*16,5);
+    eg.addColorStop(0,thrusting?"rgba(60,180,255,1)":"rgba(20,80,160,0.55)"); eg.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(-12,s*16,5,0,Math.PI*2); ctx.fill();
+    const blink=Math.sin(t*2.5+s*1.5)>0.2;
+    ctx.fillStyle=blink?(s<0?"rgba(255,50,50,1)":"rgba(50,255,80,1)"):"rgba(60,60,60,0.4)";
+    ctx.shadowColor=blink?(s<0?"red":"lime"):"transparent"; ctx.shadowBlur=blink?5:0;
+    ctx.beginPath(); ctx.arc(-12,s*16,1.8,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+  }
+  for(const s of [-1,1]){
+    const wg=ctx.createLinearGradient(6,s*3,-8,s*20);
+    wg.addColorStop(0,"#203545"); wg.addColorStop(1,"#0c1820");
+    ctx.fillStyle=wg; ctx.strokeStyle="#2e5070"; ctx.lineWidth=0.7;
+    ctx.beginPath(); ctx.moveTo(10,s*2); ctx.lineTo(4,s*9); ctx.lineTo(-5,s*19); ctx.lineTo(-10,s*19); ctx.lineTo(-9,s*10); ctx.lineTo(8,s*2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle="rgba(80,150,210,0.22)"; ctx.lineWidth=0.6;
+    ctx.beginPath(); ctx.moveTo(7,s*3); ctx.lineTo(-6,s*17); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(2,s*3); ctx.lineTo(-8,s*17); ctx.stroke();
+  }
+  const fg=ctx.createLinearGradient(-16,-9,20,9);
+  fg.addColorStop(0,"#0b1c2a"); fg.addColorStop(0.35,"#1b3a52"); fg.addColorStop(0.65,"#224260"); fg.addColorStop(1,"#0b1c2a");
+  ctx.fillStyle=fg; ctx.strokeStyle="#305878"; ctx.lineWidth=1.1;
+  ctx.beginPath(); ctx.moveTo(20,0); ctx.lineTo(14,5); ctx.lineTo(4,8); ctx.lineTo(-11,8); ctx.lineTo(-16,4); ctx.lineTo(-16,-4); ctx.lineTo(-11,-8); ctx.lineTo(4,-8); ctx.lineTo(14,-5); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle="rgba(80,170,240,0.35)"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(-14,0); ctx.lineTo(18,0); ctx.stroke();
+  ctx.strokeStyle="rgba(60,130,190,0.2)"; ctx.lineWidth=0.5;
+  ctx.beginPath(); ctx.moveTo(10,-5); ctx.lineTo(-10,-6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(10,5); ctx.lineTo(-10,6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(0,7); ctx.stroke();
+  const cpg=ctx.createRadialGradient(10,-1.5,0,10,-1.5,7);
+  cpg.addColorStop(0, laserOn?"rgba(80,255,255,0.98)":"rgba(140,235,255,0.98)");
+  cpg.addColorStop(0.45,"rgba(40,155,220,0.85)"); cpg.addColorStop(1,"rgba(0,35,75,0.6)");
+  ctx.fillStyle=cpg; ctx.strokeStyle=laserOn?"rgba(80,255,255,0.8)":"rgba(180,250,255,0.55)"; ctx.lineWidth=0.9;
+  ctx.beginPath(); ctx.ellipse(10,0,6.5,5,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle="rgba(255,255,255,0.65)";
+  ctx.beginPath(); ctx.ellipse(11,-1.8,2.2,1.1,-0.35,0,Math.PI*2); ctx.fill();
+  ctx.shadowColor=laserOn?"#00ffff":"#7ae0ff"; ctx.shadowBlur=laserOn?16:8;
+  ctx.fillStyle=laserOn?"#00ffff":"#9ff0ff";
+  ctx.beginPath(); ctx.arc(20,0,1.8,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+  const eng=ctx.createRadialGradient(-16,0,0,-16,0,5);
+  eng.addColorStop(0,thrusting?"rgba(100,200,255,0.9)":"rgba(25,80,130,0.8)"); eng.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=eng; ctx.strokeStyle="#183548"; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.ellipse(-16,0,2.2,5,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+// ================================================================
+//  DRAW: MINI-MAP
+// ================================================================
+function drawMiniMap(){
+  const mapX=canvas.width-miniMap.width-miniMap.padding, mapY=miniMap.padding;
+  ctx.fillStyle="rgba(0,0,0,0.5)"; ctx.fillRect(mapX,mapY,miniMap.width,miniMap.height);
+  ctx.strokeStyle="rgba(100,180,255,0.5)"; ctx.lineWidth=1; ctx.strokeRect(mapX,mapY,miniMap.width,miniMap.height);
+  let maxDist=0;
+  for(const p of planets.concat([blackHole])){
+    const d=Math.sqrt((p.x-player.x)**2+(p.y-player.y)**2)+p.radius;
+    if(d>maxDist) maxDist=d;
+  }
+  if(maxDist<200) maxDist=200;
+  const scale=(miniMap.width/2)/maxDist;
+  for(const p of planets){
+    const px=mapX+miniMap.width/2+(p.x-player.x)*scale, py=mapY+miniMap.height/2+(p.y-player.y)*scale;
+    ctx.fillStyle=rgbStr(p.rgb); ctx.beginPath(); ctx.arc(px,py,Math.max(2,p.radius*scale),0,Math.PI*2); ctx.fill();
+  }
+  for(const a of asteroids){
+    const px=mapX+miniMap.width/2+(a.x-player.x)*scale, py=mapY+miniMap.height/2+(a.y-player.y)*scale;
+    if(px<mapX||px>mapX+miniMap.width||py<mapY||py>mapY+miniMap.height) continue;
+    ctx.fillStyle="rgba(180,160,140,0.7)"; ctx.beginPath(); ctx.arc(px,py,1.5,0,Math.PI*2); ctx.fill();
+  }
+  const bpx=mapX+miniMap.width/2+(blackHole.x-player.x)*scale, bpy=mapY+miniMap.height/2+(blackHole.y-player.y)*scale;
+  ctx.fillStyle="rgba(180,0,200,0.25)"; ctx.beginPath(); ctx.arc(bpx,bpy,Math.max(2,blackHole.radius*scale),0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="rgba(100,220,255,1)"; ctx.beginPath(); ctx.arc(mapX+miniMap.width/2,mapY+miniMap.height/2,2.5,0,Math.PI*2); ctx.fill();
+}
+
+// ================================================================
+//  DRAW: HUD
+// ================================================================
+function drawHUD(){
+  const laserOn = keys["l"] || keys["L"];
+  const spd = Math.sqrt(player.vx**2+player.vy**2).toFixed(2);
+  ctx.font="12px monospace";
+  ctx.fillStyle="rgba(100,200,255,0.6)";
+  ctx.fillText(`SPD: ${spd}`,                             12, 20);
+  ctx.fillText(`↑ Thrust  ← → Turn  M Brake`,            12, 36);
+  ctx.fillText(`L (hold) – Laser: destroys asteroids,`,   12, 52);
+  ctx.fillText(`          erodes planets, bends at BH`,   12, 65);
+  ctx.fillText(`Asteroids: ${asteroids.length}`,          12, 81);
+
+  if(laserOn){
+    ctx.save();
+    ctx.font="bold 13px monospace";
+    ctx.fillStyle="rgba(80,255,255,0.95)";
+    ctx.shadowColor="rgba(0,255,255,0.8)"; ctx.shadowBlur=10;
+    ctx.fillText("⚡ LASER ACTIVE", 12, 100);
+    ctx.restore();
+  }
+}
+
+// ================================================================
+//  MAIN LOOP
+// ================================================================
+function loop(){
+  ctx.fillStyle="black"; ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawStars();
+  updatePhysics();
+  updateDebris();
+  drawBodies();
+  drawAsteroids();
+
+  const laserOn = keys["l"] || keys["L"];
+  if(laserOn){
+    laserPoints = traceLaser();
+    drawLaserBeam(laserPoints);
+  } else {
+    laserPoints  = [];
+    laserHitInfo = null;
+  }
+
+  drawDebris();
+  drawPlayer();
+  drawMiniMap();
+  drawHUD();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
