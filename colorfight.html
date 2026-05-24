@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chain Reaction</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f4f4f2;min-height:100vh;display:flex;align-items:center;justify-content:center}
+#cr-setup{text-align:center;padding:2rem 1.5rem;max-width:400px;width:100%}
+.setup-robot{margin:0 auto 1.25rem;width:68px;height:68px;background:#FAECE7;border:1.5px solid #D85A30;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.setup-title{font-size:22px;font-weight:700;color:#1a1a18;margin-bottom:4px}
+.setup-sub{font-size:13px;color:#999;margin-bottom:1.75rem}
+.setup-section{margin-bottom:1.25rem;text-align:left}
+.setup-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#aaa;margin-bottom:8px}
+.pcount-row{display:flex;border:1.5px solid #ddd;border-radius:12px;overflow:hidden}
+.pcount-btn{flex:1;padding:12px 0;background:white;border:none;border-right:1px solid #ddd;font-size:16px;font-weight:600;cursor:pointer;color:#aaa;transition:background .15s,color .15s}
+.pcount-btn:last-child{border-right:none}
+.pcount-btn:hover:not(.active){background:#f5f5f3;color:#555}
+.pcount-btn.active{background:#1a1a18;color:white}
+.diff-row{display:flex;gap:8px}
+.diff-btn-sm{flex:1;padding:10px 0;border-radius:10px;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#888;transition:border-color .15s,background .15s,color .15s,transform .1s}
+.diff-btn-sm:hover{transform:translateY(-1px)}
+.diff-btn-sm.active.easy{background:#E1F5EE;border-color:#1D9E75;color:#0F6E56}
+.diff-btn-sm.active.medium{background:#FAEEDA;border-color:#BA7517;color:#854F0B}
+.diff-btn-sm.active.hard{background:#FAECE7;border-color:#D85A30;color:#993C1D}
+.robot-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;border:1.5px solid #ddd;background:white;cursor:pointer;transition:border-color .15s,background .15s}
+.robot-card.on{border-color:#D85A30;background:#FAECE7}
+.robot-card-text{flex:1;text-align:left}
+.robot-card-title{font-size:14px;font-weight:600;color:#333}
+.robot-card-sub{font-size:12px;color:#999;margin-top:2px}
+.robot-card.on .robot-card-title{color:#712B13}
+.robot-card.on .robot-card-sub{color:#D85A30}
+.toggle-sw{position:relative;width:42px;height:24px;flex-shrink:0;cursor:pointer}
+.toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.toggle-sw .track{position:absolute;inset:0;background:#ddd;border-radius:24px;transition:background .2s}
+.toggle-sw .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:white;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-sw input:checked~.track{background:#D85A30}
+.toggle-sw input:checked~.knob{transform:translateX(18px)}
+.player-preview{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;justify-content:center}
+.pp-badge{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.pp-dot{width:8px;height:8px;border-radius:50%}
+.pp-badge.p1{background:#EFF6FF;color:#1D4ED8} .pp-dot.p1{background:#2563EB}
+.pp-badge.p2{background:#FEF2F2;color:#991B1B} .pp-dot.p2{background:#E53935}
+.pp-badge.p3{background:#F0FDF4;color:#15803D} .pp-dot.p3{background:#16A34A}
+.pp-badge.p4{background:#FEFCE8;color:#854D0E} .pp-dot.p4{background:#CA8A04}
+.pp-badge.p5{background:#F5F3FF;color:#6D28D9} .pp-dot.p5{background:#7C3AED}
+#setup-start{width:100%;padding:14px;border-radius:12px;background:#1a1a18;color:white;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;margin-top:.5rem}
+#setup-start:disabled{opacity:.25;cursor:not-allowed}
+#setup-start:not(:disabled):hover{opacity:.85;transform:translateY(-1px)}
+#setup-start:not(:disabled):active{transform:scale(.98)}
+#cr-game{display:none;padding:1.5rem 1rem;width:100%;max-width:560px}
+#cr-banner{max-width:500px;margin:0 auto 1rem;padding:10px 16px;border-radius:12px;font-size:15px;font-weight:500;text-align:center;display:none}
+#cr-banner.p1{background:#EFF6FF;border:1px solid #2563EB;color:#1D4ED8}
+#cr-banner.p2{background:#FEF2F2;border:1px solid #E53935;color:#991B1B}
+#cr-banner.p3{background:#F0FDF4;border:1px solid #16A34A;color:#15803D}
+#cr-banner.p4{background:#FEFCE8;border:1px solid #CA8A04;color:#854D0E}
+#cr-banner.p5{background:#F5F3FF;border:1px solid #7C3AED;color:#6D28D9}
+#cr-badges{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;max-width:500px;margin:0 auto .75rem;padding:0 4px}
+.cr-badge{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:10px;border:1.5px solid #ddd;font-size:12px;font-weight:500;color:#888;transition:background .2s,border-color .2s,color .2s;flex-shrink:0}
+.cr-pip{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cr-score{font-size:11px;font-weight:500;padding:1px 5px;border-radius:16px;background:#e8e8e6;color:#888;min-width:16px;text-align:center}
+.cr-badge .ricon{width:12px;height:12px;flex-shrink:0}
+.cr-badge.p1 .cr-pip{background:#2563EB} .cr-badge.p2 .cr-pip{background:#E53935}
+.cr-badge.p3 .cr-pip{background:#16A34A} .cr-badge.p4 .cr-pip{background:#CA8A04}
+.cr-badge.p5 .cr-pip{background:#7C3AED}
+.cr-badge.p1.active{background:#EFF6FF;border-color:#2563EB;color:#1D4ED8}
+.cr-badge.p2.active{background:#FEF2F2;border-color:#E53935;color:#991B1B}
+.cr-badge.p3.active{background:#F0FDF4;border-color:#16A34A;color:#15803D}
+.cr-badge.p4.active{background:#FEFCE8;border-color:#CA8A04;color:#854D0E}
+.cr-badge.p5.active{background:#F5F3FF;border-color:#7C3AED;color:#6D28D9}
+.cr-badge.p1.active .cr-score{background:#DBEAFE;color:#1D4ED8}
+.cr-badge.p2.active .cr-score{background:#FEE2E2;color:#991B1B}
+.cr-badge.p3.active .cr-score{background:#DCFCE7;color:#15803D}
+.cr-badge.p4.active .cr-score{background:#FEF9C3;color:#854D0E}
+.cr-badge.p5.active .cr-score{background:#EDE9FE;color:#6D28D9}
+.cr-badge.eliminated{opacity:.3;text-decoration:line-through}
+.cr-badge.p2.thinking{animation:tp2 .8s ease-in-out infinite alternate}
+.cr-badge.p3.thinking{animation:tp3 .8s ease-in-out infinite alternate}
+.cr-badge.p4.thinking{animation:tp4 .8s ease-in-out infinite alternate}
+.cr-badge.p5.thinking{animation:tp5 .8s ease-in-out infinite alternate}
+@keyframes tp2{from{background:#FEF2F2;border-color:#FCA5A5}to{background:#FEE2E2;border-color:#E53935}}
+@keyframes tp3{from{background:#F0FDF4;border-color:#86EFAC}to{background:#DCFCE7;border-color:#16A34A}}
+@keyframes tp4{from{background:#FEFCE8;border-color:#FDE047}to{background:#FEF9C3;border-color:#CA8A04}}
+@keyframes tp5{from{background:#F5F3FF;border-color:#C4B5FD}to{background:#EDE9FE;border-color:#7C3AED}}
+.cr-turn{font-size:12px;color:#aaa;text-align:center;margin-bottom:.9rem;min-height:17px}
+#cr-grid{display:grid;justify-content:center}
+#cr-grid[data-size="5"]{grid-template-columns:repeat(5,60px);gap:5px}
+#cr-grid[data-size="7"]{grid-template-columns:repeat(7,46px);gap:3px}
+.cr-cell{background:#e8e8e6;border:1px solid #d4d4d0;border-radius:8px;cursor:default;position:relative;display:flex;align-items:center;justify-content:center;transition:background .18s,border-color .18s,transform .1s}
+#cr-grid[data-size="5"] .cr-cell{width:60px;height:60px}
+#cr-grid[data-size="7"] .cr-cell{width:46px;height:46px}
+.cr-cell.clickable{cursor:pointer}
+.cr-cell.clickable:hover{border-color:#aaa;transform:scale(1.07);z-index:1}
+.cr-cell.clickable:active{transform:scale(.95)}
+.cr-cell.p1{background:#EFF6FF;border-color:#93C5FD;color:#1D4ED8}
+.cr-cell.p2{background:#FEF2F2;border-color:#FCA5A5;color:#991B1B}
+.cr-cell.p3{background:#F0FDF4;border-color:#86EFAC;color:#15803D}
+.cr-cell.p4{background:#FEFCE8;border-color:#FDE047;color:#854D0E}
+.cr-cell.p5{background:#F5F3FF;border-color:#C4B5FD;color:#6D28D9}
+.cr-cell.p1.clickable:hover{border-color:#2563EB}
+.cr-cell.p2.clickable:hover{border-color:#E53935}
+.cr-cell.p3.clickable:hover{border-color:#16A34A}
+.cr-cell.p4.clickable:hover{border-color:#CA8A04}
+.cr-cell.p5.clickable:hover{border-color:#7C3AED}
+.cr-cell.pop{animation:cr-pop .45s cubic-bezier(.36,.07,.19,.97) both !important;z-index:3}
+@keyframes cr-pop{0%{transform:scale(1)}20%{transform:scale(1.28);background:white;border-color:white}60%{transform:scale(.93)}80%{transform:scale(1.06)}100%{transform:scale(1)}}
+.cr-cell.pop::after{content:'';position:absolute;inset:-3px;border:3px solid white;border-radius:11px;opacity:0;animation:cr-burst .45s ease-out;pointer-events:none}
+@keyframes cr-burst{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+.cr-cell svg{width:76%;height:76%;display:block}
+
+/* Normal orb placement: all circles grow in */
+.cr-cell svg:not(.svg-transit) circle{transform-origin:center;animation:orb-grow .3s cubic-bezier(.175,.885,.32,1.275) both}
+.cr-cell svg:not(.svg-transit) circle:nth-child(2){animation-delay:.05s}
+.cr-cell svg:not(.svg-transit) circle:nth-child(3){animation-delay:.1s}
+@keyframes orb-grow{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* Chain arrival: existing orbs hold still, only the new one bounces in */
+.cr-cell .svg-transit circle.existing{animation:none !important}
+.cr-cell .svg-transit circle.new-orb{transform-origin:center;animation:orb-arrive .55s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes orb-arrive{
+  0%  {transform:scale(0);opacity:0}
+  42% {transform:scale(1.55);opacity:1}
+  66% {transform:scale(.82)}
+  85% {transform:scale(1.12)}
+  100%{transform:scale(1);opacity:1}
+}
+
+.splitting-orb{position:absolute;border-radius:50%;border:2.5px solid rgba(255,255,255,.9);box-shadow:0 0 6px rgba(0,0,0,.2);top:50%;left:50%;pointer-events:none;z-index:30}
+#cr-grid[data-size="5"] .splitting-orb{width:20px;height:20px;margin:-10px}
+#cr-grid[data-size="7"] .splitting-orb{width:15px;height:15px;margin:-7.5px}
+#cr-grid[data-size="5"] .orb-up{animation:sup5 .48s cubic-bezier(.3,.7,.4,1) forwards}
+#cr-grid[data-size="5"] .orb-down{animation:sdown5 .48s cubic-bezier(.3,.7,.4,1) forwards}
+#cr-grid[data-size="5"] .orb-left{animation:sleft5 .48s cubic-bezier(.3,.7,.4,1) forwards}
+#cr-grid[data-size="5"] .orb-right{animation:sright5 .48s cubic-bezier(.3,.7,.4,1) forwards}
+@keyframes sup5  {0%{transform:translateY(0)scale(1.1);opacity:1}84%{transform:translateY(-62px)scale(1);opacity:1}100%{transform:translateY(-65px)scale(.1);opacity:0}}
+@keyframes sdown5{0%{transform:translateY(0)scale(1.1);opacity:1}84%{transform:translateY(62px)scale(1);opacity:1}100%{transform:translateY(65px)scale(.1);opacity:0}}
+@keyframes sleft5{0%{transform:translateX(0)scale(1.1);opacity:1}84%{transform:translateX(-62px)scale(1);opacity:1}100%{transform:translateX(-65px)scale(.1);opacity:0}}
+@keyframes sright5{0%{transform:translateX(0)scale(1.1);opacity:1}84%{transform:translateX(62px)scale(1);opacity:1}100%{transform:translateX(65px)scale(.1);opacity:0}}
+#cr-grid[data-size="7"] .orb-up{animation:sup7 .48s cubic-bezier(.3,.7,.4,1) forwards}
+#cr-grid[data-size="7"] .orb-down{animation:sdown7 .48s cubic-bezier(.3,.7,.4,1) forwards}
+#cr-grid[data-size="7"] .orb-left{animation:sleft7 .48s cubic-bezier(.3,.7,.4,1) forwards}
+#cr-grid[data-size="7"] .orb-right{animation:sright7 .48s cubic-bezier(.3,.7,.4,1) forwards}
+@keyframes sup7  {0%{transform:translateY(0)scale(1.1);opacity:1}84%{transform:translateY(-47px)scale(1);opacity:1}100%{transform:translateY(-49px)scale(.1);opacity:0}}
+@keyframes sdown7{0%{transform:translateY(0)scale(1.1);opacity:1}84%{transform:translateY(47px)scale(1);opacity:1}100%{transform:translateY(49px)scale(.1);opacity:0}}
+@keyframes sleft7{0%{transform:translateX(0)scale(1.1);opacity:1}84%{transform:translateX(-47px)scale(1);opacity:1}100%{transform:translateX(-49px)scale(.1);opacity:0}}
+@keyframes sright7{0%{transform:translateX(0)scale(1.1);opacity:1}84%{transform:translateX(47px)scale(1);opacity:1}100%{transform:translateX(49px)scale(.1);opacity:0}}
+
+.cr-cap-dots{position:absolute;inset:0;pointer-events:none;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;gap:2.5px}
+.cr-cap-dot{width:4px;height:4px;border-radius:50%;background:#c8c8c4;opacity:.5}
+.cr-footer{text-align:center;margin-top:1.25rem;display:flex;justify-content:center;gap:8px}
+.cr-footer button{padding:7px 18px;border-radius:8px;border:1px solid #ccc;background:white;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+.cr-footer button:hover{background:#f0f0ee}
+.cr-hint{font-size:11px;color:#aaa;margin-top:8px;text-align:center;min-height:16px}
+
+@media(prefers-color-scheme:dark){
+  body{background:#1a1a18}
+  .setup-title{color:#eee} .setup-sub{color:#666}
+  .pcount-row{border-color:#3a3a38}
+  .pcount-btn{background:#2a2a28;border-right-color:#3a3a38;color:#666}
+  .pcount-btn.active{background:#eee;color:#1a1a18}
+  .pcount-btn:hover:not(.active){background:#333;color:#bbb}
+  .diff-btn-sm{background:#2a2a28;border-color:#3a3a38;color:#555}
+  .diff-btn-sm.active.easy{background:#063822;border-color:#1FAB6E;color:#5DCAA5}
+  .diff-btn-sm.active.medium{background:#412402;border-color:#BA7517;color:#EF9F27}
+  .diff-btn-sm.active.hard{background:#4A1B0C;border-color:#D85A30;color:#F09975}
+  .robot-card{background:#2a2a28;border-color:#3a3a38}
+  .robot-card-title{color:#ccc} .robot-card-sub{color:#666}
+  .robot-card.on{background:#4A1B0C;border-color:#D85A30}
+  .robot-card.on .robot-card-title{color:#F5C4B3} .robot-card.on .robot-card-sub{color:#F09975}
+  .toggle-sw .track{background:#444}
+  #setup-start{background:#eee;color:#1a1a18}
+  #setup-start:disabled{opacity:.15}
+  .cr-badge{border-color:#444;color:#555} .cr-score{background:#333;color:#555}
+  .cr-turn{color:#555}
+  .cr-cell{background:#2a2a28;border-color:#3a3a38} .cr-cap-dot{background:#4a4a48}
+  .cr-cell.p1{background:#1E3A5F;border-color:#2563EB;color:#93C5FD}
+  .cr-cell.p2{background:#7F1D1D;border-color:#E53935;color:#FCA5A5}
+  .cr-cell.p3{background:#14532D;border-color:#16A34A;color:#86EFAC}
+  .cr-cell.p4{background:#713F12;border-color:#CA8A04;color:#FDE047}
+  .cr-cell.p5{background:#2E1065;border-color:#7C3AED;color:#C4B5FD}
+  .cr-badge.p1.active{background:#1E3A5F;border-color:#2563EB;color:#93C5FD}
+  .cr-badge.p2.active{background:#7F1D1D;border-color:#E53935;color:#FCA5A5}
+  .cr-badge.p3.active{background:#14532D;border-color:#16A34A;color:#86EFAC}
+  .cr-badge.p4.active{background:#713F12;border-color:#CA8A04;color:#FDE047}
+  .cr-badge.p5.active{background:#2E1065;border-color:#7C3AED;color:#C4B5FD}
+  .cr-badge.p1.active .cr-score{background:#1D4ED8;color:#DBEAFE}
+  .cr-badge.p2.active .cr-score{background:#991B1B;color:#FEE2E2}
+  .cr-badge.p3.active .cr-score{background:#15803D;color:#DCFCE7}
+  .cr-badge.p4.active .cr-score{background:#854D0E;color:#FEF9C3}
+  .cr-badge.p5.active .cr-score{background:#6D28D9;color:#EDE9FE}
+  #cr-banner.p1{background:#1E3A5F;border-color:#2563EB;color:#93C5FD}
+  #cr-banner.p2{background:#7F1D1D;border-color:#E53935;color:#FCA5A5}
+  #cr-banner.p3{background:#14532D;border-color:#16A34A;color:#86EFAC}
+  #cr-banner.p4{background:#713F12;border-color:#CA8A04;color:#FDE047}
+  #cr-banner.p5{background:#2E1065;border-color:#7C3AED;color:#C4B5FD}
+  .cr-footer button{background:#2a2a28;border-color:#444;color:#ccc}
+  .cr-footer button:hover{background:#333}
+  @keyframes tp2{from{background:#7F1D1D;border-color:#991B1B}to{background:#991B1B;border-color:#E53935}}
+  @keyframes tp3{from{background:#14532D;border-color:#15803D}to{background:#15803D;border-color:#16A34A}}
+  @keyframes tp4{from{background:#713F12;border-color:#854D0E}to{background:#854D0E;border-color:#CA8A04}}
+  @keyframes tp5{from{background:#2E1065;border-color:#4C1D95}to{background:#4C1D95;border-color:#7C3AED}}
+}
+</style>
+</head>
+<body>
+<div id="cr-setup">
+  <div class="setup-robot">
+    <svg width="42" height="42" viewBox="0 0 44 44" fill="none">
+      <line x1="22" y1="4" x2="22" y2="10" stroke="#D85A30" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="22" cy="3" r="2.8" fill="#D85A30"/>
+      <rect x="9" y="10" width="26" height="17" rx="5.5" fill="#D85A30"/>
+      <circle cx="17" cy="19" r="3.2" fill="white"/><circle cx="27" cy="19" r="3.2" fill="white"/>
+      <circle cx="17" cy="19" r="1.6" fill="#993C1D"/><circle cx="27" cy="19" r="1.6" fill="#993C1D"/>
+      <rect x="15" y="24" width="14" height="2.2" rx="1.1" fill="white" opacity=".5"/>
+      <rect x="14" y="29" width="16" height="12" rx="4.5" fill="#D85A30"/>
+      <circle cx="22" cy="35.5" r="2.5" fill="white" opacity=".45"/>
+      <rect x="5" y="30" width="7" height="10" rx="3.5" fill="#D85A30"/>
+      <rect x="32" y="30" width="7" height="10" rx="3.5" fill="#D85A30"/>
+    </svg>
+  </div>
+  <div class="setup-title">Chain Reaction</div>
+  <div class="setup-sub">Place orbs. Trigger explosions. Last player standing wins.</div>
+  <div class="setup-section">
+    <div class="setup-label">Human Players</div>
+    <div class="pcount-row">
+      <button class="pcount-btn active" onclick="setHumanCount(1)">1</button>
+      <button class="pcount-btn" onclick="setHumanCount(2)">2</button>
+      <button class="pcount-btn" onclick="setHumanCount(3)">3</button>
+      <button class="pcount-btn" onclick="setHumanCount(4)">4</button>
+    </div>
+  </div>
+  <div id="player-preview" class="player-preview"></div>
+  <div id="setup-config" class="setup-section"></div>
+  <button id="setup-start" disabled onclick="startGame()">Start Game →</button>
+</div>
+
+<div id="cr-game">
+  <div id="cr-banner"></div>
+  <div id="cr-badges"></div>
+  <div class="cr-turn" id="cr-turn-line"></div>
+  <div id="cr-grid"></div>
+  <div class="cr-footer">
+    <button onclick="backToSetup()">← Setup</button>
+    <button onclick="restartCR()">New Game</button>
+  </div>
+  <div class="cr-hint" id="cr-hint"></div>
+</div>
+
+<script>
+const ORB_COLOR={1:'#2563EB',2:'#E53935',3:'#16A34A',4:'#CA8A04',5:'#7C3AED'};
+const DOTS={1:[[50,50]],2:[[32,33],[68,67]],3:[[50,22],[28,72],[72,72]]};
+const ROBOT_SVG=`<svg class="ricon" viewBox="0 0 14 14" fill="none">
+  <line x1="7" y1=".8" x2="7" y2="3.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+  <circle cx="7" cy=".5" r=".9" fill="currentColor"/>
+  <rect x="2.5" y="3.2" width="9" height="6" rx="2" fill="currentColor" opacity=".9"/>
+  <circle cx="5" cy="6.2" r="1.1" fill="white" opacity=".9"/>
+  <circle cx="9" cy="6.2" r="1.1" fill="white" opacity=".9"/>
+  <rect x="4" y="9.5" width="6" height="4" rx="1.6" fill="currentColor" opacity=".85"/>
+  <rect x="1" y="10" width="2.5" height="3.2" rx="1.2" fill="currentColor" opacity=".75"/>
+  <rect x="10.5" y="10" width="2.5" height="3.2" rx="1.2" fill="currentColor" opacity=".75"/>
+</svg>`;
+
+/* ── SETUP ── */
+let humanCount=1,robotEnabled=true,robotDiff=null;
+
+function setHumanCount(n){
+  humanCount=n;
+  document.querySelectorAll('.pcount-btn').forEach((b,i)=>b.classList.toggle('active',i+1===n));
+  if(n===1) robotEnabled=true;
+  updateSetupConfig();updatePlayerPreview();updateStartBtn();
+}
+function toggleRobot(){
+  if(humanCount===1) return;
+  robotEnabled=!robotEnabled;
+  if(!robotEnabled) robotDiff=null;
+  updateSetupConfig();updatePlayerPreview();updateStartBtn();
+}
+function selectDiff(d){
+  robotDiff=d;
+  document.querySelectorAll('.diff-btn-sm').forEach(b=>b.classList.toggle('active',b.dataset.d===d));
+  updateStartBtn();
+}
+function updateStartBtn(){
+  document.getElementById('setup-start').disabled=!(humanCount>0&&(!robotEnabled||robotDiff));
+}
+function updatePlayerPreview(){
+  let h='';
+  for(let i=1;i<=humanCount;i++)
+    h+=`<div class="pp-badge p${i}"><div class="pp-dot p${i}"></div>${i===1?'You':'P'+i}</div>`;
+  if(robotEnabled){const rid=humanCount+1;h+=`<div class="pp-badge p${rid}"><div class="pp-dot p${rid}"></div>Robot</div>`;}
+  document.getElementById('player-preview').innerHTML=h;
+}
+function diffBtns(sel){
+  return `<div class="diff-row">
+    <button class="diff-btn-sm easy${sel==='easy'?' active':''}" data-d="easy" onclick="selectDiff('easy')">🟢 Easy</button>
+    <button class="diff-btn-sm medium${sel==='medium'?' active':''}" data-d="medium" onclick="selectDiff('medium')">🟡 Medium</button>
+    <button class="diff-btn-sm hard${sel==='hard'?' active':''}" data-d="hard" onclick="selectDiff('hard')">🔴 Hard</button>
+  </div>`;
+}
+function updateSetupConfig(){
+  const el=document.getElementById('setup-config');
+  if(humanCount===1){
+    el.innerHTML=`<div class="setup-label">Robot Difficulty</div>${diffBtns(robotDiff)}`;
+  } else {
+    const ricon=`<svg width="26" height="26" viewBox="0 0 44 44" fill="none" style="flex-shrink:0;color:${robotEnabled?'#D85A30':'#aaa'}">
+      <line x1="22" y1="4" x2="22" y2="10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="22" cy="3" r="2.8" fill="currentColor"/>
+      <rect x="9" y="10" width="26" height="17" rx="5.5" fill="currentColor" opacity=".9"/>
+      <circle cx="17" cy="19" r="3.2" fill="white"/><circle cx="27" cy="19" r="3.2" fill="white"/>
+      <circle cx="17" cy="19" r="1.6" fill="${robotEnabled?'#712B13':'#ccc'}"/>
+      <circle cx="27" cy="19" r="1.6" fill="${robotEnabled?'#712B13':'#ccc'}"/>
+      <rect x="14" y="29" width="16" height="12" rx="4.5" fill="currentColor" opacity=".85"/>
+      <rect x="5" y="30" width="7" height="10" rx="3.5" fill="currentColor" opacity=".75"/>
+      <rect x="32" y="30" width="7" height="10" rx="3.5" fill="currentColor" opacity=".75"/>
+    </svg>`;
+    el.innerHTML=`
+      <div class="robot-card${robotEnabled?' on':''}" onclick="toggleRobot()">
+        ${ricon}
+        <div class="robot-card-text">
+          <div class="robot-card-title">Add Robot</div>
+          <div class="robot-card-sub">${robotEnabled?'Robot is joining the game':'Optional AI opponent'}</div>
+        </div>
+        <label class="toggle-sw" onclick="event.stopPropagation()">
+          <input type="checkbox"${robotEnabled?' checked':''} onchange="toggleRobot()">
+          <div class="track"></div><div class="knob"></div>
+        </label>
+      </div>
+      ${robotEnabled?`<div style="margin-top:10px">${diffBtns(robotDiff)}</div>`:''}`;
+  }
+}
+
+/* ── GAME STATE ── */
+let R,C,board,players,currentPlayerIdx,placed,eliminated,over,isAnimating,aiTimer,stepPlayer;
+
+/* ── BOARD HELPERS ── */
+function lim(){return 4}  /* fixed 4 everywhere */
+function clone(b){return b.map(r=>r.map(c=>({...c})))}
+function tally(b){const t={};b.forEach(r=>r.forEach(({p})=>{if(p>0)t[p]=(t[p]||0)+1}));return t}
+function processBoardMove(b,r,c,pl){
+  let q=[[r,c]],g=0;
+  while(q.length&&g++<3000){
+    const nq=[];
+    q.forEach(([qr,qc])=>{b[qr][qc].n++;b[qr][qc].p=pl});
+    for(let i=0;i<R;i++) for(let j=0;j<C;j++){
+      if(b[i][j].n>=lim()){
+        b[i][j].n=0;b[i][j].p=0;
+        [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{
+          const nr=i+dr,nc=j+dc;
+          if(nr>=0&&nr<R&&nc>=0&&nc<C)nq.push([nr,nc]);
+        });
+      }
+    }
+    q=nq;
+  }
+}
+
+/* ── SVG HELPERS ── */
+function svgDots(n){
+  const p=DOTS[n];if(!p)return'';
+  return`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${p.map(([cx,cy])=>`<circle cx="${cx}" cy="${cy}" r="14" fill="currentColor"/>`).join('')}</svg>`;
+}
+/* Chain arrival: existing orbs keep their circle class="existing" (no animation),
+   new orbs get class="new-orb" and bounce in — so the COUNT CHANGE is clearly visible */
+function svgDotsLanding(n,prevN){
+  const p=DOTS[n];if(!p)return'';
+  return`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="svg-transit">${
+    p.map(([cx,cy],i)=>{
+      if(i<prevN) return`<circle cx="${cx}" cy="${cy}" r="14" fill="currentColor" class="existing"/>`;
+      const d=(i-prevN)*.09;
+      return`<circle cx="${cx}" cy="${cy}" r="14" fill="currentColor" class="new-orb" style="animation-delay:${d}s"/>`;
+    }).join('')
+  }</svg>`;
+}
+function capDots(){
+  return`<div class="cr-cap-dots">${'<div class="cr-cap-dot"></div>'.repeat(4)}</div>`;
+}
+
+/* ── AI ── */
+function cheapHeuristic(b,r,c,pl){
+  const cell=b[r][c],L=lim();let s=cell.n*10;
+  if(cell.n===L-1)s+=60;if(cell.n===L-2)s+=20;
+  [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{
+    const nr=r+dr,nc=c+dc;
+    if(nr<0||nr>=R||nc<0||nc>=C)return;
+    const nb=b[nr][nc],nl=lim();
+    if(nb.p&&nb.p!==pl){s+=14;if(nb.n===nl-1)s+=35;if(nb.n===nl-2)s+=12}
+    if(nb.p===pl&&nb.n===nl-1)s+=10;
+  });
+  return s;
+}
+function getCandidates(b,pl,plPl,maxN){
+  const mv=[];
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++){
+    const cell=b[r][c];
+    if(plPl?cell.p!==pl:(cell.p!==0&&cell.p!==pl))continue;
+    mv.push({r,c,s:cheapHeuristic(b,r,c,pl)});
+  }
+  mv.sort((a,z)=>z.s-a.s);return mv.slice(0,maxN);
+}
+function evalBoard(b,rId){
+  const t=tally(b),my=t[rId]||0;
+  const oth=Object.entries(t).filter(([id])=>+id!==rId).reduce((s,[,v])=>s+v,0);
+  const nPl=players.filter(p=>placed[p.id]).length;
+  if(nPl>=2&&my===0)return-100000;
+  if(nPl>=2&&oth===0)return 100000;
+  let score=(my-oth)*14;
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++){
+    const cell=b[r][c];if(!cell.p||!cell.n)continue;
+    const L=lim(),sign=cell.p===rId?1:-1;
+    score+=sign*cell.n*3;
+    if(cell.n===L-1){score+=sign*28;[[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<R&&nc>=0&&nc<C&&b[nr][nc].p&&b[nr][nc].p!==cell.p)score+=sign*35})}
+    if(cell.n===L-2)score+=sign*10;
+  }
+  return score;
+}
+function minimaxAB(b,depth,alpha,beta,isMax,rId,p1pl,rPl){
+  const t=tally(b),rc=t[rId]||0,oc=Object.values(t).reduce((s,v)=>s+v,0)-rc;
+  if(p1pl&&rPl){if(rc===0)return-100000+depth*500;if(oc===0)return 100000-depth*500}
+  if(depth===0)return evalBoard(b,rId);
+  const pl=isMax?rId:1,plPl=isMax?rPl:p1pl;
+  const cands=getCandidates(b,pl,plPl,depth>=3?9:depth===2?12:15);
+  if(!cands.length)return evalBoard(b,rId);
+  if(isMax){
+    let best=-Infinity;
+    for(const{r,c}of cands){const nb=clone(b);processBoardMove(nb,r,c,rId);const v=minimaxAB(nb,depth-1,alpha,beta,false,rId,p1pl,true);if(v>best)best=v;if(best>alpha)alpha=best;if(beta<=alpha)break}
+    return best;
+  } else {
+    let best=Infinity;
+    for(const{r,c}of cands){const nb=clone(b);processBoardMove(nb,r,c,1);const v=minimaxAB(nb,depth-1,alpha,beta,true,rId,true,rPl);if(v<best)best=v;if(best<beta)beta=best;if(beta<=alpha)break}
+    return best;
+  }
+}
+function simPlace(b,r,c,pl,isFirst){
+  const n=isFirst?3:1;
+  for(let i=0;i<n;i++)processBoardMove(b,r,c,pl);
+}
+function pickAI(){
+  const robot=players.find(p=>p.isRobot);if(!robot)return null;
+  const rId=robot.id,diff=robot.difficulty,rPl=placed[rId],total=players.length;
+  if(diff==='easy'){
+    const cells=[];
+    for(let r=0;r<R;r++)for(let c=0;c<C;c++){const d=board[r][c];if(rPl?d.p===rId:(d.p===0||d.p===rId))cells.push([r,c])}
+    return cells.length?cells[Math.floor(Math.random()*cells.length)]:null;
+  }
+  const cands=getCandidates(board,rId,rPl,total>2?16:20);
+  if(!cands.length)return null;
+  const p1Pl=placed[1]||false;
+  // Instant win check
+  for(const{r,c}of cands){
+    const nb=clone(board);simPlace(nb,r,c,rId,!rPl);
+    const t=tally(nb),my=t[rId]||0,oth=Object.values(t).reduce((s,v)=>s+v,0)-my;
+    if(p1Pl&&my>0&&oth===0)return[r,c];
+  }
+  if(diff==='medium'||total>2){
+    let best=-Infinity,bm=[cands[0].r,cands[0].c];
+    for(const{r,c}of cands){
+      const nb=clone(board);simPlace(nb,r,c,rId,!rPl);
+      const hId=players.find(p=>!p.isRobot)?.id||1;
+      const opp=getCandidates(nb,hId,placed[hId]||false,12);
+      let worst=Infinity;
+      if(!opp.length)worst=evalBoard(nb,rId);
+      else for(const{r:or,c:oc}of opp){const nb2=clone(nb);simPlace(nb2,or,oc,hId,!placed[hId]);const v=evalBoard(nb2,rId);if(v<worst)worst=v}
+      if(worst>best){best=worst;bm=[r,c]}
+    }
+    return bm;
+  }
+  // Hard 2p: depth-4 minimax
+  const hc=getCandidates(board,rId,rPl,14);
+  let best=-Infinity,bm=[hc[0].r,hc[0].c];
+  for(const{r,c}of hc){
+    const nb=clone(board);simPlace(nb,r,c,rId,!rPl);
+    const v=minimaxAB(nb,3,-Infinity,Infinity,false,rId,p1Pl,true)+Math.random()*.4;
+    if(v>best){best=v;bm=[r,c]}
+  }
+  return bm;
+}
+
+/* ── RENDERING ── */
+function buildGrid(){
+  const g=document.getElementById('cr-grid');
+  g.innerHTML='';g.setAttribute('data-size',R);
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++){
+    const el=document.createElement('div');
+    el.className='cr-cell';el.dataset.r=r;el.dataset.c=c;
+    el.innerHTML=capDots()+`<div id="ci-${r}-${c}" data-dots="0" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"></div>`;
+    el.onclick=()=>handleClick(r,c);
+    g.appendChild(el);
+  }
+}
+function buildBadges(){
+  const con=document.getElementById('cr-badges');con.innerHTML='';
+  players.forEach(p=>{
+    const b=document.createElement('div');
+    b.id=`badge-${p.id}`;b.className=`cr-badge p${p.id}`;
+    b.innerHTML=p.isRobot
+      ?`${ROBOT_SVG}<span>Robot</span><span class="cr-score" id="score-${p.id}">0</span>`
+      :`<div class="cr-pip"></div><span>${p.name}</span><span class="cr-score" id="score-${p.id}">0</span>`;
+    con.appendChild(b);
+  });
+}
+function updateHeader(){
+  const t=tally(board);
+  players.forEach(p=>{
+    const se=document.getElementById(`score-${p.id}`);if(se)se.textContent=t[p.id]||0;
+    const b=document.getElementById(`badge-${p.id}`);
+    if(b){b.classList.toggle('active',players[currentPlayerIdx]?.id===p.id&&!over);b.classList.toggle('eliminated',eliminated.has(p.id))}
+  });
+  if(!over){
+    const cur=players[currentPlayerIdx];
+    document.getElementById('cr-turn-line').textContent=cur?.isRobot?'Robot is thinking…':(cur?.id===1?'Your turn':`${cur?.name}'s turn`);
+    const hl=document.getElementById('cr-hint');
+    if(hl&&cur&&!cur.isRobot)
+      hl.textContent=placed[cur.id]
+        ?`Click one of ${cur.id===1?'your':cur.name+"'s"} cells`
+        :`${cur.id===1?'Click any':'P'+cur.id+': click any'} empty cell to place 3 orbs`;
+  }
+}
+function renderState({prevCounts,isChain,pop}={}){
+  document.querySelectorAll('.cr-cell').forEach(el=>{
+    const r=+el.dataset.r,c=+el.dataset.c,d=board[r][c],key=`${r},${c}`;
+    el.classList.remove('p1','p2','p3','p4','p5');
+    if(d.p>0)el.classList.add(`p${d.p}`);
+    if(pop&&pop.has(key)){el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),450)}
+    const cur=players[currentPlayerIdx];
+    const ok=!over&&!isAnimating&&cur&&!cur.isRobot&&(placed[cur.id]?d.p===cur.id:(d.p===0||d.p===cur.id));
+    el.classList.toggle('clickable',ok);
+    const inn=document.getElementById(`ci-${r}-${c}`);if(!inn)return;
+    const domN=parseInt(inn.getAttribute('data-dots')||'0');
+    if(domN===d.n)return;
+    const prev=prevCounts?prevCounts[key]:undefined;
+    /* KEY ANIMATION LOGIC:
+       - isChain + prev>0: existing orbs stay still (class=existing → animation:none),
+         only the new orb bounces in (class=new-orb → orb-arrive keyframe).
+         User sees exactly which orb was added without obscuring the existing ones.
+       - Otherwise: all orbs grow in normally */
+    const landing=isChain&&prev!==undefined&&prev>0&&d.n>0;
+    inn.innerHTML=d.n===0?'':(landing?svgDotsLanding(d.n,prev):svgDots(d.n));
+    inn.setAttribute('data-dots',d.n);
+  });
+  updateHeader();
+}
+function createSplittingOrbs(r,c,pl){
+  const cell=document.querySelector(`.cr-cell[data-r="${r}"][data-c="${c}"]`);if(!cell)return;
+  const color=ORB_COLOR[pl];
+  [['up',-1,0],['down',1,0],['left',0,-1],['right',0,1]].forEach(([dir,dr,dc])=>{
+    const nr=r+dr,nc=c+dc;
+    if(nr<0||nr>=R||nc<0||nc>=C)return;
+    const orb=document.createElement('div');
+    orb.className=`splitting-orb orb-${dir}`;orb.style.background=color;
+    cell.appendChild(orb);setTimeout(()=>orb.remove(),520);
+  });
+}
+
+/* ── GAME LOGIC ── */
+function handleClick(r,c){
+  if(over||isAnimating)return;
+  const cur=players[currentPlayerIdx];if(!cur||cur.isRobot)return;
+  const d=board[r][c];
+  if(placed[cur.id]?d.p!==cur.id:(d.p!==0&&d.p!==cur.id))return;
+  applyMove(r,c,cur.id);
+}
+function applyMove(r,c,playerId){
+  if(over||isAnimating)return;
+  const isFirst=!placed[playerId];
+  placed[playerId]=true;isAnimating=true;stepPlayer=playerId;
+  /* First placement puts down 3 orbs at once to save time */
+  step(isFirst?[{r,c},{r,c},{r,c}]:[{r,c}],false);
+}
+function step(incomingCells,isChain){
+  if(!incomingCells||!incomingCells.length){endTurn();return}
+  const pl=stepPlayer;
+  const prevCounts={};
+  incomingCells.forEach(({r,c})=>{const k=`${r},${c}`;if(!(k in prevCounts))prevCounts[k]=board[r][c].n});
+  incomingCells.forEach(({r,c})=>{board[r][c].n++;board[r][c].p=pl});
+  renderState({prevCounts,isChain,pop:null});
+  /* Pause long enough that the orb-arrive animation (~0.55s) is clearly visible
+     before checking if the cell explodes */
+  setTimeout(()=>{
+    if(over)return;
+    const seen=new Set(),toExplode=[];
+    incomingCells.forEach(({r,c})=>{
+      const k=`${r},${c}`;
+      if(!seen.has(k)&&board[r][c].n>=lim()){seen.add(k);toExplode.push({r,c})}
+    });
+    if(!toExplode.length){endTurn();return}
+    const nextCells=[],poppedSet=new Set();
+    toExplode.forEach(({r,c})=>{
+      poppedSet.add(`${r},${c}`);
+      createSplittingOrbs(r,c,pl);
+      board[r][c].n=0;board[r][c].p=0;
+      [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{
+        const nr=r+dr,nc=c+dc;
+        if(nr>=0&&nr<R&&nc>=0&&nc<C)nextCells.push({r:nr,c:nc});
+      });
+    });
+    renderState({pop:poppedSet});
+    setTimeout(()=>{if(!over)step(nextCells,true)},480);
+  }, isChain?280:80);
+}
+function endTurn(){
+  const nPl=players.filter(p=>placed[p.id]).length;
+  if(nPl>=2){
+    const t=tally(board);
+    players.forEach(p=>{if(placed[p.id]&&!eliminated.has(p.id)&&!(t[p.id]||0))eliminated.add(p.id)});
+    const active=players.filter(p=>!eliminated.has(p.id));
+    if(active.length<=1){
+      over=true;isAnimating=false;
+      const ban=document.getElementById('cr-banner');ban.style.display='block';
+      if(active.length===1){const w=active[0];ban.className=`p${w.id}`;ban.textContent=w.id===1?'You win! 🎉':`${w.name} wins!`}
+      else{ban.className='p1';ban.textContent="It's a draw!"}
+      document.getElementById('cr-turn-line').textContent='';
+      document.getElementById('cr-hint').textContent='';
+      document.querySelectorAll('.cr-badge').forEach(b=>b.classList.remove('active','thinking'));
+      document.querySelectorAll('.cr-cell').forEach(el=>el.classList.remove('clickable'));
+      updateHeader();return;
+    }
+  }
+  let ni=currentPlayerIdx;
+  for(let i=0;i<players.length;i++){ni=(ni+1)%players.length;if(!eliminated.has(players[ni].id))break}
+  currentPlayerIdx=ni;isAnimating=false;
+  renderState({});
+  if(players[currentPlayerIdx]?.isRobot)scheduleAI();
+}
+function scheduleAI(){
+  const robot=players.find(p=>p.isRobot);if(!robot)return;
+  const delay={easy:420,medium:650,hard:980}[robot.difficulty]||600;
+  const b=document.getElementById(`badge-${robot.id}`);
+  if(b)b.classList.add('thinking');
+  document.getElementById('cr-turn-line').textContent='Robot is thinking…';
+  aiTimer=setTimeout(()=>{
+    if(b)b.classList.remove('thinking');
+    if(over)return;
+    const mv=pickAI();if(mv)applyMove(mv[0],mv[1],robot.id);
+  },delay);
+}
+
+/* ── START / RESTART ── */
+function startGame(){
+  const total=humanCount+(robotEnabled?1:0);
+  R=C=total<=2?5:7;
+  players=[];
+  for(let i=0;i<humanCount;i++)players.push({id:i+1,name:i===0?'You':'P'+(i+1),isRobot:false});
+  if(robotEnabled){const rid=humanCount+1;players.push({id:rid,name:'Robot',isRobot:true,difficulty:robotDiff})}
+  document.getElementById('cr-setup').style.display='none';
+  document.getElementById('cr-game').style.display='block';
+  restartCR();
+}
+function restartCR(){
+  clearTimeout(aiTimer);
+  board=Array.from({length:R},()=>Array.from({length:C},()=>({n:0,p:0})));
+  currentPlayerIdx=0;placed={};players.forEach(p=>placed[p.id]=false);
+  eliminated=new Set();over=false;isAnimating=false;
+  document.getElementById('cr-banner').style.display='none';
+  document.getElementById('cr-banner').className='';
+  buildBadges();buildGrid();renderState({});
+  document.getElementById('cr-hint').textContent='Click any cell to place your first 3 orbs';
+  document.getElementById('cr-turn-line').textContent='Your turn';
+}
+function backToSetup(){
+  clearTimeout(aiTimer);
+  document.getElementById('cr-game').style.display='none';
+  document.getElementById('cr-setup').style.display='block';
+}
+setHumanCount(1);
+</script>
+</body>
+</html>
