@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Google Whirlybird - Ultimate Edition</title>
+    <style>
+        body {
+            margin: 0; padding: 0; background-color: #2b2b2b;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden;
+        }
+        #game-wrapper {
+            position: relative; width: 400px; height: 600px;
+            background-color: #000; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 10px; overflow: hidden;
+        }
+        canvas { display: block; }
+        #ui-layer {
+            position: absolute; top: 15px; left: 15px; font-size: 24px;
+            font-weight: bold; color: #333; pointer-events: none;
+            display: flex; flex-direction: column; gap: 5px; z-index: 5;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+        .rocket-alert {
+            color: #FF5722; font-size: 14px; animation: blink 0.5s infinite alternate;
+            display: none; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+        @keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
+        
+        .overlay-screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); display: flex;
+            flex-direction: column; justify-content: center; align-items: center; 
+            color: white; z-index: 10;
+        }
+        #game-over-screen { display: none; }
+        
+        h1 { margin: 0 0 10px 0; font-size: 38px; color: #A4C639; text-align: center; }
+        p { font-size: 18px; margin: 0 0 20px 0; text-align: center; color: #ccc;}
+        button {
+            padding: 12px 28px; font-size: 18px; cursor: pointer;
+            background: #A4C639; border: none; border-radius: 8px; font-weight: bold;
+            color: #222; transition: transform 0.1s;
+        }
+        button:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    
+    <div id="ui-layer">
+        <div>Score: <span id="scoreText">0</span></div>
+        <div id="rocketStatus" class="rocket-alert">🚀 ROCKET BOOST ACTIVE!</div>
+    </div>
+    
+    <div id="start-screen" class="overlay-screen">
+        <h1>WHIRLYBIRD</h1>
+        <p>Left/Right Arrows or A/D to move.<br><br>Climb high, avoid spiked mines!</p>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="game-over-screen" class="overlay-screen">
+        <h1 style="color: #FF5722;">GAME OVER</h1>
+        <p>Final Score: <span id="finalScoreText">0</span></p>
+        <button onclick="startGame()">Fly Again (Or press any key)</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    
+    let animationId, isGameOver = false;
+    let score = 0, worldScrollY = 0, coinScore = 0; 
+    let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
+    let particles = [];
+    
+    // Environmental variables
+    let dayNightTimer = -Math.PI / 2; // Starts exactly at day
+    const DAY_NIGHT_SPEED = 0.0005; 
+    const FOG_INCREASE_RATE = 0.00002; // Reduced by 50% from original
+    const MAX_FOG_OPACITY = 0.85; 
+    
+    let audioCtx;
+
+    document.addEventListener("keydown", (e) => { 
+        // Allow pressing any key to restart when dead
+        if (isGameOver) {
+            startGame();
+            return;
+        }
+        if (keys.hasOwnProperty(e.key)) keys[e.key] = true; 
+    });
+    
+    document.addEventListener("keyup", (e) => { 
+        if (keys.hasOwnProperty(e.key)) keys[e.key] = false; 
+    });
+
+    const player = {
+        x: 0, y: 0, width: 30, height: 30,
+        dx: 0, dy: 0, speed: 6, gravity: 0.3,
+        jumpPower: -9, springPower: -16,
+        isRocketing: false, rocketTimer: 0
+    };
+
+    let platforms = [];
+    let hazards = []; 
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        
+        if (type === 'bounce') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(330, now);
+            osc.frequency.setValueAtTime(440, now + 0.05);
+            osc.frequency.setValueAtTime(554, now + 0.1);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now); osc.stop(now + 0.15);
+        } else if (type === 'broken') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.setValueAtTime(150, now + 0.05);
+            osc.frequency.setValueAtTime(120, now + 0.1);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now); osc.stop(now + 0.15);
+        } else if (type === 'spring') {
+            osc.type = 'square';
+            const freqs = [440, 554, 659, 880, 1108, 1318];
+            freqs.forEach((f, i) => osc.frequency.setValueAtTime(f, now + i * 0.05));
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
+        } else if (type === 'coin') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.setValueAtTime(1760, now + 0.08);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now); osc.stop(now + 0.2);
+        } else if (type === 'spike') {
+            osc.type = 'sawtooth';
+            const freqs = [200, 190, 150, 145, 100, 95, 50, 45];
+            freqs.forEach((f, i) => osc.frequency.setValueAtTime(f, now + i * 0.05));
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+            osc.start(now); osc.stop(now + 0.4);
+        } else if (type === 'rocket') {
+            osc.type = 'triangle';
+            for (let i = 0; i < 50; i++) {
+                osc.frequency.setValueAtTime(150 + Math.random() * 100, now + i * 0.05);
+            }
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0.05, now + 2.0); 
+            gain.gain.linearRampToValueAtTime(0.01, now + 2.5);
+            osc.start(now); osc.stop(now + 2.5);
+        }
+    }
+
+    function checkRectCircleCollision(rect, circle) {
+        let closestX = Math.max(rect.x, Math.min(circle.x, rect.x + rect.width));
+        let closestY = Math.max(rect.y, Math.min(circle.y, rect.y + rect.height));
+
+        let distanceX = circle.x - closestX;
+        let distanceY = circle.y - closestY;
+
+        let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+        return distanceSquared < (circle.radius * circle.radius);
+    }
+
+    function spawnHazard(yLevel) {
+        let attempts = 0;
+        let spawned = false;
+        
+        while (!spawned && attempts < 10) {
+            let hX = Math.random() * (canvas.width - 40) + 20;
+            let hY = yLevel - Math.random() * 20; 
+            
+            let proposedHazard = { x: hX, y: hY, radius: 14 };
+            let overlaps = false;
+            
+            for (let i = 0; i < platforms.length; i++) {
+                let p = platforms[i];
+                if (checkRectCircleCollision({x: p.x - 10, y: p.y - 30, width: p.width + 20, height: p.height + 40}, proposedHazard)) {
+                    overlaps = true; break;
+                }
+            }
+            
+            if (!overlaps) {
+                hazards.push(proposedHazard);
+                spawned = true;
+            }
+            attempts++;
+        }
+    }
+
+    function spawnPlatform(yLevel) {
+        let rand = Math.random();
+        let type = 'standard';
+        let dx = 0;
+        
+        if (rand < 0.25) { type = 'broken'; } 
+        else if (rand < 0.45) { type = 'moving'; dx = Math.random() < 0.5 ? 2 : -2; }
+
+        let item = 'none';
+        if (type !== 'broken') {
+            let itemRand = Math.random();
+            if (itemRand < 0.05) item = 'rocket'; 
+            else if (itemRand < 0.15) item = 'spring'; 
+            else if (itemRand < 0.35) item = 'coin'; 
+        }
+
+        platforms.push({
+            x: Math.random() * (canvas.width - 60),
+            y: yLevel, width: 60, height: 12,
+            type: type, dx: dx, item: item, itemCollected: false
+        });
+        
+        if (Math.random() < 0.15) {
+            spawnHazard(yLevel - 30); 
+        }
+    }
+
+    function startGame() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        document.getElementById("start-screen").style.display = "none";
+        initGame();
+    }
+
+    function initGame() {
+        cancelAnimationFrame(animationId);
+        score = 0; worldScrollY = 0; coinScore = 0;
+        dayNightTimer = -Math.PI / 2; // Reset to daylight
+        isGameOver = false; particles = [];
+        player.isRocketing = false; player.rocketTimer = 0;
+        
+        document.getElementById("game-over-screen").style.display = "none";
+        document.getElementById("rocketStatus").style.display = "none";
+        document.getElementById("scoreText").innerText = "0";
+        
+        player.x = canvas.width / 2 - player.width / 2;
+        player.y = canvas.height / 2;
+        player.dy = 0;
+        
+        platforms = []; hazards = [];
+        
+        platforms.push({ x: canvas.width / 2 - 30, y: canvas.height - 20, width: 60, height: 12, type: 'standard', dx: 0, item: 'none', itemCollected: false });
+        
+        let highestY = canvas.height - 20;
+        while (highestY > -canvas.height * 1.5) {
+            highestY -= (Math.random() * 35 + 55);
+            spawnPlatform(highestY);
+        }
+        
+        player.dy = player.jumpPower;
+        playSound('bounce');
+        
+        gameLoop();
+    }
+
+    function createFireParticle(x, y) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 2, vy: Math.random() * 4 + 2,
+            radius: Math.random() * 4 + 2, alpha: 1,
+            color: Math.random() < 0.5 ? '#FF5722' : '#FFC107'
+        });
+    }
+
+    function update() {
+        if (isGameOver) return;
+
+        // Advance Day/Night cycle smoothly
+        dayNightTimer += DAY_NIGHT_SPEED; 
+
+        // Rocket logic
+        if (player.isRocketing) {
+            player.dy = -12;
+            player.rocketTimer--;
+            createFireParticle(player.x + 5, player.y + player.height);
+            createFireParticle(player.x + player.width - 5, player.y + player.height);
+
+            if (player.rocketTimer <= 0) {
+                player.isRocketing = false;
+                document.getElementById("rocketStatus").style.display = "none";
+            }
+        } else {
+            player.dy += player.gravity;
+        }
+
+        if (keys.ArrowLeft || keys.a) player.x -= player.speed;
+        if (keys.ArrowRight || keys.d) player.x += player.speed;
+        if (player.x + player.width < 0) player.x = canvas.width;
+        else if (player.x > canvas.width) player.x = -player.width;
+
+        player.y += player.dy;
+
+        // Particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
+            if (p.alpha <= 0) particles.splice(i, 1);
+        }
+
+        // Platform movement
+        for (let i = 0; i < platforms.length; i++) {
+            let p = platforms[i];
+            if (p.type === 'moving') {
+                p.x += p.dx;
+                if (p.x <= 0 || p.x + p.width >= canvas.width) p.dx *= -1;
+            }
+        }
+
+        // Hazard (Floating Mine) Collision
+        for (let i = 0; i < hazards.length; i++) {
+            let h = hazards[i];
+            if (!player.isRocketing) {
+                let hitbox = { x: player.x + 2, y: player.y + 2, width: player.width - 4, height: player.height - 4 };
+                if (checkRectCircleCollision(hitbox, h)) {
+                    playSound('spike');
+                    isGameOver = true;
+                    document.getElementById("finalScoreText").innerText = score;
+                    document.getElementById("game-over-screen").style.display = "flex";
+                }
+            }
+        }
+
+        // Platform & Item Collision
+        for (let i = platforms.length - 1; i >= 0; i--) {
+            let p = platforms[i];
+            
+            if (player.dy > 0 && !player.isRocketing) {
+                if (player.x < p.x + p.width && player.x + player.width > p.x) {
+                    
+                    let pBottom = player.y + player.height;
+
+                    if (pBottom >= p.y - 15 && pBottom <= p.y + p.height + player.dy) {
+                        if (!p.itemCollected) {
+                            if (p.item === 'coin') {
+                                p.itemCollected = true;
+                                coinScore += 75;
+                                score = Math.floor(worldScrollY / 10) + coinScore;
+                                document.getElementById("scoreText").innerText = score;
+                                playSound('coin');
+                            } else if (p.item === 'rocket') {
+                                p.itemCollected = true;
+                                player.isRocketing = true;
+                                player.rocketTimer = 150;
+                                document.getElementById("rocketStatus").style.display = "block";
+                                playSound('rocket');
+                            } else if (p.item === 'spring') {
+                                let sX = p.x + p.width / 2 - 10;
+                                if (player.x < sX + 20 && player.x + player.width > sX) {
+                                    player.dy = player.springPower;
+                                    playSound('spring');
+                                    continue; 
+                                }
+                            }
+                        }
+                    }
+
+                    if (pBottom >= p.y && pBottom <= p.y + p.height + player.dy) {
+                        if (p.type === 'broken') {
+                            player.dy = player.jumpPower; 
+                            playSound('broken');
+                            platforms.splice(i, 1);       
+                        } else {
+                            player.dy = player.jumpPower; 
+                            playSound('bounce');
+                        }
+                    }
+                }
+            }
+        }
+
+        // Camera Update
+        if (player.y < canvas.height / 2) {
+            let diff = (canvas.height / 2) - player.y;
+            player.y = canvas.height / 2;
+            
+            worldScrollY += diff;
+            score = Math.floor(worldScrollY / 10) + coinScore;
+            document.getElementById("scoreText").innerText = score;
+
+            for (let i = 0; i < platforms.length; i++) platforms[i].y += diff;
+            for (let i = 0; i < hazards.length; i++) hazards[i].y += diff;
+            for (let i = 0; i < particles.length; i++) particles[i].y += diff;
+        }
+
+        let highestY = canvas.height;
+        
+        // Remove platforms that fell below screen, and track the highest existing platform
+        for (let i = platforms.length - 1; i >= 0; i--) {
+            if (platforms[i].y > canvas.height + 100) {
+                platforms.splice(i, 1);
+            } else {
+                if (platforms[i].y < highestY) {
+                    highestY = platforms[i].y;
+                }
+            }
+        }
+        
+        // Ensure there is ALWAYS a buffer of platforms above the visible screen
+        while (highestY > -canvas.height * 1.5) {
+            highestY -= (Math.random() * 35 + 55);
+            spawnPlatform(highestY);
+        }
+        
+        // Clean up old hazards
+        for (let i = hazards.length - 1; i >= 0; i--) {
+            if (hazards[i].y > canvas.height + 100) {
+                hazards.splice(i, 1);
+            }
+        }
+
+        // Death by falling
+        if (player.y > canvas.height) {
+            playSound('spike');
+            isGameOver = true;
+            document.getElementById("finalScoreText").innerText = score;
+            document.getElementById("game-over-screen").style.display = "flex";
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = "#87CEEB"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let nightFactor = (Math.sin(dayNightTimer) + 1) / 2; 
+        let nightOpacity = nightFactor * 0.75; 
+        ctx.fillStyle = `rgba(5, 5, 25, ${nightOpacity})`; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < particles.length; i++) {
+            let p = particles[i];
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        for (let i = 0; i < platforms.length; i++) {
+            let p = platforms[i];
+            
+            if (p.type === 'standard') ctx.fillStyle = "#A4C639"; 
+            else if (p.type === 'moving') ctx.fillStyle = "#03A9F4"; 
+            else if (p.type === 'broken') ctx.fillStyle = "#E53935"; 
+            
+            ctx.beginPath();
+            ctx.roundRect(p.x, p.y, p.width, p.height, 4);
+            ctx.fill();
+
+            if (p.type === 'broken') {
+                ctx.strokeStyle = "#B71C1C"; ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(p.x + p.width / 2 - 5, p.y);
+                ctx.lineTo(p.x + p.width / 2 + 2, p.y + p.height / 2);
+                ctx.lineTo(p.x + p.width / 2 - 2, p.y + p.height);
+                ctx.stroke();
+            }
+
+            if (!p.itemCollected) {
+                let centerX = p.x + p.width / 2;
+                if (p.item === 'spring') {
+                    ctx.fillStyle = "#FFC107";
+                    ctx.fillRect(centerX - 10, p.y - 10, 20, 10);
+                    ctx.fillStyle = "#333";
+                    ctx.fillRect(centerX - 10, p.y - 8, 20, 2);
+                    ctx.fillRect(centerX - 10, p.y - 4, 20, 2);
+                } else if (p.item === 'coin') {
+                    ctx.fillStyle = "#FFD700";
+                    ctx.beginPath(); ctx.arc(centerX, p.y - 8, 7, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = "#B7950B"; ctx.stroke();
+                } else if (p.item === 'rocket') {
+                    ctx.fillStyle = "#D35400";
+                    ctx.fillRect(centerX - 6, p.y - 16, 12, 16);
+                    ctx.fillStyle = "#E74C3C";
+                    ctx.beginPath();
+                    ctx.moveTo(centerX - 6, p.y - 16);
+                    ctx.lineTo(centerX + 6, p.y - 16);
+                    ctx.lineTo(centerX, p.y - 24);
+                    ctx.fill();
+                }
+            }
+        }
+
+        for (let i = 0; i < hazards.length; i++) {
+            let h = hazards[i];
+            
+            ctx.fillStyle = "#757575"; 
+            ctx.beginPath();
+            let numSpikes = 8;
+            for (let j = 0; j < numSpikes; j++) {
+                let angle = (j / numSpikes) * Math.PI * 2;
+                let outerX = h.x + Math.cos(angle) * (h.radius + 6);
+                let outerY = h.y + Math.sin(angle) * (h.radius + 6);
+                let innerAngle1 = angle - 0.2;
+                let innerAngle2 = angle + 0.2;
+                ctx.moveTo(h.x + Math.cos(innerAngle1) * h.radius, h.y + Math.sin(innerAngle1) * h.radius);
+                ctx.lineTo(outerX, outerY);
+                ctx.lineTo(h.x + Math.cos(innerAngle2) * h.radius, h.y + Math.sin(innerAngle2) * h.radius);
+            }
+            ctx.fill();
+
+            ctx.fillStyle = "#424242"; 
+            ctx.beginPath(); ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2); ctx.fill();
+            
+            ctx.fillStyle = "#E53935";
+            ctx.beginPath(); ctx.arc(h.x, h.y, h.radius / 2.5, 0, Math.PI * 2); ctx.fill();
+        }
+
+        ctx.fillStyle = player.isRocketing ? "#9C27B0" : "#FF5722"; 
+        ctx.beginPath();
+        ctx.roundRect(player.x, player.y, player.width, player.height, 8);
+        ctx.fill();
+        
+        ctx.fillStyle = "white";
+        ctx.fillRect(player.x + 6, player.y + 8, 4, 4);
+        ctx.fillRect(player.x + 20, player.y + 8, 4, 4);
+
+        let fogOpacity = Math.min(worldScrollY * FOG_INCREASE_RATE, MAX_FOG_OPACITY);
+        if (fogOpacity > 0) {
+            ctx.fillStyle = `rgba(240, 248, 255, ${fogOpacity})`; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        if (!isGameOver) animationId = requestAnimationFrame(gameLoop);
+    }
+    
+    draw();
+</script>
+</body>
+</html>
