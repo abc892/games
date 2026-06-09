@@ -8,167 +8,96 @@
         *, *::before, *::after { box-sizing: border-box; }
 
         body {
-            margin: 0;
-            padding: 0;
-            background: #1a1a1a;
-            color: #fff;
+            margin: 0; padding: 0;
+            background: #1a1a1a; color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden;
         }
 
-        /* ── Screens ── */
         .screen { display: none; width: 100%; max-width: 520px; padding: 10px; }
         .screen.active { display: block; }
 
         .card {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,.5);
+            background: #2a2a2a; border: 1px solid #444;
+            border-radius: 12px; padding: 30px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.5);
         }
 
         h1 { margin: 0 0 6px; color: #ffca28; font-size: 2.2rem; }
         h2 { margin: 0 0 20px; color: #ccc; font-size: 1rem; font-weight: 400; }
-        h3 { margin: 0 0 15px; color: #ffca28; }
 
         input[type="text"] {
-            background: #333;
-            border: 1px solid #555;
-            border-radius: 6px;
-            color: #fff;
-            font-size: 1rem;
-            padding: 10px 14px;
-            width: 100%;
-            margin-bottom: 10px;
-            outline: none;
+            background: #333; border: 1px solid #555; border-radius: 6px;
+            color: #fff; font-size: 1rem; padding: 10px 14px;
+            width: 100%; margin-bottom: 10px; outline: none;
         }
         input[type="text"]:focus { border-color: #ffca28; }
 
         .btn {
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 700;
-            padding: 10px 22px;
-            transition: filter .15s, transform .1s;
-            margin: 5px 4px;
+            border: none; border-radius: 6px; cursor: pointer;
+            font-size: 1rem; font-weight: 700; padding: 10px 22px;
+            transition: filter .15s, transform .1s; margin: 5px 4px;
         }
-        .btn:hover { filter: brightness(1.12); }
+        .btn:hover  { filter: brightness(1.12); }
         .btn:active { transform: scale(.97); }
-        .btn-green  { background: #4caf50; color: #fff; }
-        .btn-blue   { background: #33b5e5; color: #fff; }
-        .btn-red    { background: #e53935; color: #fff; }
-        .btn-amber  { background: #ffca28; color: #222; }
-        .btn-grey   { background: #555; color: #fff; }
-        .btn-sm     { padding: 5px 12px; font-size: .82rem; }
+        .btn-green { background: #4caf50; color: #fff; }
+        .btn-blue  { background: #33b5e5; color: #fff; }
+        .btn-red   { background: #e53935; color: #fff; }
+        .btn-grey  { background: #555;    color: #fff; }
+        .btn-sm    { padding: 5px 12px; font-size: .82rem; }
 
-        /* ── Lobby ── */
         #lobby-title { font-size: 1.4rem; margin-bottom: 4px; color: #ffca28; }
         #lobby-code-display {
-            background: #333;
-            border-radius: 8px;
-            padding: 8px 18px;
-            display: inline-block;
-            font-size: 1.8rem;
-            font-weight: 900;
-            letter-spacing: 6px;
-            color: #ffca28;
-            margin-bottom: 16px;
+            background: #333; border-radius: 8px; padding: 8px 18px;
+            display: inline-block; font-size: 1.8rem; font-weight: 900;
+            letter-spacing: 6px; color: #ffca28; margin-bottom: 16px;
         }
 
         #player-list { list-style: none; margin: 0; padding: 0; text-align: left; }
         #player-list li {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 10px;
-            margin-bottom: 6px;
-            background: rgba(255,255,255,.05);
-            border-radius: 6px;
-            font-size: .95rem;
-            flex-wrap: wrap;
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px; margin-bottom: 6px;
+            background: rgba(255,255,255,.05); border-radius: 6px;
+            font-size: .95rem; flex-wrap: wrap;
         }
-        .player-dot {
-            width: 12px; height: 12px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
+        .player-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
         .player-name-label { flex: 1; font-weight: 600; }
         .status-badge {
-            padding: 2px 9px;
-            border-radius: 20px;
-            font-size: .75rem;
-            font-weight: 700;
+            padding: 2px 9px; border-radius: 20px;
+            font-size: .75rem; font-weight: 700;
         }
         .status-ready   { background: #4caf50; color: #fff; }
         .status-unready { background: #e53935; color: #fff; }
         .status-playing { background: #ffca28; color: #222; }
 
-        /* ── Game ── */
-        #game-wrap {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-        }
-
+        #game-wrap { display: none; flex-direction: column; align-items: center; }
         #game-top-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-            justify-content: center;
+            display: flex; gap: 10px; margin-bottom: 8px;
+            align-items: center; flex-wrap: wrap; justify-content: center;
         }
-
         .score-chip {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: .9rem;
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 0 1px 3px rgba(0,0,0,.6);
+            padding: 6px 14px; border-radius: 20px;
+            font-size: .9rem; font-weight: 700;
+            color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6);
         }
-
         #timer-display {
-            font-size: 2rem;
-            font-weight: 900;
-            background: #333;
-            border: 2px solid #555;
-            border-radius: 10px;
-            padding: 4px 20px;
-            min-width: 80px;
-            text-align: center;
+            font-size: 2rem; font-weight: 900;
+            background: #333; border: 2px solid #555;
+            border-radius: 10px; padding: 4px 20px;
+            min-width: 80px; text-align: center;
         }
+        #gameCanvas { background: #fff; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
 
-        #gameCanvas {
-            background: #fff;
-            border-radius: 4px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.5);
-        }
-
-        /* ── Countdown Overlay ── */
         #countdown-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.7);
-            z-index: 50;
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.7); z-index: 50;
+            align-items: center; justify-content: center;
         }
         #countdown-overlay.visible { display: flex; }
         #countdown-num {
-            font-size: 12rem;
-            font-weight: 900;
-            color: #ffca28;
+            font-size: 12rem; font-weight: 900; color: #ffca28;
             text-shadow: 0 0 60px rgba(255,202,40,.6);
             animation: pulse .8s ease-in-out;
         }
@@ -178,57 +107,34 @@
             100% { transform: scale(.85); opacity: .8; }
         }
 
-        /* ── Results ── */
         #results-screen {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.85);
-            z-index: 60;
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.85); z-index: 60;
+            align-items: center; justify-content: center;
         }
         #results-screen.visible { display: flex; }
         #results-card {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 14px;
-            padding: 36px 44px;
-            text-align: center;
-            min-width: 320px;
+            background: #2a2a2a; border: 1px solid #444;
+            border-radius: 14px; padding: 36px 44px;
+            text-align: center; min-width: 320px;
         }
         #results-title { font-size: 2rem; font-weight: 900; margin-bottom: 20px; }
-        .result-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 0;
-            font-size: 1.1rem;
-        }
+        .result-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; font-size: 1.1rem; }
         .result-rank { font-size: 1.4rem; width: 36px; }
         .result-dot  { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
         .result-name { flex: 1; text-align: left; font-weight: 700; }
         .result-pct  { font-weight: 900; font-size: 1.2rem; }
         #results-countdown { margin-top: 18px; color: #aaa; font-size: .9rem; }
 
-        /* ── Notification Toast ── */
         #toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
+            position: fixed; bottom: 24px; left: 50%;
             transform: translateX(-50%) translateY(80px);
-            background: #333;
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 10px 22px;
-            font-size: .95rem;
-            z-index: 999;
-            transition: transform .3s ease;
-            pointer-events: none;
+            background: #333; border: 1px solid #555; border-radius: 8px;
+            padding: 10px 22px; font-size: .95rem; z-index: 999;
+            transition: transform .3s ease; pointer-events: none;
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
-        /* ── Misc ── */
         .divider { border: none; border-top: 1px solid #444; margin: 18px 0; }
         .error-text { color: #e53935; font-size: .85rem; margin: 6px 0; min-height: 18px; }
         .info-text  { color: #aaa; font-size: .82rem; }
@@ -236,23 +142,19 @@
 </head>
 <body>
 
-<!-- ═══════════════════ MAIN MENU ═══════════════════ -->
+<!-- MAIN MENU -->
 <div id="screen-menu" class="screen active">
     <div class="card">
         <h1>🎨 Roller Royale</h1>
         <h2>Paint the canvas – highest coverage wins!</h2>
         <hr class="divider">
-
-        <div id="menu-name-section">
-            <input type="text" id="input-name" placeholder="Enter your name…" maxlength="16">
-            <p class="error-text" id="menu-error"></p>
-        </div>
-
-        <button class="btn btn-green"  onclick="handleCreate()">🏠 Create Lobby</button>
-        <button class="btn btn-blue"   onclick="showJoin()">🔑 Join Lobby</button>
-
+        <input type="text" id="input-name" placeholder="Enter your name…" maxlength="16">
+        <p class="error-text" id="menu-error"></p>
+        <button class="btn btn-green" onclick="handleCreate()">🏠 Create Lobby</button>
+        <button class="btn btn-blue"  onclick="showJoin()">🔑 Join Lobby</button>
         <div id="join-section" style="display:none; margin-top:14px;">
-            <input type="text" id="input-code" placeholder="Enter lobby code (A–Z)…" maxlength="1" style="text-transform:uppercase; text-align:center; font-size:1.5rem; letter-spacing:4px;">
+            <input type="text" id="input-code" placeholder="Enter lobby code (A–Z)…"
+                   maxlength="1" style="text-transform:uppercase;text-align:center;font-size:1.5rem;letter-spacing:4px;">
             <br>
             <button class="btn btn-blue" onclick="handleJoin()">Enter Lobby</button>
             <button class="btn btn-grey" onclick="hideJoin()">Cancel</button>
@@ -260,27 +162,24 @@
     </div>
 </div>
 
-<!-- ═══════════════════ LOBBY ═══════════════════ -->
+<!-- LOBBY -->
 <div id="screen-lobby" class="screen">
     <div class="card">
         <div id="lobby-title">Lobby</div>
         <div>Lobby Code: <span id="lobby-code-display">A</span></div>
-        <p class="info-text" id="lobby-info">Share this code with friends!</p>
+        <p class="info-text">Share this code with friends!</p>
         <hr class="divider">
-
         <ul id="player-list"></ul>
-
         <hr class="divider">
-        <div id="lobby-status-msg" style="color:#aaa; font-size:.88rem; margin-bottom:10px;"></div>
-
-        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <div id="lobby-status-msg" style="color:#aaa;font-size:.88rem;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-green" id="btn-ready" onclick="toggleReady()">✅ Ready</button>
-            <button class="btn btn-red"   id="btn-leave" onclick="leaveLobby()">🚪 Leave</button>
+            <button class="btn btn-red"   onclick="leaveLobby()">🚪 Leave</button>
         </div>
     </div>
 </div>
 
-<!-- ═══════════════════ GAME WRAP ═══════════════════ -->
+<!-- GAME -->
 <div id="game-wrap">
     <div id="game-top-bar">
         <div id="scores-bar"></div>
@@ -289,12 +188,12 @@
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 </div>
 
-<!-- ═══════════════════ COUNTDOWN OVERLAY ═══════════════════ -->
+<!-- COUNTDOWN -->
 <div id="countdown-overlay">
     <div id="countdown-num">3</div>
 </div>
 
-<!-- ═══════════════════ RESULTS ═══════════════════ -->
+<!-- RESULTS -->
 <div id="results-screen">
     <div id="results-card">
         <div id="results-title">🏆 Results</div>
@@ -303,81 +202,98 @@
     </div>
 </div>
 
-<!-- ═══════════════════ TOAST ═══════════════════ -->
+<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- ═══════════════════ FIREBASE SDK ═══════════════════ -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { initializeApp }    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import {
     getDatabase, ref, set, get, update, push, remove,
     onValue, off, onDisconnect, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
 
-/* ══════════════════════════════════════════════
-   🔧  FIREBASE CONFIG — replace with your own
-   ══════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────
+   🔧  FIREBASE CONFIG  — replace with your own
+   ───────────────────────────────────────────── */
 const firebaseConfig = {
-        apiKey: "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
-        authDomain: "games-c3e27.firebaseapp.com",
-        databaseURL: "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "games-c3e27",
-        storageBucket: "games-c3e27.firebasestorage.app",
-        messagingSenderId: "193027632069",
-        appId: "1:193027632069:web:b559c3b10011bc6982b9ac"
-      };
+    apiKey:            "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
+    authDomain:        "games-c3e27.firebaseapp.com",
+    databaseURL:       "https://games-c3e27-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "games-c3e27",
+    storageBucket:     "games-c3e27.firebasestorage.app",
+    messagingSenderId: "193027632069",
+    appId:             "1:193027632069:web:b559c3b10011bc6982b9ac"
+};
 
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
-/* ══════════════════════════════════════════════
-   🌈  PLAYER COLOURS (up to 8 players)
-   ══════════════════════════════════════════════ */
-const PLAYER_COLORS = [
-    '#ff4444','#33b5e5','#00c851','#ffbb33',
-    '#aa66cc','#ff8800','#00b8d4','#f06292'
-];
+/* ─────────────────────────────────────────────
+   CONSTANTS
+   ───────────────────────────────────────────── */
+const PLAYER_COLORS   = ['#ff4444','#33b5e5','#00c851','#ffbb33','#aa66cc','#ff8800','#00b8d4','#f06292'];
+const GAME_DURATION   = 80_000;   // ms
+const RESULT_DURATION = 7_000;    // ms
+const GRID_SIZE       = 10;
+const COLS            = 80;       // 800/10
+const ROWS            = 60;       // 600/10
+const TOTAL_CELLS     = COLS * ROWS;
+const ROLLER_RADIUS   = 22;
+const P_RADIUS        = 12;
+const P_SPEED         = 4;
 
-/* ══════════════════════════════════════════════
-   🎮  GAME CONSTANTS
-   ══════════════════════════════════════════════ */
-const GAME_DURATION = 80_000; // ms
-const GRID_SIZE     = 10;
-const COLS          = 800 / GRID_SIZE;
-const ROWS          = 600 / GRID_SIZE;
-const RESULT_DURATION = 7_000; // ms shown on result screen
-
-/* ══════════════════════════════════════════════
-   🗂  LOCAL STATE
-   ══════════════════════════════════════════════ */
-let myId        = null;   // uid in firebase (push key)
+/* ─────────────────────────────────────────────
+   LOCAL STATE
+   ───────────────────────────────────────────── */
+let myId        = null;
 let myName      = '';
-let lobbyLetter = '';     // e.g. "a"
+let lobbyLetter = '';
 let isCreator   = false;
 let isReady     = false;
-let gameState   = 'LOBBY'; // 'LOBBY' | 'COUNTDOWN' | 'PLAYING' | 'RESULTS'
+let gameState   = 'MENU';   // MENU | LOBBY | COUNTDOWN | PLAYING | RESULTS
 
-let lobbyData   = {};     // live snapshot of lobby from firebase
-let listeners   = [];     // [{ref, type, fn}] for cleanup
+let lobbyMeta    = {};      // latest Firebase meta snapshot value
+let lobbyPlayers = {};      // latest Firebase players snapshot value
+let fbListeners  = [];      // for cleanup
 
-// Canvas/game
-const canvas  = document.getElementById('gameCanvas');
-const ctx     = canvas.getContext('2d');
-let keys      = {};
-let grid      = [];
-let localPlayers = []; // array of {id, name, color, x, y, radius, rollerRadius}
-let rafId     = null;
-let gameEndAt = null;  // absolute ms timestamp when game ends
-let timerTick = null;
+// Game
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+let keys     = {};
+
+// grid[c][r] = 0 (empty) | 1..8 (player slot, 1-based)
+let grid = new Uint8Array(COLS * ROWS);
+
+// Active players during a match: [{id, name, color, slot, x, y, prevX, prevY, isMe}]
+let activePlayers = [];
+
+// Paint-event queue written/read through Firebase
+// Host writes a compact encoded string of paint events each frame;
+// all clients (including host) read that string and replay it onto grid.
+let hostPaintBuf    = '';   // host accumulates paint events between flushes
+let lastFlushSeq    = -1;   // seq number of last event chunk applied by this client
+let paintFlushTimer = null;
+
+let gameEndAt   = null;
+let timerTick   = null;
 let resultTimer = null;
+let rafId       = null;
+let startMatchGuard = false; // prevents double-trigger
 
-/* ══════════════════════════════════════════════
-   🛠  UTILITY
-   ══════════════════════════════════════════════ */
+const SPAWN = [
+    [50,50],[750,550],[750,50],[50,550],
+    [400,50],[400,550],[50,300],[750,300]
+];
+
+/* ─────────────────────────────────────────────
+   HELPERS
+   ───────────────────────────────────────────── */
+function lobbyPath(sub = '') { return `Paint-roller/lobby ${lobbyLetter}${sub ? '/'+sub : ''}`; }
+function lRef(sub = '')      { return ref(db, lobbyPath(sub)); }
+
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const el = document.getElementById(id);
-    if (el) el.classList.add('active');
+    if (id) { const el = document.getElementById(id); if (el) el.classList.add('active'); }
 }
 
 function toast(msg, dur = 3000) {
@@ -387,200 +303,219 @@ function toast(msg, dur = 3000) {
     setTimeout(() => t.classList.remove('show'), dur);
 }
 
-function lobbyRef(path = '') {
-    return ref(db, `Paint-roller/lobby ${lobbyLetter}${path ? '/' + path : ''}`);
-}
-
-function removeListener(r, type, fn) {
-    off(r, type, fn);
-}
-
-function clearListeners() {
-    listeners.forEach(({ r, type, fn }) => off(r, type, fn));
-    listeners = [];
-}
-
-function addListener(r, type, fn) {
+function addFbListener(r, fn) {
     onValue(r, fn);
-    listeners.push({ r, type, fn });
+    fbListeners.push({ r, fn });
+}
+function clearFbListeners() {
+    fbListeners.forEach(({ r, fn }) => off(r, fn));
+    fbListeners = [];
 }
 
-/* ══════════════════════════════════════════════
-   🏠  MAIN MENU ACTIONS
-   ══════════════════════════════════════════════ */
-window.showJoin = function () {
+/* ─────────────────────────────────────────────
+   PAINT ENCODING
+   Each paint event = "slot,cellX,cellY|..."  (integers, '|' separated)
+   We encode the circle of cells from each position rather than raw coords
+   so every client produces the same cells without floating-point drift.
+   ───────────────────────────────────────────── */
+function cellsForPosition(cx, cy) {
+    // cx/cy are canvas pixels. Returns array of {c, r} cells covered.
+    const cells = [];
+    const cellX = Math.floor(cx / GRID_SIZE);
+    const cellY = Math.floor(cy / GRID_SIZE);
+    const range = Math.ceil(ROLLER_RADIUS / GRID_SIZE);
+    for (let c = Math.max(0, cellX - range); c <= Math.min(COLS-1, cellX + range); c++) {
+        for (let r = Math.max(0, cellY - range); r <= Math.min(ROWS-1, cellY + range); r++) {
+            const dx = (c * GRID_SIZE + GRID_SIZE/2) - cx;
+            const dy = (r * GRID_SIZE + GRID_SIZE/2) - cy;
+            if (dx*dx + dy*dy <= ROLLER_RADIUS * ROLLER_RADIUS) {
+                cells.push(c * ROWS + r); // single integer index
+            }
+        }
+    }
+    return cells;
+}
+
+// Walk line between two positions and collect all cell indices along it
+function cellsAlongLine(x0, y0, x1, y1) {
+    const seen = new Set();
+    const dist = Math.hypot(x1-x0, y1-y0);
+    const steps = Math.max(1, Math.ceil(dist / (GRID_SIZE * 0.5)));
+    for (let i = 0; i <= steps; i++) {
+        const t  = i / steps;
+        const px = x0 + (x1-x0)*t;
+        const py = y0 + (y1-y0)*t;
+        cellsForPosition(px, py).forEach(ci => seen.add(ci));
+    }
+    return [...seen];
+}
+
+function applyCellIndices(slot, indices) {
+    for (const ci of indices) {
+        grid[ci] = slot;
+    }
+}
+
+/* ─────────────────────────────────────────────
+   MENU
+   ───────────────────────────────────────────── */
+window.showJoin = () => {
     document.getElementById('join-section').style.display = 'block';
     document.getElementById('input-code').focus();
 };
-window.hideJoin = function () {
-    document.getElementById('join-section').style.display = 'none';
-};
+window.hideJoin = () => { document.getElementById('join-section').style.display = 'none'; };
 
-window.handleCreate = async function () {
+window.handleCreate = async () => {
     const name = document.getElementById('input-name').value.trim();
-    if (!name) { document.getElementById('menu-error').textContent = 'Please enter your name.'; return; }
+    if (!name) { document.getElementById('menu-error').textContent = 'Enter your name.'; return; }
     document.getElementById('menu-error').textContent = '';
 
-    // Find a free lobby letter
     const rootSnap = await get(ref(db, 'Paint-roller'));
-    const taken = rootSnap.exists() ? Object.keys(rootSnap.val()).map(k => k.replace('lobby ', '')) : [];
-    const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
-    const free = alphabet.find(l => !taken.includes(l));
-
-    if (!free) { document.getElementById('menu-error').textContent = 'All 26 lobbies are full. Try again later.'; return; }
+    const taken    = rootSnap.exists() ? Object.keys(rootSnap.val()).map(k => k.replace('lobby ','')) : [];
+    const freeAll  = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(l => !taken.includes(l));
+    if (!freeAll.length) { document.getElementById('menu-error').textContent = 'All lobbies full.'; return; }
+    // Pick a purely random free letter — never predictable
+    const free = freeAll[Math.floor(Math.random() * freeAll.length)];
 
     lobbyLetter = free;
     myName      = name;
     isCreator   = true;
 
-    // Create lobby node + add self
-    const playerRef = push(lobbyRef('players'));
-    myId = playerRef.key;
+    const pRef = push(lRef('players'));
+    myId = pRef.key;
 
-    await set(lobbyRef(), {
-        createdAt:  serverTimestamp(),
-        status:     'lobby',
-        gameEndAt:  null,
-        creatorId:  myId
-    });
-
-    await set(playerRef, {
-        name:    myName,
-        color:   PLAYER_COLORS[0],
-        ready:   false,
-        colorIdx: 0,
-        online:  true
-    });
-
-    // Disconnect cleanup
-    onDisconnect(playerRef).remove();
+    await set(lRef(), { status:'lobby', gameEndAt:null, creatorId:myId, results:null });
+    await set(pRef, { name:myName, color:PLAYER_COLORS[0], slot:1, ready:false, online:true });
+    // When this tab closes: remove the player node AND the whole lobby
+    onDisconnect(pRef).remove();
+    onDisconnect(lRef()).remove();
 
     enterLobby();
 };
 
-window.handleJoin = async function () {
+window.handleJoin = async () => {
     const name = document.getElementById('input-name').value.trim();
-    if (!name) { document.getElementById('menu-error').textContent = 'Please enter your name.'; return; }
+    if (!name) { document.getElementById('menu-error').textContent = 'Enter your name.'; return; }
     document.getElementById('menu-error').textContent = '';
 
-    const raw   = document.getElementById('input-code').value.trim().toLowerCase();
-    const valid = /^[a-z]$/.test(raw);
-    if (!valid) { document.getElementById('menu-error').textContent = 'Enter a single letter A–Z.'; return; }
+    const code = document.getElementById('input-code').value.trim().toLowerCase();
+    if (!/^[a-z]$/.test(code)) { document.getElementById('menu-error').textContent = 'Enter a letter A–Z.'; return; }
 
-    const snap = await get(ref(db, `Paint-roller/lobby ${raw}`));
+    const snap = await get(ref(db, `Paint-roller/lobby ${code}`));
     if (!snap.exists()) { document.getElementById('menu-error').textContent = 'Lobby not found.'; return; }
 
-    lobbyLetter = raw;
+    lobbyLetter = code;
     myName      = name;
     isCreator   = false;
 
-    // Count existing players to assign color
-    const playersSnap = await get(lobbyRef('players'));
-    const existingCount = playersSnap.exists() ? Object.keys(playersSnap.val()).length : 0;
-    const colorIdx = existingCount % PLAYER_COLORS.length;
+    // Assign slot = next available slot number
+    const psSnap   = await get(lRef('players'));
+    const existing = psSnap.exists() ? Object.values(psSnap.val()) : [];
+    const usedSlots = new Set(existing.map(p => p.slot));
+    let slot = 1;
+    while (usedSlots.has(slot)) slot++;
+    const colorIdx = (slot - 1) % PLAYER_COLORS.length;
 
-    const playerRef = push(lobbyRef('players'));
-    myId = playerRef.key;
-
-    await set(playerRef, {
-        name:     myName,
-        color:    PLAYER_COLORS[colorIdx],
-        ready:    false,
-        colorIdx: colorIdx,
-        online:   true
-    });
-
-    onDisconnect(playerRef).remove();
+    const pRef = push(lRef('players'));
+    myId = pRef.key;
+    await set(pRef, { name:myName, color:PLAYER_COLORS[colorIdx], slot, ready:false, online:true });
+    // When this tab closes: remove my player node
+    onDisconnect(pRef).remove();
+    // Cancel the creator's lobby-root onDisconnect — lobby should survive until truly empty
+    const { cancel: cancelLobbyDisconnect } = onDisconnect(lRef());
+    cancelLobbyDisconnect();
 
     enterLobby();
 };
 
-/* ══════════════════════════════════════════════
-   🏟  LOBBY
-   ══════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────
+   LOBBY
+   ───────────────────────────────────────────── */
 function enterLobby() {
-    gameState = 'LOBBY';
-    isReady   = false;
+    gameState       = 'LOBBY';
+    isReady         = false;
+    startMatchGuard = false;
 
     document.getElementById('game-wrap').style.display = 'none';
     document.getElementById('results-screen').classList.remove('visible');
     document.getElementById('countdown-overlay').classList.remove('visible');
     document.getElementById('lobby-code-display').textContent = lobbyLetter.toUpperCase();
-
     updateReadyBtn();
     showScreen('screen-lobby');
 
-    clearListeners();
+    clearFbListeners();
     subscribeToLobby();
+    watchSelf();
 }
 
 function subscribeToLobby() {
-    // Watch players list
-    const pr = lobbyRef('players');
-    addListener(pr, 'value', snap => {
-        lobbyData.players = snap.val() || {};
+    // Players
+    addFbListener(lRef('players'), snap => {
+        lobbyPlayers = snap.val() || {};
         renderPlayerList();
-        checkAllReady();
-    });
+        maybeCheckAllReady();
 
-    // Watch lobby meta (status, gameEndAt, creatorId)
-    const lr = lobbyRef();
-    addListener(lr, 'value', snap => {
-        if (!snap.exists()) {
-            // Lobby was deleted (shouldn't happen often)
-            return;
+        // If the players node is now empty (everyone closed their tab / left),
+        // delete the orphaned lobby shell entirely.
+        if (!snap.exists() || Object.keys(lobbyPlayers).length === 0) {
+            remove(lRef()).catch(() => {});
         }
-        const data = snap.val();
-        lobbyData.meta = data;
+    });
+    // Meta
+    addFbListener(lRef(), snap => {
+        if (!snap.exists()) return;
+        const prev   = lobbyMeta;
+        lobbyMeta    = snap.val() || {};
 
-        if (data.status === 'playing' && gameState === 'LOBBY') {
-            // Someone else started the match; I'm a spectator / late joiner
-            // Stay in lobby, display "Match in progress"
+        renderPlayerList(); // refresh badge states
+
+        // Late joiner during active match
+        if (lobbyMeta.status === 'playing' && gameState === 'LOBBY') {
             document.getElementById('lobby-status-msg').textContent = '⚡ Match in progress – wait for players to return.';
-            // Reset my ready state so late-joiners can't accidentally start another match
-            setMyReady(false);
+            if (isReady) { isReady = false; update(lRef(`players/${myId}`), {ready:false}); updateReadyBtn(); }
         }
 
-        if (data.status === 'lobby' && gameState === 'RESULTS') {
-            // Match ended, come back
-            backToLobby();
+        // Results were published → show them
+        if (lobbyMeta.results && gameState === 'LOBBY' && prev.status === 'playing') {
+            // nothing needed here; results shown by the host/client that ended the game
+        }
+
+        // After results, host resets status to 'lobby'
+        if (lobbyMeta.status === 'lobby' && gameState === 'RESULTS') {
+            finaliseBackToLobby();
         }
     });
+    // Paint events (only during play; this listener is added in launchGame)
 }
 
 function renderPlayerList() {
-    const players = lobbyData.players || {};
-    const meta    = lobbyData.meta    || {};
-    const creatorId = meta.creatorId  || '';
-    const status    = meta.status     || 'lobby';
+    const meta      = lobbyMeta    || {};
+    const players   = lobbyPlayers || {};
+    const creatorId = meta.creatorId || '';
+    const status    = meta.status   || 'lobby';
     const ul = document.getElementById('player-list');
     ul.innerHTML = '';
 
-    // Determine color assignment order
-    const entries = Object.entries(players);
+    Object.entries(players).forEach(([pid, p]) => {
+        const color = p.color || '#fff';
+        const li    = document.createElement('li');
 
-    entries.forEach(([pid, p], idx) => {
-        // Assign colors by order if missing
-        const color = p.color || PLAYER_COLORS[idx % PLAYER_COLORS.length];
-
-        const li = document.createElement('li');
-
-        // Colored dot
         const dot = document.createElement('span');
         dot.className = 'player-dot';
         dot.style.background = color;
         li.appendChild(dot);
 
-        // Name
         const nameEl = document.createElement('span');
         nameEl.className = 'player-name-label';
-        nameEl.textContent = p.name + (pid === creatorId ? ' 👑' : '') + (pid === myId ? ' (You)' : '');
+        nameEl.textContent = p.name
+            + (pid === creatorId ? ' 👑' : '')
+            + (pid === myId      ? ' (You)' : '');
         li.appendChild(nameEl);
 
         // Status badge
         const badge = document.createElement('span');
         badge.className = 'status-badge';
-        if (status === 'playing' && pid !== myId) {
+        if (status === 'playing') {
             badge.textContent = 'Playing';
             badge.classList.add('status-playing');
         } else {
@@ -589,92 +524,82 @@ function renderPlayerList() {
         }
         li.appendChild(badge);
 
-        // Kick button (only for creator, only for others, only in lobby)
+        // Kick button — creator only, others only, lobby only
         if (isCreator && pid !== myId && status !== 'playing') {
-            const kickBtn = document.createElement('button');
-            kickBtn.className = 'btn btn-red btn-sm';
-            kickBtn.textContent = 'Kick';
-            kickBtn.onclick = () => kickPlayer(pid);
-            li.appendChild(kickBtn);
+            const kb = document.createElement('button');
+            kb.className = 'btn btn-red btn-sm';
+            kb.textContent = 'Kick';
+            kb.onclick = () => kickPlayer(pid);
+            li.appendChild(kb);
         }
 
         ul.appendChild(li);
     });
 }
 
-function checkAllReady() {
-    const players = lobbyData.players || {};
-    const meta    = lobbyData.meta    || {};
-    if (meta.status === 'playing') return; // match already running
+function maybeCheckAllReady() {
+    if (gameState !== 'LOBBY') return;
+    const meta    = lobbyMeta    || {};
+    const players = lobbyPlayers || {};
+    if (meta.status === 'playing') return;
 
     const entries = Object.entries(players);
-    if (entries.length < 2) {
-        document.getElementById('lobby-status-msg').textContent = 'Waiting for at least 2 players…';
-        return;
-    }
+    // Allow solo play (1 player)
+    if (entries.length === 0) { document.getElementById('lobby-status-msg').textContent = ''; return; }
 
-    const allReady = entries.every(([, p]) => p.ready);
+    const allReady   = entries.every(([, p]) => p.ready);
+    const readyCount = entries.filter(([, p]) => p.ready).length;
+
     if (allReady) {
         document.getElementById('lobby-status-msg').textContent = '✅ All ready! Starting…';
         startMatchSequence();
     } else {
-        const readyCount = entries.filter(([, p]) => p.ready).length;
-        document.getElementById('lobby-status-msg').textContent = `${readyCount} / ${entries.length} ready`;
+        document.getElementById('lobby-status-msg').textContent =
+            entries.length === 1
+                ? (readyCount === 1 ? '✅ Ready! Starting…' : 'Press Ready to start solo!')
+                : `${readyCount} / ${entries.length} ready`;
     }
 }
 
 async function startMatchSequence() {
-    if (gameState !== 'LOBBY') return; // already started
-    gameState = 'COUNTDOWN';
+    if (gameState !== 'LOBBY' || startMatchGuard) return;
+    startMatchGuard = true;
+    gameState       = 'COUNTDOWN';
 
-    // Immediately set all players to NOT ready in Firebase
-    // (prevents double-trigger and late-joiner confusion)
-    const players = lobbyData.players || {};
-    const updates = {};
-    Object.keys(players).forEach(pid => {
-        updates[`Paint-roller/lobby ${lobbyLetter}/players/${pid}/ready`] = false;
+    // Set all players to not-ready in Firebase
+    const batch = {};
+    Object.keys(lobbyPlayers).forEach(pid => {
+        batch[`${lobbyPath('players')}/${pid}/ready`] = false;
     });
-    await update(ref(db), updates);
+    await update(ref(db), batch);
 
-    // Mark lobby status as playing
-    await update(lobbyRef(), { status: 'playing' });
+    // Mark playing
+    await update(lRef(), { status:'playing', results:null, paintSeq:0, paintChunk:'' });
 
-    // Compute game end timestamp; only creator writes it
-    const meta = lobbyData.meta || {};
-    const creatorId = meta.creatorId || '';
-    if (myId === creatorId) {
-        const endAt = Date.now() + 3000 + GAME_DURATION; // 3s countdown + game
-        await update(lobbyRef(), { gameEndAt: endAt });
+    // Only the creator writes the authoritative end timestamp
+    const meta = lobbyMeta || {};
+    if (myId === meta.creatorId) {
+        const endAt = Date.now() + 3000 + GAME_DURATION;
+        await update(lRef(), { gameEndAt: endAt });
         gameEndAt = endAt;
+        runCountdown();
+    } else {
+        // Non-creator waits for gameEndAt to appear
+        const waitForTs = setInterval(() => {
+            if (lobbyMeta.gameEndAt) {
+                gameEndAt = lobbyMeta.gameEndAt;
+                clearInterval(waitForTs);
+                runCountdown();
+            }
+        }, 80);
     }
-
-    runCountdown();
 }
 
 function runCountdown() {
-    // If I'm not the creator, wait until gameEndAt appears in Firebase
-    const meta = lobbyData.meta || {};
-    if (!meta.gameEndAt && myId !== (meta.creatorId || '')) {
-        // Poll via the existing listener; once gameEndAt is set, re-check
-        const checkInterval = setInterval(() => {
-            const m = lobbyData.meta || {};
-            if (m.gameEndAt) {
-                gameEndAt = m.gameEndAt;
-                clearInterval(checkInterval);
-                startCountdownAnimation();
-            }
-        }, 100);
-    } else {
-        if (meta.gameEndAt) gameEndAt = meta.gameEndAt;
-        startCountdownAnimation();
-    }
-}
-
-function startCountdownAnimation() {
     const overlay = document.getElementById('countdown-overlay');
     const numEl   = document.getElementById('countdown-num');
     overlay.classList.add('visible');
-    showScreen(null); // hide lobby card but keep overlay
+    showScreen(null);
 
     let count = 3;
     numEl.textContent = count;
@@ -683,193 +608,227 @@ function startCountdownAnimation() {
         count--;
         if (count <= 0) {
             numEl.textContent = 'GO!';
-            setTimeout(() => {
-                overlay.classList.remove('visible');
-                launchGame();
-            }, 700);
+            setTimeout(() => { overlay.classList.remove('visible'); launchGame(); }, 700);
             return;
         }
         numEl.textContent = count;
-        // re-trigger animation
         numEl.style.animation = 'none';
-        numEl.offsetHeight; // reflow
+        void numEl.offsetHeight;
         numEl.style.animation = 'pulse .8s ease-in-out';
         setTimeout(tick, 1000);
     };
     setTimeout(tick, 1000);
 }
 
-/* ══════════════════════════════════════════════
-   🎮  GAME
-   ══════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────
+   GAME
+   ───────────────────────────────────────────── */
 function launchGame() {
     gameState = 'PLAYING';
     document.getElementById('game-wrap').style.display = 'flex';
 
-    // Build local player list from Firebase snapshot
-    const players = lobbyData.players || {};
-    const entries = Object.entries(players);
-    const spawnPoints = [
-        { x: 50,  y: 50  },
-        { x: 750, y: 550 },
-        { x: 750, y: 50  },
-        { x: 50,  y: 550 },
-        { x: 400, y: 50  },
-        { x: 400, y: 550 },
-        { x: 50,  y: 300 },
-        { x: 750, y: 300 }
-    ];
+    // Snapshot current player list into activePlayers with stable spawn positions
+    activePlayers = Object.entries(lobbyPlayers).map(([pid, p]) => {
+        const slotIdx = (p.slot - 1);
+        const sp = SPAWN[slotIdx % SPAWN.length];
+        return {
+            id:    pid,
+            name:  p.name,
+            color: p.color,
+            slot:  p.slot,
+            x: sp[0], y: sp[1],
+            prevX: sp[0], prevY: sp[1],
+            isMe: pid === myId
+        };
+    });
 
-    localPlayers = entries.map(([pid, p], idx) => ({
-        id:          pid,
-        name:        p.name,
-        color:       p.color || PLAYER_COLORS[idx % PLAYER_COLORS.length],
-        x:           spawnPoints[idx % spawnPoints.length].x,
-        y:           spawnPoints[idx % spawnPoints.length].y,
-        speed:       4,
-        radius:      12,
-        rollerRadius: 22,
-        isMe:        pid === myId
-    }));
+    // Clear grid
+    grid.fill(0);
+    hostPaintBuf = '';
+    lastFlushSeq = -1;
 
-    initGrid();
     keys = {};
-
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup',   onKeyUp);
 
+    // Listen for paint events from host
+    addFbListener(lRef('paintChunk'), snap => {
+        if (!snap.exists()) return;
+        const raw = snap.val();
+        if (!raw) return;
+        // Format: "seq|encodedCells"
+        // encodedCells: "slot:idx,idx,idx;slot:idx,idx;..."
+        const pipe = raw.indexOf('|');
+        if (pipe < 0) return;
+        const seq = parseInt(raw.slice(0, pipe), 10);
+        if (seq <= lastFlushSeq) return;
+        lastFlushSeq = seq;
+        const body = raw.slice(pipe + 1);
+        applyPaintChunk(body);
+    });
+
+    // Listen for player position updates (for visual rendering only)
+    addFbListener(lRef('positions'), snap => {
+        if (!snap.exists()) return;
+        const pos = snap.val();
+        activePlayers.forEach(p => {
+            if (p.isMe) return;
+            if (pos[p.id]) {
+                p.x = pos[p.id].x;
+                p.y = pos[p.id].y;
+            }
+        });
+    });
+
+    // Listen for player list changes during match (join/leave)
+    addFbListener(lRef('players'), snap => {
+        const fresh = snap.val() || {};
+        // Remove players who left
+        activePlayers = activePlayers.filter(p => fresh[p.id]);
+    });
+
     startTimerLoop();
+    if (isCreator) startHostFlushLoop();
     rafId = requestAnimationFrame(gameLoop);
 }
 
 function onKeyDown(e) {
     keys[e.code] = true;
-    // Prevent arrow keys from scrolling page
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
 }
 function onKeyUp(e) { keys[e.code] = false; }
 
-function initGrid() {
-    grid = [];
-    for (let c = 0; c < COLS; c++) {
-        grid[c] = new Uint8Array(ROWS);
-    }
-}
+/* HOST: accumulate paint from all players' positions, flush to Firebase at ~20 fps */
+function startHostFlushLoop() {
+    let seq = 0;
+    // Collect positions from Firebase every 50ms and encode paint
+    paintFlushTimer = setInterval(async () => {
+        if (gameState !== 'PLAYING') { clearInterval(paintFlushTimer); return; }
 
-function startTimerLoop() {
-    timerTick = setInterval(() => {
-        const remaining = Math.max(0, Math.ceil((gameEndAt - Date.now()) / 1000));
-        document.getElementById('timer-display').textContent = remaining + 's';
-        if (remaining <= 0) {
-            clearInterval(timerTick);
-            endGame();
-        }
-    }, 250);
-}
-
-function paintGround(player) {
-    const cellX     = Math.floor(player.x / GRID_SIZE);
-    const cellY     = Math.floor(player.y / GRID_SIZE);
-    const cellRange = Math.ceil(player.rollerRadius / GRID_SIZE);
-    // Map player id → index+1 for the grid
-    const pidIdx    = localPlayers.findIndex(p => p.id === player.id) + 1;
-
-    for (let c = cellX - cellRange; c <= cellX + cellRange; c++) {
-        for (let r = cellY - cellRange; r <= cellY + cellRange; r++) {
-            if (c >= 0 && c < COLS && r >= 0 && r < ROWS) {
-                const dx = (c * GRID_SIZE + GRID_SIZE / 2) - player.x;
-                const dy = (r * GRID_SIZE + GRID_SIZE / 2) - player.y;
-                if (dx * dx + dy * dy <= player.rollerRadius * player.rollerRadius) {
-                    grid[c][r] = pidIdx;
-                }
+        // Build a paint chunk for all active players based on last known positions
+        // The host owns the grid; it encodes which cells changed this tick
+        const chunkParts = [];
+        activePlayers.forEach(p => {
+            // Use the canvas-space positions already tracked on host
+            const indices = cellsAlongLine(p.prevX, p.prevY, p.x, p.y);
+            if (indices.length > 0) {
+                chunkParts.push(`${p.slot}:${indices.join(',')}`);
             }
-        }
+            p.prevX = p.x;
+            p.prevY = p.y;
+        });
+
+        if (chunkParts.length === 0) return;
+
+        const chunk = `${seq}|${chunkParts.join(';')}`;
+        seq++;
+        await update(lRef(), { paintChunk: chunk }).catch(() => {});
+    }, 50); // 20 fps for paint sync
+}
+
+function applyPaintChunk(body) {
+    // "slot:idx,idx;slot:idx,idx"
+    if (!body) return;
+    body.split(';').forEach(part => {
+        if (!part) return;
+        const colon = part.indexOf(':');
+        if (colon < 0) return;
+        const slot    = parseInt(part.slice(0, colon), 10);
+        const indices = part.slice(colon + 1).split(',').map(Number);
+        applyCellIndices(slot, indices);
+    });
+}
+
+/* Non-host: move self and report position to Firebase for the host to pick up */
+function gameUpdate() {
+    const me = activePlayers.find(p => p.isMe);
+    if (!me) return;
+
+    let mx = 0, my = 0;
+    if (keys['ArrowUp']    || keys['KeyW']) my = -1;
+    if (keys['ArrowDown']  || keys['KeyS']) my =  1;
+    if (keys['ArrowLeft']  || keys['KeyA']) mx = -1;
+    if (keys['ArrowRight'] || keys['KeyD']) mx =  1;
+    if (mx && my) { mx *= 0.7071; my *= 0.7071; }
+
+    me.prevX = me.x;
+    me.prevY = me.y;
+    me.x = Math.max(P_RADIUS, Math.min(canvas.width  - P_RADIUS, me.x + mx * P_SPEED));
+    me.y = Math.max(P_RADIUS, Math.min(canvas.height - P_RADIUS, me.y + my * P_SPEED));
+
+    if (isCreator) {
+        // If I'm the host, I already handle paint in the flush loop.
+        // But I still need to update grid locally for my own movement immediately
+        // (will be overwritten by the chunk anyway, but keeps local rendering snappy)
+        const indices = cellsAlongLine(me.prevX, me.prevY, me.x, me.y);
+        applyCellIndices(me.slot, indices);
+    } else {
+        // Report position to Firebase so the host can encode my paint
+        update(lRef('positions'), { [myId]: { x: me.x, y: me.y } }).catch(() => {});
+        // Also locally paint for instant visual feedback (grid will be corrected by host chunk)
+        const indices = cellsAlongLine(me.prevX, me.prevY, me.x, me.y);
+        applyCellIndices(me.slot, indices);
     }
 }
 
-function gameUpdate() {
-    localPlayers.forEach(p => {
-        if (!p.isMe) return; // only control self
-
-        let moveX = 0, moveY = 0;
-
-        // Arrow keys OR WASD for everyone (each controls their own avatar)
-        if (keys['ArrowUp']   || keys['KeyW']) moveY = -1;
-        if (keys['ArrowDown'] || keys['KeyS']) moveY =  1;
-        if (keys['ArrowLeft'] || keys['KeyA']) moveX = -1;
-        if (keys['ArrowRight']|| keys['KeyD']) moveX =  1;
-
-        if (moveX !== 0 && moveY !== 0) { moveX *= 0.7071; moveY *= 0.7071; }
-
-        p.x = Math.max(p.radius, Math.min(canvas.width  - p.radius, p.x + moveX * p.speed));
-        p.y = Math.max(p.radius, Math.min(canvas.height - p.radius, p.y + moveY * p.speed));
-
-        paintGround(p);
-
-        // Publish position to Firebase (throttled by rAF, ~60fps is fine for fun game)
-        update(lobbyRef(`players/${myId}`), { px: p.x, py: p.y });
-    });
-
-    // Read other players' positions from Firebase snapshot (via lobbyData)
-    const fbPlayers = lobbyData.players || {};
-    localPlayers.forEach(p => {
-        if (p.isMe) return;
-        const fb = fbPlayers[p.id];
-        if (fb && fb.px != null) {
-            p.x = fb.px;
-            p.y = fb.py;
-            paintGround(p);
-        }
-    });
+/* Build slot→color map */
+function slotColorMap() {
+    const m = {};
+    activePlayers.forEach(p => { m[p.slot] = p.color; });
+    return m;
 }
 
 function gameDraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const colorMap = slotColorMap();
 
-    // 1. Grid
+    // Grid
     for (let c = 0; c < COLS; c++) {
         for (let r = 0; r < ROWS; r++) {
-            const pidIdx = grid[c][r];
-            if (pidIdx > 0 && localPlayers[pidIdx - 1]) {
-                ctx.fillStyle = localPlayers[pidIdx - 1].color;
+            const slot = grid[c * ROWS + r];
+            if (slot > 0 && colorMap[slot]) {
+                ctx.fillStyle = colorMap[slot];
                 ctx.fillRect(c * GRID_SIZE, r * GRID_SIZE, GRID_SIZE, GRID_SIZE);
             }
         }
     }
 
-    // 2. Scoreboard chips
+    // Scores
     const stats = calculateRatios();
-    let html = '';
-    stats.forEach(s => {
-        html += `<span class="score-chip" style="background:${s.color}">${s.name}: ${s.pct}%</span>`;
-    });
-    document.getElementById('scores-bar').innerHTML = html;
+    document.getElementById('scores-bar').innerHTML =
+        stats.map(s => `<span class="score-chip" style="background:${s.color}">${s.name}: ${s.pct}%</span>`).join('');
 
-    // 3. Players
-    localPlayers.forEach(p => {
-        // Roller ring
-        ctx.strokeStyle = p.color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.rollerRadius, 0, Math.PI * 2);
-        ctx.stroke();
+    // Players
+    activePlayers.forEach(p => {
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(p.x, p.y, ROLLER_RADIUS, 0, Math.PI*2); ctx.stroke();
 
-        // Body
         ctx.fillStyle = '#222';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, P_RADIUS, 0, Math.PI*2); ctx.fill();
 
         ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius - 4, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, P_RADIUS-4, 0, Math.PI*2); ctx.fill();
 
-        // Name tag
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 11px Segoe UI';
+        // Name label — always readable over any paint colour
+        const labelY = p.y - ROLLER_RADIUS - 8;
+        ctx.font      = 'bold 12px Segoe UI, Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(p.name, p.x, p.y - p.radius - 5);
+        ctx.textBaseline = 'bottom';
+        const textW = ctx.measureText(p.name).width;
+        const padH = 4, padV = 2;
+        const bx = p.x - textW/2 - padH;
+        const by = labelY - 12 - padV;
+        const bw = textW + padH*2;
+        const bh = 12 + padV*2 + 1;
+        // Dark semi-transparent pill background
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, bh, 4);
+        ctx.fill();
+        // Coloured text matching the player
+        ctx.fillStyle = p.color;
+        ctx.fillText(p.name, p.x, labelY);
+        ctx.textBaseline = 'alphabetic';
     });
 }
 
@@ -881,71 +840,85 @@ function gameLoop() {
 }
 
 function calculateRatios() {
-    const totalCells = COLS * ROWS;
-    return localPlayers.map((p, idx) => {
-        let count = 0;
-        for (let c = 0; c < COLS; c++) {
-            for (let r = 0; r < ROWS; r++) {
-                if (grid[c][r] === idx + 1) count++;
-            }
-        }
-        return { name: p.name, color: p.color, pct: ((count / totalCells) * 100).toFixed(1) };
-    });
+    const counts = {};
+    activePlayers.forEach(p => { counts[p.slot] = 0; });
+    for (let i = 0; i < grid.length; i++) {
+        const s = grid[i];
+        if (s > 0 && counts[s] !== undefined) counts[s]++;
+    }
+    return activePlayers.map(p => ({
+        name:  p.name,
+        color: p.color,
+        slot:  p.slot,
+        pct:   ((counts[p.slot] / TOTAL_CELLS) * 100).toFixed(1)
+    }));
 }
 
-/* ══════════════════════════════════════════════
-   🏁  END GAME & RESULTS
-   ══════════════════════════════════════════════ */
+function startTimerLoop() {
+    timerTick = setInterval(() => {
+        const rem = Math.max(0, Math.ceil((gameEndAt - Date.now()) / 1000));
+        document.getElementById('timer-display').textContent = rem + 's';
+        if (rem <= 0) { clearInterval(timerTick); endGame(); }
+    }, 250);
+}
+
+/* ─────────────────────────────────────────────
+   END GAME
+   ───────────────────────────────────────────── */
 function endGame() {
     if (gameState !== 'PLAYING') return;
     gameState = 'RESULTS';
 
     cancelAnimationFrame(rafId);
     clearInterval(timerTick);
+    clearInterval(paintFlushTimer);
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup',   onKeyUp);
 
-    // Save final stats to Firebase (so late-joiners viewing lobby can see)
+    // Clean up position entries
+    update(lRef('positions'), { [myId]: null }).catch(() => {});
+
     const stats = calculateRatios().sort((a, b) => b.pct - a.pct);
-    update(lobbyRef(), {
-        lastResults: JSON.stringify(stats)
+
+    // Publish frozen results & reset players' ready status immediately
+    // Only the first client to reach here wins the write race —
+    // all clients use the same grid so stats are identical regardless.
+    const playerUpdates = {};
+    Object.keys(lobbyPlayers).forEach(pid => {
+        playerUpdates[`${lobbyPath('players')}/${pid}/ready`] = false;
     });
+    update(ref(db), playerUpdates).catch(() => {});
+    update(lRef(), { results: JSON.stringify(stats) }).catch(() => {});
 
     showResults(stats);
 
-    // After 7 seconds, go back to lobby
     resultTimer = setTimeout(async () => {
-        // Reset lobby status
-        await update(lobbyRef(), { status: 'lobby', gameEndAt: null });
-        backToLobby();
+        // First client back resets the lobby
+        await update(lRef(), { status:'lobby', gameEndAt:null, paintChunk:'', paintSeq:0 }).catch(() => {});
+        finaliseBackToLobby();
     }, RESULT_DURATION);
 }
 
 function showResults(stats) {
     document.getElementById('game-wrap').style.display = 'none';
 
-    const medals = ['🥇', '🥈', '🥉'];
-    let html = '';
-    stats.forEach((s, i) => {
-        html += `
+    const medals = ['🥇','🥈','🥉'];
+    document.getElementById('results-list').innerHTML = stats.map((s, i) => `
         <div class="result-row">
-            <span class="result-rank">${medals[i] || (i + 1) + '.'}</span>
+            <span class="result-rank">${medals[i] || (i+1)+'.'}</span>
             <span class="result-dot" style="background:${s.color}"></span>
             <span class="result-name">${s.name}</span>
             <span class="result-pct" style="color:${s.color}">${s.pct}%</span>
-        </div>`;
-    });
-    document.getElementById('results-list').innerHTML = html;
+        </div>`).join('');
 
-    // Determine winner text
     const top = stats[0];
-    const tie  = stats.length > 1 && parseFloat(stats[0].pct) === parseFloat(stats[1].pct);
-    document.getElementById('results-title').textContent = tie ? "🤝 It's a Tie!" : `🏆 ${top.name} Wins!`;
-    document.getElementById('results-title').style.color = tie ? '#fff' : top.color;
+    const tie = stats.length > 1 && parseFloat(stats[0].pct) === parseFloat(stats[1].pct);
+    const titleEl = document.getElementById('results-title');
+    titleEl.textContent  = tie ? "🤝 It's a Tie!" : `🏆 ${top.name} Wins!`;
+    titleEl.style.color  = tie ? '#fff' : top.color;
 
     document.getElementById('results-screen').classList.add('visible');
 
-    // Countdown display
     let secs = Math.ceil(RESULT_DURATION / 1000);
     const cdEl = document.getElementById('results-countdown');
     cdEl.textContent = `Returning to lobby in ${secs}s…`;
@@ -956,57 +929,55 @@ function showResults(stats) {
     }, 1000);
 }
 
-function backToLobby() {
+function finaliseBackToLobby() {
+    if (gameState === 'LOBBY') return; // already there
     gameState = 'LOBBY';
-    isReady   = false;
 
     cancelAnimationFrame(rafId);
     clearInterval(timerTick);
+    clearInterval(paintFlushTimer);
     clearTimeout(resultTimer);
 
     document.getElementById('results-screen').classList.remove('visible');
     document.getElementById('game-wrap').style.display = 'none';
     document.getElementById('countdown-overlay').classList.remove('visible');
 
+    // Remove paint listener; keep player/meta listeners via re-subscribe
+    clearFbListeners();
+
+    isReady         = false;
+    startMatchGuard = false;
     updateReadyBtn();
     document.getElementById('lobby-status-msg').textContent = '';
     showScreen('screen-lobby');
 
-    // Make sure my player entry exists (in case it was wiped)
-    get(lobbyRef(`players/${myId}`)).then(snap => {
+    // Ensure my player node exists and is unready
+    get(lRef(`players/${myId}`)).then(snap => {
         if (!snap.exists()) {
-            set(lobbyRef(`players/${myId}`), {
-                name:    myName,
-                color:   PLAYER_COLORS[0],
-                ready:   false,
-                colorIdx: 0,
-                online:  true
+            set(lRef(`players/${myId}`), {
+                name: myName, color: PLAYER_COLORS[0],
+                slot: 1, ready: false, online: true
             });
-            onDisconnect(lobbyRef(`players/${myId}`)).remove();
+            onDisconnect(lRef(`players/${myId}`)).remove();
         } else {
-            update(lobbyRef(`players/${myId}`), { ready: false });
+            update(lRef(`players/${myId}`), { ready: false });
         }
     });
+
+    subscribeToLobby();
+    watchSelf();
 }
 
-/* ══════════════════════════════════════════════
-   ✅  READY TOGGLE
-   ══════════════════════════════════════════════ */
-window.toggleReady = async function () {
+/* ─────────────────────────────────────────────
+   READY TOGGLE
+   ───────────────────────────────────────────── */
+window.toggleReady = async () => {
     if (gameState !== 'LOBBY') return;
-    const meta = lobbyData.meta || {};
-    if (meta.status === 'playing') return;
-
+    if ((lobbyMeta || {}).status === 'playing') return;
     isReady = !isReady;
-    await update(lobbyRef(`players/${myId}`), { ready: isReady });
+    await update(lRef(`players/${myId}`), { ready: isReady });
     updateReadyBtn();
 };
-
-function setMyReady(val) {
-    isReady = val;
-    update(lobbyRef(`players/${myId}`), { ready: isReady });
-    updateReadyBtn();
-}
 
 function updateReadyBtn() {
     const btn = document.getElementById('btn-ready');
@@ -1015,58 +986,60 @@ function updateReadyBtn() {
     btn.className   = isReady ? 'btn btn-grey' : 'btn btn-green';
 }
 
-/* ══════════════════════════════════════════════
-   👢  KICK
-   ══════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────
+   KICK
+   ───────────────────────────────────────────── */
 async function kickPlayer(pid) {
     if (!isCreator) return;
-    // Write a kick flag; that player will detect it and leave
-    await update(lobbyRef(`players/${pid}`), { kicked: true });
-    // Remove after short delay
-    setTimeout(() => remove(lobbyRef(`players/${pid}`)), 500);
+    await update(lRef(`players/${pid}`), { kicked: true });
+    setTimeout(() => remove(lRef(`players/${pid}`)).catch(() => {}), 400);
+    // Also remove from positions if in game
+    update(lRef('positions'), { [pid]: null }).catch(() => {});
     toast('Player kicked!');
 }
 
-/* ══════════════════════════════════════════════
-   🚪  LEAVE
-   ══════════════════════════════════════════════ */
-window.leaveLobby = async function () {
+/* ─────────────────────────────────────────────
+   LEAVE
+   ───────────────────────────────────────────── */
+window.leaveLobby = async () => {
     await doLeave();
     returnToMenu();
 };
 
 async function doLeave() {
-    clearListeners();
+    clearFbListeners();
+    cancelAnimationFrame(rafId);
+    clearInterval(timerTick);
+    clearInterval(paintFlushTimer);
+    clearTimeout(resultTimer);
 
-    // Remove myself from firebase
-    await remove(lobbyRef(`players/${myId}`)).catch(() => {});
+    await remove(lRef(`players/${myId}`)).catch(() => {});
+    await update(lRef('positions'), { [myId]: null }).catch(() => {});
 
-    // If I'm the creator, transfer ownership
-    const playersSnap = await get(lobbyRef('players'));
-    const remaining = playersSnap.exists() ? Object.entries(playersSnap.val()) : [];
-    const others = remaining.filter(([pid]) => pid !== myId);
+    // Transfer creator if needed
+    const psSnap   = await get(lRef('players'));
+    const remaining = psSnap.exists()
+        ? Object.entries(psSnap.val()).filter(([pid]) => pid !== myId)
+        : [];
 
-    if (isCreator && others.length > 0) {
-        const [newCreatorId] = others[0];
-        await update(lobbyRef(), { creatorId: newCreatorId }).catch(() => {});
-    } else if (isCreator && others.length === 0) {
-        // Last one out: delete the lobby
-        await remove(lobbyRef()).catch(() => {});
+    if (isCreator) {
+        if (remaining.length > 0) {
+            await update(lRef(), { creatorId: remaining[0][0] }).catch(() => {});
+        } else {
+            await remove(lRef()).catch(() => {});
+        }
     }
 }
 
 function returnToMenu() {
-    gameState = 'LOBBY';
-    isReady   = false;
-    isCreator = false;
-    myId      = null;
+    gameState   = 'MENU';
+    isReady     = false;
+    isCreator   = false;
+    myId        = null;
     lobbyLetter = '';
-    lobbyData = {};
-    localPlayers = [];
-
-    cancelAnimationFrame(rafId);
-    clearInterval(timerTick);
-    clearTimeout(resultTimer);
+    lobbyMeta   = {};
+    lobbyPlayers = {};
+    activePlayers = [];
 
     document.getElementById('game-wrap').style.display = 'none';
     document.getElementById('results-screen').classList.remove('visible');
@@ -1078,48 +1051,49 @@ function returnToMenu() {
     showScreen('screen-menu');
 }
 
-/* ══════════════════════════════════════════════
-   👀  DETECT KICKED / LOBBY DELETED
-   ══════════════════════════════════════════════ */
-function watchSelfForKick() {
-    const selfRef = lobbyRef(`players/${myId}`);
+/* ─────────────────────────────────────────────
+   WATCH SELF (kick detection + creator transfer)
+   ───────────────────────────────────────────── */
+function watchSelf() {
+    const selfRef = lRef(`players/${myId}`);
     const fn = snap => {
         if (!snap.exists()) {
-            // I was kicked or lobby removed
             toast('You were removed from the lobby.');
-            clearListeners();
+            clearFbListeners();
             returnToMenu();
-        } else {
-            const data = snap.val();
-            if (data.kicked) {
-                toast('You were kicked from the lobby.');
-                clearListeners();
-                remove(selfRef).catch(() => {});
-                returnToMenu();
-            }
+            return;
+        }
+        const d = snap.val();
+        if (d.kicked) {
+            toast('You were kicked!');
+            clearFbListeners();
+            remove(selfRef).catch(() => {});
+            returnToMenu();
         }
     };
     onValue(selfRef, fn);
-    listeners.push({ r: selfRef, type: 'value', fn });
+    fbListeners.push({ r: selfRef, fn });
+
+    // Watch creator changes (in case host left)
+    const metaRef = lRef();
+    const mfn = snap => {
+        if (!snap.exists()) return;
+        const d = snap.val();
+        if (d.creatorId === myId && !isCreator) {
+            isCreator = true;
+            toast('You are now the lobby host 👑');
+            renderPlayerList();
+        }
+    };
+    onValue(metaRef, mfn);
+    fbListeners.push({ r: metaRef, fn: mfn });
 }
 
-/* ══════════════════════════════════════════════
-   🔌  WIRE UP
-   ══════════════════════════════════════════════ */
-// Override enterLobby to also watch self
-const _enterLobby = enterLobby;
-enterLobby = function () {
-    _enterLobby();
-    watchSelfForKick();
-};
-
-// Allow pressing Enter in code input
-document.getElementById('input-code').addEventListener('keydown', e => {
-    if (e.key === 'Enter') window.handleJoin();
-});
-document.getElementById('input-name').addEventListener('keydown', e => {
-    if (e.key === 'Enter') window.handleCreate();
-});
+/* ─────────────────────────────────────────────
+   KEY BINDINGS
+   ───────────────────────────────────────────── */
+document.getElementById('input-code').addEventListener('keydown', e => { if (e.key==='Enter') window.handleJoin(); });
+document.getElementById('input-name').addEventListener('keydown', e => { if (e.key==='Enter') window.handleCreate(); });
 
 </script>
 </body>
