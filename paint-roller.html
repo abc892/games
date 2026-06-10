@@ -6,7 +6,6 @@
     <title>Roller Royale</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
-
         body {
             margin: 0; padding: 0;
             background: #1a1a1a; color: #fff;
@@ -15,26 +14,21 @@
             align-items: center; justify-content: center;
             min-height: 100vh; overflow: hidden;
         }
-
         .screen { display: none; width: 100%; max-width: 520px; padding: 10px; }
         .screen.active { display: block; }
-
         .card {
             background: #2a2a2a; border: 1px solid #444;
             border-radius: 12px; padding: 30px;
             text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.5);
         }
-
         h1 { margin: 0 0 6px; color: #ffca28; font-size: 2.2rem; }
         h2 { margin: 0 0 20px; color: #ccc; font-size: 1rem; font-weight: 400; }
-
         input[type="text"] {
             background: #333; border: 1px solid #555; border-radius: 6px;
             color: #fff; font-size: 1rem; padding: 10px 14px;
             width: 100%; margin-bottom: 10px; outline: none;
         }
         input[type="text"]:focus { border-color: #ffca28; }
-
         .btn {
             border: none; border-radius: 6px; cursor: pointer;
             font-size: 1rem; font-weight: 700; padding: 10px 22px;
@@ -47,14 +41,12 @@
         .btn-red   { background: #e53935; color: #fff; }
         .btn-grey  { background: #555;    color: #fff; }
         .btn-sm    { padding: 5px 12px; font-size: .82rem; }
-
         #lobby-title { font-size: 1.4rem; margin-bottom: 4px; color: #ffca28; }
         #lobby-code-display {
             background: #333; border-radius: 8px; padding: 8px 18px;
             display: inline-block; font-size: 1.8rem; font-weight: 900;
             letter-spacing: 6px; color: #ffca28; margin-bottom: 16px;
         }
-
         #player-list { list-style: none; margin: 0; padding: 0; text-align: left; }
         #player-list li {
             display: flex; align-items: center; gap: 8px;
@@ -64,22 +56,17 @@
         }
         .player-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
         .player-name-label { flex: 1; font-weight: 600; }
-        .status-badge {
-            padding: 2px 9px; border-radius: 20px;
-            font-size: .75rem; font-weight: 700;
-        }
+        .status-badge { padding: 2px 9px; border-radius: 20px; font-size: .75rem; font-weight: 700; }
         .status-ready   { background: #4caf50; color: #fff; }
         .status-unready { background: #e53935; color: #fff; }
         .status-playing { background: #ffca28; color: #222; }
-
         #game-wrap { display: none; flex-direction: column; align-items: center; }
         #game-top-bar {
             display: flex; gap: 10px; margin-bottom: 8px;
             align-items: center; flex-wrap: wrap; justify-content: center;
         }
         .score-chip {
-            padding: 6px 14px; border-radius: 20px;
-            font-size: .9rem; font-weight: 700;
+            padding: 6px 14px; border-radius: 20px; font-size: .9rem; font-weight: 700;
             color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6);
         }
         #timer-display {
@@ -89,7 +76,6 @@
             min-width: 80px; text-align: center;
         }
         #gameCanvas { background: #fff; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
-
         #countdown-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,.7); z-index: 50;
@@ -106,7 +92,6 @@
             50%  { transform: scale(1);   opacity: 1; }
             100% { transform: scale(.85); opacity: .8; }
         }
-
         #results-screen {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,.85); z-index: 60;
@@ -125,7 +110,6 @@
         .result-name { flex: 1; text-align: left; font-weight: 700; }
         .result-pct  { font-weight: 900; font-size: 1.2rem; }
         #results-countdown { margin-top: 18px; color: #aaa; font-size: .9rem; }
-
         #toast {
             position: fixed; bottom: 24px; left: 50%;
             transform: translateX(-50%) translateY(80px);
@@ -134,10 +118,10 @@
             transition: transform .3s ease; pointer-events: none;
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
-
         .divider { border: none; border-top: 1px solid #444; margin: 18px 0; }
         .error-text { color: #e53935; font-size: .85rem; margin: 6px 0; min-height: 18px; }
         .info-text  { color: #aaa; font-size: .82rem; }
+        .btn-loading { opacity: .6; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -150,13 +134,13 @@
         <hr class="divider">
         <input type="text" id="input-name" placeholder="Enter your name…" maxlength="16">
         <p class="error-text" id="menu-error"></p>
-        <button class="btn btn-green" onclick="handleCreate()">🏠 Create Lobby</button>
-        <button class="btn btn-blue"  onclick="showJoin()">🔑 Join Lobby</button>
+        <button class="btn btn-green" id="btn-create" onclick="handleCreate()">🏠 Create Lobby</button>
+        <button class="btn btn-blue"  id="btn-showjoin" onclick="showJoin()">🔑 Join Lobby</button>
         <div id="join-section" style="display:none; margin-top:14px;">
             <input type="text" id="input-code" placeholder="Enter lobby code (A–Z)…"
                    maxlength="1" style="text-transform:uppercase;text-align:center;font-size:1.5rem;letter-spacing:4px;">
             <br>
-            <button class="btn btn-blue" onclick="handleJoin()">Enter Lobby</button>
+            <button class="btn btn-blue" id="btn-join" onclick="handleJoin()">Enter Lobby</button>
             <button class="btn btn-grey" onclick="hideJoin()">Cancel</button>
         </div>
     </div>
@@ -174,7 +158,7 @@
         <div id="lobby-status-msg" style="color:#aaa;font-size:.88rem;margin-bottom:10px;"></div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-green" id="btn-ready" onclick="toggleReady()">✅ Ready</button>
-            <button class="btn btn-red"   onclick="leaveLobby()">🚪 Leave</button>
+            <button class="btn btn-red" onclick="leaveLobby()">🚪 Leave</button>
         </div>
     </div>
 </div>
@@ -206,15 +190,13 @@
 <div id="toast"></div>
 
 <script type="module">
-import { initializeApp }    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import {
     getDatabase, ref, set, get, update, push, remove,
-    onValue, off, onDisconnect, serverTimestamp
+    onValue, off, onDisconnect
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
 
-/* ─────────────────────────────────────────────
-   🔧  FIREBASE CONFIG  — replace with your own
-   ───────────────────────────────────────────── */
+/* ── Firebase config ── */
 const firebaseConfig = {
     apiKey:            "AIzaSyAwEy-sJx7E61BA6VmBfIFMZsjuAj8RK5g",
     authDomain:        "games-c3e27.firebaseapp.com",
@@ -224,72 +206,63 @@ const firebaseConfig = {
     messagingSenderId: "193027632069",
     appId:             "1:193027632069:web:b559c3b10011bc6982b9ac"
 };
-
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
-/* ─────────────────────────────────────────────
-   CONSTANTS
-   ───────────────────────────────────────────── */
+/* ── Constants ── */
 const PLAYER_COLORS   = ['#ff4444','#33b5e5','#00c851','#ffbb33','#aa66cc','#ff8800','#00b8d4','#f06292'];
-const GAME_DURATION   = 80_000;   // ms
-const RESULT_DURATION = 7_000;    // ms
+const GAME_DURATION   = 80_000;
+const RESULT_DURATION = 7_000;
 const GRID_SIZE       = 10;
-const COLS            = 80;       // 800/10
-const ROWS            = 60;       // 600/10
+const COLS            = 80;
+const ROWS            = 60;
 const TOTAL_CELLS     = COLS * ROWS;
 const ROLLER_RADIUS   = 22;
 const P_RADIUS        = 12;
 const P_SPEED         = 4;
+const SPAWN = [[50,50],[750,550],[750,50],[50,550],[400,50],[400,550],[50,300],[750,300]];
 
-/* ─────────────────────────────────────────────
-   LOCAL STATE
-   ───────────────────────────────────────────── */
-let myId        = null;
+/* ── Session state ── */
+let myId        = null;   // Firebase push key for my player node
 let myName      = '';
 let lobbyLetter = '';
 let isCreator   = false;
 let isReady     = false;
-let gameState   = 'MENU';   // MENU | LOBBY | COUNTDOWN | PLAYING | RESULTS
+// Prevents double-clicks on Create/Join buttons
+let actionInProgress = false;
 
-let lobbyMeta    = {};      // latest Firebase meta snapshot value
-let lobbyPlayers = {};      // latest Firebase players snapshot value
-let fbListeners  = [];      // for cleanup
+/* ── Game state ── */
+// MENU | LOBBY | COUNTDOWN | PLAYING | RESULTS
+let gameState = 'MENU';
 
-// Game
+/* ── Live Firebase snapshots ── */
+let lobbyMeta    = {};
+let lobbyPlayers = {};
+
+/* ── Firebase listener registry (for clean teardown) ── */
+// Each entry: { r: firebaseRef, fn: function }
+let fbListeners = [];
+
+/* ── In-game state ── */
 const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
 let keys     = {};
-
-// grid[c][r] = 0 (empty) | 1..8 (player slot, 1-based)
-let grid = new Uint8Array(COLS * ROWS);
-
-// Active players during a match: [{id, name, color, slot, x, y, prevX, prevY, isMe}]
-let activePlayers = [];
-
-// Paint-event queue written/read through Firebase
-// Host writes a compact encoded string of paint events each frame;
-// all clients (including host) read that string and replay it onto grid.
-let hostPaintBuf    = '';   // host accumulates paint events between flushes
-let lastFlushSeq    = -1;   // seq number of last event chunk applied by this client
+let grid     = new Uint8Array(COLS * ROWS);
+// [{id, name, color, slot, x, y, prevX, prevY, isMe}]
+let activePlayers   = [];
+let lastFlushSeq    = -1;
 let paintFlushTimer = null;
+let gameEndAt       = null;
+let timerTick       = null;
+let resultTimer     = null;
+let rafId           = null;
+let startMatchGuard = false;
 
-let gameEndAt   = null;
-let timerTick   = null;
-let resultTimer = null;
-let rafId       = null;
-let startMatchGuard = false; // prevents double-trigger
-
-const SPAWN = [
-    [50,50],[750,550],[750,50],[50,550],
-    [400,50],[400,550],[50,300],[750,300]
-];
-
-/* ─────────────────────────────────────────────
-   HELPERS
-   ───────────────────────────────────────────── */
-function lobbyPath(sub = '') { return `Paint-roller/lobby ${lobbyLetter}${sub ? '/'+sub : ''}`; }
-function lRef(sub = '')      { return ref(db, lobbyPath(sub)); }
+/* ════════════════════════════════════════════
+   UTILITY
+   ════════════════════════════════════════════ */
+function dbPath(sub)    { return sub ? `Paint-roller/lobby ${lobbyLetter}/${sub}` : `Paint-roller/lobby ${lobbyLetter}`; }
+function lRef(sub = '') { return ref(db, dbPath(sub)); }
 
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -298,11 +271,19 @@ function showScreen(id) {
 
 function toast(msg, dur = 3000) {
     const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
+    t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), dur);
 }
 
+function setMenuBusy(busy) {
+    ['btn-create','btn-showjoin','btn-join'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('btn-loading', busy);
+    });
+    actionInProgress = busy;
+}
+
+/* Firebase listener helpers */
 function addFbListener(r, fn) {
     onValue(r, fn);
     fbListeners.push({ r, fn });
@@ -312,15 +293,11 @@ function clearFbListeners() {
     fbListeners = [];
 }
 
-/* ─────────────────────────────────────────────
-   PAINT ENCODING
-   Each paint event = "slot,cellX,cellY|..."  (integers, '|' separated)
-   We encode the circle of cells from each position rather than raw coords
-   so every client produces the same cells without floating-point drift.
-   ───────────────────────────────────────────── */
-function cellsForPosition(cx, cy) {
-    // cx/cy are canvas pixels. Returns array of {c, r} cells covered.
-    const cells = [];
+/* ════════════════════════════════════════════
+   PAINT MATH  (deterministic — same on all clients)
+   ════════════════════════════════════════════ */
+function cellsForPos(cx, cy) {
+    const out   = [];
     const cellX = Math.floor(cx / GRID_SIZE);
     const cellY = Math.floor(cy / GRID_SIZE);
     const range = Math.ceil(ROLLER_RADIUS / GRID_SIZE);
@@ -329,108 +306,177 @@ function cellsForPosition(cx, cy) {
             const dx = (c * GRID_SIZE + GRID_SIZE/2) - cx;
             const dy = (r * GRID_SIZE + GRID_SIZE/2) - cy;
             if (dx*dx + dy*dy <= ROLLER_RADIUS * ROLLER_RADIUS) {
-                cells.push(c * ROWS + r); // single integer index
+                out.push(c * ROWS + r);
             }
         }
     }
-    return cells;
+    return out;
 }
 
-// Walk line between two positions and collect all cell indices along it
 function cellsAlongLine(x0, y0, x1, y1) {
-    const seen = new Set();
-    const dist = Math.hypot(x1-x0, y1-y0);
+    const seen  = new Set();
+    const dist  = Math.hypot(x1-x0, y1-y0);
     const steps = Math.max(1, Math.ceil(dist / (GRID_SIZE * 0.5)));
     for (let i = 0; i <= steps; i++) {
-        const t  = i / steps;
-        const px = x0 + (x1-x0)*t;
-        const py = y0 + (y1-y0)*t;
-        cellsForPosition(px, py).forEach(ci => seen.add(ci));
+        const t = i / steps;
+        cellsForPos(x0 + (x1-x0)*t, y0 + (y1-y0)*t).forEach(ci => seen.add(ci));
     }
     return [...seen];
 }
 
-function applyCellIndices(slot, indices) {
-    for (const ci of indices) {
-        grid[ci] = slot;
-    }
+function applyPaintChunk(body) {
+    // body = "slot:idx,idx,...;slot:idx,..."
+    if (!body) return;
+    body.split(';').forEach(part => {
+        if (!part) return;
+        const colon = part.indexOf(':');
+        if (colon < 0) return;
+        const slot    = parseInt(part.slice(0, colon), 10);
+        const indices = part.slice(colon + 1).split(',').map(Number);
+        for (const ci of indices) grid[ci] = slot;
+    });
 }
 
-/* ─────────────────────────────────────────────
-   MENU
-   ───────────────────────────────────────────── */
+/* ════════════════════════════════════════════
+   LOBBY CLEANUP HELPERS
+   Centralised so they're called correctly everywhere.
+   ════════════════════════════════════════════ */
+
+// Called when this client is the last one standing and needs to wipe the lobby from Firebase.
+async function deleteLobbyFromFirebase() {
+    try { await remove(lRef()); } catch (_) {}
+}
+
+// Cancel ALL onDisconnect handlers we registered for this lobby.
+// Must be called before explicit remove() calls, otherwise Firebase
+// will re-delete things after an explicit remove has already run.
+async function cancelMyDisconnectHandlers() {
+    try { await onDisconnect(lRef()).cancel(); }            catch (_) {}
+    try { await onDisconnect(lRef('players/' + myId)).cancel(); } catch (_) {}
+}
+
+/* ════════════════════════════════════════════
+   MENU  — Create / Join
+   ════════════════════════════════════════════ */
 window.showJoin = () => {
     document.getElementById('join-section').style.display = 'block';
     document.getElementById('input-code').focus();
 };
-window.hideJoin = () => { document.getElementById('join-section').style.display = 'none'; };
+window.hideJoin = () => {
+    document.getElementById('join-section').style.display = 'none';
+};
 
 window.handleCreate = async () => {
+    if (actionInProgress) return;
     const name = document.getElementById('input-name').value.trim();
     if (!name) { document.getElementById('menu-error').textContent = 'Enter your name.'; return; }
     document.getElementById('menu-error').textContent = '';
+    setMenuBusy(true);
 
-    const rootSnap = await get(ref(db, 'Paint-roller'));
-    const taken    = rootSnap.exists() ? Object.keys(rootSnap.val()).map(k => k.replace('lobby ','')) : [];
-    const freeAll  = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(l => !taken.includes(l));
-    if (!freeAll.length) { document.getElementById('menu-error').textContent = 'All lobbies full.'; return; }
-    // Pick a purely random free letter — never predictable
-    const free = freeAll[Math.floor(Math.random() * freeAll.length)];
+    try {
+        // Find a random free lobby letter
+        const rootSnap = await get(ref(db, 'Paint-roller'));
+        const taken    = rootSnap.exists()
+            ? Object.keys(rootSnap.val()).map(k => k.replace('lobby ', ''))
+            : [];
+        const freeAll = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(l => !taken.includes(l));
+        if (!freeAll.length) {
+            document.getElementById('menu-error').textContent = 'All 26 lobbies are currently full. Try again soon.';
+            setMenuBusy(false);
+            return;
+        }
+        const letter = freeAll[Math.floor(Math.random() * freeAll.length)];
 
-    lobbyLetter = free;
-    myName      = name;
-    isCreator   = true;
+        lobbyLetter = letter;
+        myName      = name;
+        isCreator   = true;
 
-    const pRef = push(lRef('players'));
-    myId = pRef.key;
+        // Create player node first so we have myId
+        const pRef = push(lRef('players'));
+        myId = pRef.key;
 
-    await set(lRef(), { status:'lobby', gameEndAt:null, creatorId:myId, results:null });
-    await set(pRef, { name:myName, color:PLAYER_COLORS[0], slot:1, ready:false, online:true });
-    // When this tab closes: remove the player node AND the whole lobby
-    onDisconnect(pRef).remove();
-    onDisconnect(lRef()).remove();
+        // Write lobby root and player atomically-ish (two writes, fastest first)
+        await set(lRef(), {
+            status: 'lobby', gameEndAt: null,
+            creatorId: myId, results: null,
+            paintChunk: '', paintSeq: 0
+        });
+        await set(pRef, { name: myName, color: PLAYER_COLORS[0], slot: 1, ready: false });
 
-    enterLobby();
+        // onDisconnect: if tab closes, delete BOTH my player node AND the whole lobby.
+        // These are cancelled explicitly when I do a clean leave/delete.
+        onDisconnect(lRef()).remove();
+        onDisconnect(pRef).remove();
+
+        setMenuBusy(false);
+        enterLobby();
+    } catch (err) {
+        console.error(err);
+        document.getElementById('menu-error').textContent = 'Failed to create lobby. Check your connection.';
+        setMenuBusy(false);
+    }
 };
 
 window.handleJoin = async () => {
+    if (actionInProgress) return;
     const name = document.getElementById('input-name').value.trim();
     if (!name) { document.getElementById('menu-error').textContent = 'Enter your name.'; return; }
     document.getElementById('menu-error').textContent = '';
 
-    const code = document.getElementById('input-code').value.trim().toLowerCase();
-    if (!/^[a-z]$/.test(code)) { document.getElementById('menu-error').textContent = 'Enter a letter A–Z.'; return; }
+    const raw = document.getElementById('input-code').value.trim().toLowerCase();
+    if (!/^[a-z]$/.test(raw)) {
+        document.getElementById('menu-error').textContent = 'Enter a single letter A–Z.';
+        return;
+    }
+    setMenuBusy(true);
 
-    const snap = await get(ref(db, `Paint-roller/lobby ${code}`));
-    if (!snap.exists()) { document.getElementById('menu-error').textContent = 'Lobby not found.'; return; }
+    try {
+        // Verify lobby exists
+        const lobbySnap = await get(ref(db, `Paint-roller/lobby ${raw}`));
+        if (!lobbySnap.exists()) {
+            document.getElementById('menu-error').textContent = 'Lobby not found. Check the code.';
+            setMenuBusy(false);
+            return;
+        }
 
-    lobbyLetter = code;
-    myName      = name;
-    isCreator   = false;
+        lobbyLetter = raw;
+        myName      = name;
+        isCreator   = false;
 
-    // Assign slot = next available slot number
-    const psSnap   = await get(lRef('players'));
-    const existing = psSnap.exists() ? Object.values(psSnap.val()) : [];
-    const usedSlots = new Set(existing.map(p => p.slot));
-    let slot = 1;
-    while (usedSlots.has(slot)) slot++;
-    const colorIdx = (slot - 1) % PLAYER_COLORS.length;
+        // Pick the next free slot number
+        const psSnap    = await get(lRef('players'));
+        const existing  = psSnap.exists() ? Object.values(psSnap.val()) : [];
+        const usedSlots = new Set(existing.map(p => p.slot));
+        let slot = 1;
+        while (usedSlots.has(slot)) slot++;
+        const color = PLAYER_COLORS[(slot - 1) % PLAYER_COLORS.length];
 
-    const pRef = push(lRef('players'));
-    myId = pRef.key;
-    await set(pRef, { name:myName, color:PLAYER_COLORS[colorIdx], slot, ready:false, online:true });
-    // When this tab closes: remove my player node
-    onDisconnect(pRef).remove();
-    // Cancel the creator's lobby-root onDisconnect — lobby should survive until truly empty
-    const { cancel: cancelLobbyDisconnect } = onDisconnect(lRef());
-    cancelLobbyDisconnect();
+        // Write my player node
+        const pRef = push(lRef('players'));
+        myId = pRef.key;
+        await set(pRef, { name: myName, color, slot, ready: false });
 
-    enterLobby();
+        // If my tab closes: remove my player node.
+        // Do NOT register a lobby-root onDisconnect — the lobby belongs to the creator.
+        onDisconnect(pRef).remove();
+
+        // Cancel the creator's lobby-root onDisconnect now that there are ≥2 players.
+        // This prevents the lobby from vanishing if only the creator closes their tab
+        // while others are still connected.
+        try { await onDisconnect(lRef()).cancel(); } catch (_) {}
+
+        setMenuBusy(false);
+        enterLobby();
+    } catch (err) {
+        console.error(err);
+        document.getElementById('menu-error').textContent = 'Failed to join lobby. Check your connection.';
+        setMenuBusy(false);
+    }
 };
 
-/* ─────────────────────────────────────────────
+/* ════════════════════════════════════════════
    LOBBY
-   ───────────────────────────────────────────── */
+   ════════════════════════════════════════════ */
 function enterLobby() {
     gameState       = 'LOBBY';
     isReady         = false;
@@ -440,52 +486,91 @@ function enterLobby() {
     document.getElementById('results-screen').classList.remove('visible');
     document.getElementById('countdown-overlay').classList.remove('visible');
     document.getElementById('lobby-code-display').textContent = lobbyLetter.toUpperCase();
+    document.getElementById('lobby-status-msg').textContent = '';
     updateReadyBtn();
     showScreen('screen-lobby');
 
     clearFbListeners();
-    subscribeToLobby();
-    watchSelf();
+    subscribeLobbyPlayers();
+    subscribeLobbyMeta();
+    watchSelfForKick();
 }
 
-function subscribeToLobby() {
-    // Players
+function subscribeLobbyPlayers() {
     addFbListener(lRef('players'), snap => {
         lobbyPlayers = snap.val() || {};
         renderPlayerList();
-        maybeCheckAllReady();
 
-        // If the players node is now empty (everyone closed their tab / left),
-        // delete the orphaned lobby shell entirely.
-        if (!snap.exists() || Object.keys(lobbyPlayers).length === 0) {
-            remove(lRef()).catch(() => {});
+        // If we are still in this lobby and the players node is now empty,
+        // the last person must have closed their tab — clean up the shell.
+        if (gameState === 'LOBBY' && Object.keys(lobbyPlayers).length === 0) {
+            deleteLobbyFromFirebase();
         }
+
+        if (gameState === 'LOBBY') maybeCheckAllReady();
     });
-    // Meta
+}
+
+function subscribeLobbyMeta() {
     addFbListener(lRef(), snap => {
-        if (!snap.exists()) return;
-        const prev   = lobbyMeta;
-        lobbyMeta    = snap.val() || {};
+        if (!snap.exists()) {
+            // Lobby was deleted externally (last person closed tab, etc.)
+            // If we're somehow still here, boot back to menu.
+            if (gameState === 'LOBBY') returnToMenu();
+            return;
+        }
+        const prev = lobbyMeta;
+        lobbyMeta  = snap.val();
 
-        renderPlayerList(); // refresh badge states
+        renderPlayerList();
 
-        // Late joiner during active match
+        // Detect creator-ship transfer
+        if (lobbyMeta.creatorId === myId && !isCreator) {
+            isCreator = true;
+            toast('You are now the lobby host 👑');
+            renderPlayerList(); // show kick buttons
+        }
+
+        // Late joiner arrives while match is running
         if (lobbyMeta.status === 'playing' && gameState === 'LOBBY') {
-            document.getElementById('lobby-status-msg').textContent = '⚡ Match in progress – wait for players to return.';
-            if (isReady) { isReady = false; update(lRef(`players/${myId}`), {ready:false}); updateReadyBtn(); }
+            document.getElementById('lobby-status-msg').textContent = '⚡ Match in progress – wait here.';
+            if (isReady) {
+                isReady = false;
+                update(lRef(`players/${myId}`), { ready: false }).catch(() => {});
+                updateReadyBtn();
+            }
         }
 
-        // Results were published → show them
-        if (lobbyMeta.results && gameState === 'LOBBY' && prev.status === 'playing') {
-            // nothing needed here; results shown by the host/client that ended the game
-        }
-
-        // After results, host resets status to 'lobby'
+        // Match ended → return to lobby
         if (lobbyMeta.status === 'lobby' && gameState === 'RESULTS') {
             finaliseBackToLobby();
         }
     });
-    // Paint events (only during play; this listener is added in launchGame)
+}
+
+function watchSelfForKick() {
+    // Only watch for the kicked flag — don't use this to detect missing nodes
+    // (the players listener handles empty-lobby cleanup instead).
+    const r  = lRef(`players/${myId}`);
+    const fn = snap => {
+        if (!snap.exists()) {
+            // My node was removed — either kicked or lobby was cleaned up
+            if (gameState === 'LOBBY' || gameState === 'COUNTDOWN') {
+                clearFbListeners();
+                returnToMenu();
+            }
+            return;
+        }
+        if (snap.val().kicked) {
+            toast('You were kicked from the lobby.');
+            clearFbListeners();
+            // Remove my node now (the kicked flag was set, we just confirm the remove)
+            remove(r).catch(() => {});
+            returnToMenu();
+        }
+    };
+    onValue(r, fn);
+    fbListeners.push({ r, fn });
 }
 
 function renderPlayerList() {
@@ -497,14 +582,16 @@ function renderPlayerList() {
     ul.innerHTML = '';
 
     Object.entries(players).forEach(([pid, p]) => {
-        const color = p.color || '#fff';
+        const color = p.color || '#aaa';
         const li    = document.createElement('li');
 
+        // Colour dot
         const dot = document.createElement('span');
         dot.className = 'player-dot';
         dot.style.background = color;
         li.appendChild(dot);
 
+        // Name
         const nameEl = document.createElement('span');
         nameEl.className = 'player-name-label';
         nameEl.textContent = p.name
@@ -524,7 +611,7 @@ function renderPlayerList() {
         }
         li.appendChild(badge);
 
-        // Kick button — creator only, others only, lobby only
+        // Kick button — only creator sees it, only for others, only in lobby phase
         if (isCreator && pid !== myId && status !== 'playing') {
             const kb = document.createElement('button');
             kb.className = 'btn btn-red btn-sm';
@@ -539,13 +626,13 @@ function renderPlayerList() {
 
 function maybeCheckAllReady() {
     if (gameState !== 'LOBBY') return;
-    const meta    = lobbyMeta    || {};
-    const players = lobbyPlayers || {};
-    if (meta.status === 'playing') return;
+    if ((lobbyMeta || {}).status === 'playing') return;
 
-    const entries = Object.entries(players);
-    // Allow solo play (1 player)
-    if (entries.length === 0) { document.getElementById('lobby-status-msg').textContent = ''; return; }
+    const entries = Object.entries(lobbyPlayers || {});
+    if (entries.length === 0) {
+        document.getElementById('lobby-status-msg').textContent = '';
+        return;
+    }
 
     const allReady   = entries.every(([, p]) => p.ready);
     const readyCount = entries.filter(([, p]) => p.ready).length;
@@ -556,7 +643,7 @@ function maybeCheckAllReady() {
     } else {
         document.getElementById('lobby-status-msg').textContent =
             entries.length === 1
-                ? (readyCount === 1 ? '✅ Ready! Starting…' : 'Press Ready to start solo!')
+                ? 'Press Ready to play solo!'
                 : `${readyCount} / ${entries.length} ready`;
     }
 }
@@ -564,31 +651,29 @@ function maybeCheckAllReady() {
 async function startMatchSequence() {
     if (gameState !== 'LOBBY' || startMatchGuard) return;
     startMatchGuard = true;
-    gameState       = 'COUNTDOWN';
+    gameState = 'COUNTDOWN';
 
-    // Set all players to not-ready in Firebase
+    // Mark all players unready in one batch write
     const batch = {};
     Object.keys(lobbyPlayers).forEach(pid => {
-        batch[`${lobbyPath('players')}/${pid}/ready`] = false;
+        batch[`Paint-roller/lobby ${lobbyLetter}/players/${pid}/ready`] = false;
     });
-    await update(ref(db), batch);
+    await update(ref(db), batch).catch(() => {});
 
-    // Mark playing
-    await update(lRef(), { status:'playing', results:null, paintSeq:0, paintChunk:'' });
+    // Mark the lobby as playing
+    await update(lRef(), { status: 'playing', results: null, paintChunk: '', paintSeq: 0 }).catch(() => {});
 
-    // Only the creator writes the authoritative end timestamp
-    const meta = lobbyMeta || {};
-    if (myId === meta.creatorId) {
-        const endAt = Date.now() + 3000 + GAME_DURATION;
-        await update(lRef(), { gameEndAt: endAt });
+    // Creator writes the authoritative end timestamp; others poll for it
+    if (isCreator) {
+        const endAt = Date.now() + 3000 + GAME_DURATION; // 3 s countdown + game
+        await update(lRef(), { gameEndAt: endAt }).catch(() => {});
         gameEndAt = endAt;
         runCountdown();
     } else {
-        // Non-creator waits for gameEndAt to appear
-        const waitForTs = setInterval(() => {
-            if (lobbyMeta.gameEndAt) {
+        const pollForTs = setInterval(() => {
+            if (lobbyMeta && lobbyMeta.gameEndAt) {
                 gameEndAt = lobbyMeta.gameEndAt;
-                clearInterval(waitForTs);
+                clearInterval(pollForTs);
                 runCountdown();
             }
         }, 80);
@@ -599,7 +684,7 @@ function runCountdown() {
     const overlay = document.getElementById('countdown-overlay');
     const numEl   = document.getElementById('countdown-num');
     overlay.classList.add('visible');
-    showScreen(null);
+    showScreen(null); // hide lobby card; overlay is above everything
 
     let count = 3;
     numEl.textContent = count;
@@ -613,78 +698,64 @@ function runCountdown() {
         }
         numEl.textContent = count;
         numEl.style.animation = 'none';
-        void numEl.offsetHeight;
+        void numEl.offsetHeight; // force reflow to restart animation
         numEl.style.animation = 'pulse .8s ease-in-out';
         setTimeout(tick, 1000);
     };
     setTimeout(tick, 1000);
 }
 
-/* ─────────────────────────────────────────────
+/* ════════════════════════════════════════════
    GAME
-   ───────────────────────────────────────────── */
+   ════════════════════════════════════════════ */
 function launchGame() {
     gameState = 'PLAYING';
     document.getElementById('game-wrap').style.display = 'flex';
 
-    // Snapshot current player list into activePlayers with stable spawn positions
+    // Snapshot player list into local activePlayers
     activePlayers = Object.entries(lobbyPlayers).map(([pid, p]) => {
-        const slotIdx = (p.slot - 1);
-        const sp = SPAWN[slotIdx % SPAWN.length];
+        const sp = SPAWN[(p.slot - 1) % SPAWN.length];
         return {
-            id:    pid,
-            name:  p.name,
-            color: p.color,
-            slot:  p.slot,
-            x: sp[0], y: sp[1],
-            prevX: sp[0], prevY: sp[1],
+            id: pid, name: p.name, color: p.color, slot: p.slot,
+            x: sp[0], y: sp[1], prevX: sp[0], prevY: sp[1],
             isMe: pid === myId
         };
     });
 
-    // Clear grid
     grid.fill(0);
-    hostPaintBuf = '';
     lastFlushSeq = -1;
-
     keys = {};
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup',   onKeyUp);
 
-    // Listen for paint events from host
+    // Listen for authoritative paint chunks from host
     addFbListener(lRef('paintChunk'), snap => {
         if (!snap.exists()) return;
-        const raw = snap.val();
+        const raw  = snap.val();
         if (!raw) return;
-        // Format: "seq|encodedCells"
-        // encodedCells: "slot:idx,idx,idx;slot:idx,idx;..."
         const pipe = raw.indexOf('|');
         if (pipe < 0) return;
         const seq = parseInt(raw.slice(0, pipe), 10);
         if (seq <= lastFlushSeq) return;
         lastFlushSeq = seq;
-        const body = raw.slice(pipe + 1);
-        applyPaintChunk(body);
+        applyPaintChunk(raw.slice(pipe + 1));
     });
 
-    // Listen for player position updates (for visual rendering only)
+    // Listen for other players' positions (visual only — paint comes from host chunk)
     addFbListener(lRef('positions'), snap => {
         if (!snap.exists()) return;
         const pos = snap.val();
         activePlayers.forEach(p => {
             if (p.isMe) return;
-            if (pos[p.id]) {
-                p.x = pos[p.id].x;
-                p.y = pos[p.id].y;
-            }
+            if (pos[p.id]) { p.x = pos[p.id].x; p.y = pos[p.id].y; }
         });
     });
 
-    // Listen for player list changes during match (join/leave)
+    // Watch player list during match — remove anyone who leaves
     addFbListener(lRef('players'), snap => {
         const fresh = snap.val() || {};
-        // Remove players who left
-        activePlayers = activePlayers.filter(p => fresh[p.id]);
+        activePlayers = activePlayers.filter(p => !!fresh[p.id]);
     });
 
     startTimerLoop();
@@ -698,48 +769,23 @@ function onKeyDown(e) {
 }
 function onKeyUp(e) { keys[e.code] = false; }
 
-/* HOST: accumulate paint from all players' positions, flush to Firebase at ~20 fps */
 function startHostFlushLoop() {
     let seq = 0;
-    // Collect positions from Firebase every 50ms and encode paint
     paintFlushTimer = setInterval(async () => {
         if (gameState !== 'PLAYING') { clearInterval(paintFlushTimer); return; }
-
-        // Build a paint chunk for all active players based on last known positions
-        // The host owns the grid; it encodes which cells changed this tick
-        const chunkParts = [];
+        const parts = [];
         activePlayers.forEach(p => {
-            // Use the canvas-space positions already tracked on host
-            const indices = cellsAlongLine(p.prevX, p.prevY, p.x, p.y);
-            if (indices.length > 0) {
-                chunkParts.push(`${p.slot}:${indices.join(',')}`);
-            }
+            const idx = cellsAlongLine(p.prevX, p.prevY, p.x, p.y);
+            if (idx.length > 0) parts.push(`${p.slot}:${idx.join(',')}`);
             p.prevX = p.x;
             p.prevY = p.y;
         });
-
-        if (chunkParts.length === 0) return;
-
-        const chunk = `${seq}|${chunkParts.join(';')}`;
+        if (parts.length === 0) return;
+        await update(lRef(), { paintChunk: `${seq}|${parts.join(';')}` }).catch(() => {});
         seq++;
-        await update(lRef(), { paintChunk: chunk }).catch(() => {});
-    }, 50); // 20 fps for paint sync
+    }, 50); // ~20 fps paint sync
 }
 
-function applyPaintChunk(body) {
-    // "slot:idx,idx;slot:idx,idx"
-    if (!body) return;
-    body.split(';').forEach(part => {
-        if (!part) return;
-        const colon = part.indexOf(':');
-        if (colon < 0) return;
-        const slot    = parseInt(part.slice(0, colon), 10);
-        const indices = part.slice(colon + 1).split(',').map(Number);
-        applyCellIndices(slot, indices);
-    });
-}
-
-/* Non-host: move self and report position to Firebase for the host to pick up */
 function gameUpdate() {
     const me = activePlayers.find(p => p.isMe);
     if (!me) return;
@@ -756,33 +802,24 @@ function gameUpdate() {
     me.x = Math.max(P_RADIUS, Math.min(canvas.width  - P_RADIUS, me.x + mx * P_SPEED));
     me.y = Math.max(P_RADIUS, Math.min(canvas.height - P_RADIUS, me.y + my * P_SPEED));
 
-    if (isCreator) {
-        // If I'm the host, I already handle paint in the flush loop.
-        // But I still need to update grid locally for my own movement immediately
-        // (will be overwritten by the chunk anyway, but keeps local rendering snappy)
-        const indices = cellsAlongLine(me.prevX, me.prevY, me.x, me.y);
-        applyCellIndices(me.slot, indices);
-    } else {
-        // Report position to Firebase so the host can encode my paint
-        update(lRef('positions'), { [myId]: { x: me.x, y: me.y } }).catch(() => {});
-        // Also locally paint for instant visual feedback (grid will be corrected by host chunk)
-        const indices = cellsAlongLine(me.prevX, me.prevY, me.x, me.y);
-        applyCellIndices(me.slot, indices);
-    }
-}
+    // Local paint preview (will be authoritative-overwritten by host chunk for non-hosts)
+    const idx = cellsAlongLine(me.prevX, me.prevY, me.x, me.y);
+    for (const ci of idx) grid[ci] = me.slot;
 
-/* Build slot→color map */
-function slotColorMap() {
-    const m = {};
-    activePlayers.forEach(p => { m[p.slot] = p.color; });
-    return m;
+    if (!isCreator) {
+        // Report position to Firebase so the host can encode our paint
+        update(lRef('positions'), { [myId]: { x: me.x, y: me.y } }).catch(() => {});
+    }
 }
 
 function gameDraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const colorMap = slotColorMap();
 
-    // Grid
+    // Build slot → color lookup once per frame
+    const colorMap = {};
+    activePlayers.forEach(p => { colorMap[p.slot] = p.color; });
+
+    // Draw painted cells
     for (let c = 0; c < COLS; c++) {
         for (let r = 0; r < ROWS; r++) {
             const slot = grid[c * ROWS + r];
@@ -793,39 +830,34 @@ function gameDraw() {
         }
     }
 
-    // Scores
+    // Scoreboard chips
     const stats = calculateRatios();
     document.getElementById('scores-bar').innerHTML =
         stats.map(s => `<span class="score-chip" style="background:${s.color}">${s.name}: ${s.pct}%</span>`).join('');
 
-    // Players
+    // Draw each player
     activePlayers.forEach(p => {
+        // Roller ring
         ctx.strokeStyle = p.color; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(p.x, p.y, ROLLER_RADIUS, 0, Math.PI*2); ctx.stroke();
 
+        // Player body
         ctx.fillStyle = '#222';
         ctx.beginPath(); ctx.arc(p.x, p.y, P_RADIUS, 0, Math.PI*2); ctx.fill();
-
         ctx.fillStyle = p.color;
-        ctx.beginPath(); ctx.arc(p.x, p.y, P_RADIUS-4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, P_RADIUS - 4, 0, Math.PI*2); ctx.fill();
 
-        // Name label — always readable over any paint colour
+        // Name label with dark pill background
         const labelY = p.y - ROLLER_RADIUS - 8;
-        ctx.font      = 'bold 12px Segoe UI, Arial';
-        ctx.textAlign = 'center';
+        ctx.font     = 'bold 12px Segoe UI, Arial';
+        ctx.textAlign    = 'center';
         ctx.textBaseline = 'bottom';
-        const textW = ctx.measureText(p.name).width;
-        const padH = 4, padV = 2;
-        const bx = p.x - textW/2 - padH;
-        const by = labelY - 12 - padV;
-        const bw = textW + padH*2;
-        const bh = 12 + padV*2 + 1;
-        // Dark semi-transparent pill background
+        const tw = ctx.measureText(p.name).width;
+        const pH = 4, pV = 2;
         ctx.fillStyle = 'rgba(0,0,0,0.75)';
         ctx.beginPath();
-        ctx.roundRect(bx, by, bw, bh, 4);
+        ctx.roundRect(p.x - tw/2 - pH, labelY - 12 - pV, tw + pH*2, 12 + pV*2 + 1, 4);
         ctx.fill();
-        // Coloured text matching the player
         ctx.fillStyle = p.color;
         ctx.fillText(p.name, p.x, labelY);
         ctx.textBaseline = 'alphabetic';
@@ -847,10 +879,8 @@ function calculateRatios() {
         if (s > 0 && counts[s] !== undefined) counts[s]++;
     }
     return activePlayers.map(p => ({
-        name:  p.name,
-        color: p.color,
-        slot:  p.slot,
-        pct:   ((counts[p.slot] / TOTAL_CELLS) * 100).toFixed(1)
+        name: p.name, color: p.color, slot: p.slot,
+        pct: ((counts[p.slot] / TOTAL_CELLS) * 100).toFixed(1)
     }));
 }
 
@@ -862,9 +892,9 @@ function startTimerLoop() {
     }, 250);
 }
 
-/* ─────────────────────────────────────────────
-   END GAME
-   ───────────────────────────────────────────── */
+/* ════════════════════════════════════════════
+   END GAME  →  RESULTS  →  BACK TO LOBBY
+   ════════════════════════════════════════════ */
 function endGame() {
     if (gameState !== 'PLAYING') return;
     gameState = 'RESULTS';
@@ -875,33 +905,28 @@ function endGame() {
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup',   onKeyUp);
 
-    // Clean up position entries
     update(lRef('positions'), { [myId]: null }).catch(() => {});
 
     const stats = calculateRatios().sort((a, b) => b.pct - a.pct);
 
-    // Publish frozen results & reset players' ready status immediately
-    // Only the first client to reach here wins the write race —
-    // all clients use the same grid so stats are identical regardless.
-    const playerUpdates = {};
+    // Reset all players to unready and store results (idempotent write race — all clients have same stats)
+    const batch = {};
     Object.keys(lobbyPlayers).forEach(pid => {
-        playerUpdates[`${lobbyPath('players')}/${pid}/ready`] = false;
+        batch[`Paint-roller/lobby ${lobbyLetter}/players/${pid}/ready`] = false;
     });
-    update(ref(db), playerUpdates).catch(() => {});
+    update(ref(db), batch).catch(() => {});
     update(lRef(), { results: JSON.stringify(stats) }).catch(() => {});
 
     showResults(stats);
 
     resultTimer = setTimeout(async () => {
-        // First client back resets the lobby
-        await update(lRef(), { status:'lobby', gameEndAt:null, paintChunk:'', paintSeq:0 }).catch(() => {});
+        await update(lRef(), { status: 'lobby', gameEndAt: null, paintChunk: '', paintSeq: 0 }).catch(() => {});
         finaliseBackToLobby();
     }, RESULT_DURATION);
 }
 
 function showResults(stats) {
     document.getElementById('game-wrap').style.display = 'none';
-
     const medals = ['🥇','🥈','🥉'];
     document.getElementById('results-list').innerHTML = stats.map((s, i) => `
         <div class="result-row">
@@ -914,9 +939,8 @@ function showResults(stats) {
     const top = stats[0];
     const tie = stats.length > 1 && parseFloat(stats[0].pct) === parseFloat(stats[1].pct);
     const titleEl = document.getElementById('results-title');
-    titleEl.textContent  = tie ? "🤝 It's a Tie!" : `🏆 ${top.name} Wins!`;
-    titleEl.style.color  = tie ? '#fff' : top.color;
-
+    titleEl.textContent = tie ? "🤝 It's a Tie!" : `🏆 ${top.name} Wins!`;
+    titleEl.style.color = tie ? '#fff' : top.color;
     document.getElementById('results-screen').classList.add('visible');
 
     let secs = Math.ceil(RESULT_DURATION / 1000);
@@ -930,7 +954,7 @@ function showResults(stats) {
 }
 
 function finaliseBackToLobby() {
-    if (gameState === 'LOBBY') return; // already there
+    if (gameState === 'LOBBY') return;
     gameState = 'LOBBY';
 
     cancelAnimationFrame(rafId);
@@ -942,40 +966,43 @@ function finaliseBackToLobby() {
     document.getElementById('game-wrap').style.display = 'none';
     document.getElementById('countdown-overlay').classList.remove('visible');
 
-    // Remove paint listener; keep player/meta listeners via re-subscribe
-    clearFbListeners();
-
     isReady         = false;
     startMatchGuard = false;
     updateReadyBtn();
     document.getElementById('lobby-status-msg').textContent = '';
     showScreen('screen-lobby');
 
-    // Ensure my player node exists and is unready
+    // Re-register my disconnect handlers since we're back in the lobby
+    onDisconnect(lRef(`players/${myId}`)).remove();
+    if (isCreator) onDisconnect(lRef()).remove();
+
+    // Ensure my player node is unready
     get(lRef(`players/${myId}`)).then(snap => {
-        if (!snap.exists()) {
-            set(lRef(`players/${myId}`), {
-                name: myName, color: PLAYER_COLORS[0],
-                slot: 1, ready: false, online: true
-            });
-            onDisconnect(lRef(`players/${myId}`)).remove();
+        if (snap.exists()) {
+            update(lRef(`players/${myId}`), { ready: false }).catch(() => {});
         } else {
-            update(lRef(`players/${myId}`), { ready: false });
+            // Recreate if it was somehow removed
+            const slot = 1;
+            set(lRef(`players/${myId}`), {
+                name: myName, color: PLAYER_COLORS[0], slot, ready: false
+            }).catch(() => {});
         }
     });
 
-    subscribeToLobby();
-    watchSelf();
+    clearFbListeners();
+    subscribeLobbyPlayers();
+    subscribeLobbyMeta();
+    watchSelfForKick();
 }
 
-/* ─────────────────────────────────────────────
-   READY TOGGLE
-   ───────────────────────────────────────────── */
+/* ════════════════════════════════════════════
+   READY / UNREADY
+   ════════════════════════════════════════════ */
 window.toggleReady = async () => {
     if (gameState !== 'LOBBY') return;
     if ((lobbyMeta || {}).status === 'playing') return;
     isReady = !isReady;
-    await update(lRef(`players/${myId}`), { ready: isReady });
+    await update(lRef(`players/${myId}`), { ready: isReady }).catch(() => {});
     updateReadyBtn();
 };
 
@@ -986,60 +1013,73 @@ function updateReadyBtn() {
     btn.className   = isReady ? 'btn btn-grey' : 'btn btn-green';
 }
 
-/* ─────────────────────────────────────────────
+/* ════════════════════════════════════════════
    KICK
-   ───────────────────────────────────────────── */
+   ════════════════════════════════════════════ */
 async function kickPlayer(pid) {
     if (!isCreator) return;
-    await update(lRef(`players/${pid}`), { kicked: true });
-    setTimeout(() => remove(lRef(`players/${pid}`)).catch(() => {}), 400);
-    // Also remove from positions if in game
+    // Set kicked flag — the target client's watchSelfForKick will detect it and leave cleanly
+    await update(lRef(`players/${pid}`), { kicked: true }).catch(() => {});
+    // Then delete after a short grace period so the client has time to react
+    setTimeout(() => remove(lRef(`players/${pid}`)).catch(() => {}), 600);
     update(lRef('positions'), { [pid]: null }).catch(() => {});
     toast('Player kicked!');
 }
 
-/* ─────────────────────────────────────────────
-   LEAVE
-   ───────────────────────────────────────────── */
+/* ════════════════════════════════════════════
+   LEAVE  (explicit button press)
+   ════════════════════════════════════════════ */
 window.leaveLobby = async () => {
-    await doLeave();
-    returnToMenu();
-};
+    // Cancel all onDisconnect handlers we registered BEFORE doing explicit removes,
+    // otherwise Firebase will try to re-delete things that are already gone.
+    await cancelMyDisconnectHandlers();
 
-async function doLeave() {
     clearFbListeners();
     cancelAnimationFrame(rafId);
     clearInterval(timerTick);
     clearInterval(paintFlushTimer);
     clearTimeout(resultTimer);
 
+    // Remove my player node
     await remove(lRef(`players/${myId}`)).catch(() => {});
     await update(lRef('positions'), { [myId]: null }).catch(() => {});
 
-    // Transfer creator if needed
-    const psSnap   = await get(lRef('players'));
-    const remaining = psSnap.exists()
+    // Check who remains
+    const psSnap    = await get(lRef('players')).catch(() => null);
+    const remaining = psSnap && psSnap.exists()
         ? Object.entries(psSnap.val()).filter(([pid]) => pid !== myId)
         : [];
 
-    if (isCreator) {
-        if (remaining.length > 0) {
-            await update(lRef(), { creatorId: remaining[0][0] }).catch(() => {});
-        } else {
-            await remove(lRef()).catch(() => {});
-        }
+    if (remaining.length === 0) {
+        // I was the last one — delete the whole lobby
+        await deleteLobbyFromFirebase();
+    } else if (isCreator) {
+        // Transfer creator role to next player
+        const [newCreatorId] = remaining[0];
+        await update(lRef(), { creatorId: newCreatorId }).catch(() => {});
+        // New creator registers their own lobby-root disconnect handler via subscribeLobbyMeta
     }
-}
 
+    returnToMenu();
+};
+
+/* ════════════════════════════════════════════
+   RETURN TO MENU  (local reset, no Firebase writes)
+   ════════════════════════════════════════════ */
 function returnToMenu() {
-    gameState   = 'MENU';
-    isReady     = false;
-    isCreator   = false;
-    myId        = null;
-    lobbyLetter = '';
-    lobbyMeta   = {};
+    gameState    = 'MENU';
+    isReady      = false;
+    isCreator    = false;
+    myId         = null;
+    lobbyLetter  = '';
+    lobbyMeta    = {};
     lobbyPlayers = {};
     activePlayers = [];
+
+    cancelAnimationFrame(rafId);
+    clearInterval(timerTick);
+    clearInterval(paintFlushTimer);
+    clearTimeout(resultTimer);
 
     document.getElementById('game-wrap').style.display = 'none';
     document.getElementById('results-screen').classList.remove('visible');
@@ -1051,49 +1091,15 @@ function returnToMenu() {
     showScreen('screen-menu');
 }
 
-/* ─────────────────────────────────────────────
-   WATCH SELF (kick detection + creator transfer)
-   ───────────────────────────────────────────── */
-function watchSelf() {
-    const selfRef = lRef(`players/${myId}`);
-    const fn = snap => {
-        if (!snap.exists()) {
-            toast('You were removed from the lobby.');
-            clearFbListeners();
-            returnToMenu();
-            return;
-        }
-        const d = snap.val();
-        if (d.kicked) {
-            toast('You were kicked!');
-            clearFbListeners();
-            remove(selfRef).catch(() => {});
-            returnToMenu();
-        }
-    };
-    onValue(selfRef, fn);
-    fbListeners.push({ r: selfRef, fn });
-
-    // Watch creator changes (in case host left)
-    const metaRef = lRef();
-    const mfn = snap => {
-        if (!snap.exists()) return;
-        const d = snap.val();
-        if (d.creatorId === myId && !isCreator) {
-            isCreator = true;
-            toast('You are now the lobby host 👑');
-            renderPlayerList();
-        }
-    };
-    onValue(metaRef, mfn);
-    fbListeners.push({ r: metaRef, fn: mfn });
-}
-
-/* ─────────────────────────────────────────────
-   KEY BINDINGS
-   ───────────────────────────────────────────── */
-document.getElementById('input-code').addEventListener('keydown', e => { if (e.key==='Enter') window.handleJoin(); });
-document.getElementById('input-name').addEventListener('keydown', e => { if (e.key==='Enter') window.handleCreate(); });
+/* ════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+   ════════════════════════════════════════════ */
+document.getElementById('input-code').addEventListener('keydown', e => {
+    if (e.key === 'Enter') window.handleJoin();
+});
+document.getElementById('input-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') window.handleCreate();
+});
 
 </script>
 </body>
