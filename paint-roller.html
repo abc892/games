@@ -447,7 +447,7 @@ window.handleCreate = async () => {
             status: 'lobby', gameEndAt: null, creatorId: myId,
             results: null, paintChunk: '', paintSeq: 0
         });
-        await set(pRef, { name: myName, color: PLAYER_COLORS[0], slot: 1, ready: false });
+        await set(pRef, { name: myName, color: PLAYER_COLORS[0], slot: 1, ready: false, joinedAt: Date.now() });
 
         registerDisconnectHandlers();
         setBusy(false);
@@ -494,7 +494,7 @@ window.handleJoin = async () => {
 
         const pRef = push(lRef('players'));
         myId = pRef.key;
-        await set(pRef, { name: myName, color, slot, ready: false });
+        await set(pRef, { name: myName, color, slot, ready: false, joinedAt: Date.now() });
 
         // My player node removed on disconnect; lobby root is not my responsibility
         onDisconnect(pRef).remove();
@@ -547,6 +547,26 @@ function subPlayers() {
             remove(lRef()).catch(() => {});
             return;
         }
+
+        // Self-healing host transfer:
+        // If creatorId points at a player who is no longer in the lobby
+        // (they closed their tab — onDisconnect removed their node but
+        // never updated creatorId), the player with the earliest joinedAt
+        // among those still present elects themselves as the new host.
+        const currentCreatorId = (lobbyMeta || {}).creatorId || '';
+        const creatorStillHere = !!lobbyPlayers[currentCreatorId];
+        if (!creatorStillHere && Object.keys(lobbyPlayers).length > 0) {
+            // Find the player who joined earliest
+            const sorted = Object.entries(lobbyPlayers)
+                .sort(([, a], [, b]) => (a.joinedAt || 0) - (b.joinedAt || 0));
+            const [earliestId] = sorted[0];
+            // Only the earliest-joined player writes the update to avoid a write race
+            if (earliestId === myId) {
+                update(lRef(), { creatorId: myId }).catch(() => {});
+                // subMeta will fire, detect creatorId === myId, and set isHost = true
+            }
+        }
+
         maybeCheckAllReady();
     });
 }
